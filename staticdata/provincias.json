@@ -1,0 +1,562 @@
+[
+  {
+    "id": "101",
+    "dpto_id": "1",
+    "name": "OROPEZA"
+  },
+  {
+    "id": "102",
+    "dpto_id": "1",
+    "name": "AZURDUY"
+  },
+  {
+    "id": "103",
+    "dpto_id": "1",
+    "name": "ZUDAÑEZ"
+  },
+  {
+    "id": "104",
+    "dpto_id": "1",
+    "name": "TOMINA"
+  },
+  {
+    "id": "105",
+    "dpto_id": "1",
+    "name": "HERNANDO SILES"
+  },
+  {
+    "id": "106",
+    "dpto_id": "1",
+    "name": "YAMPARAEZ"
+  },
+  {
+    "id": "107",
+    "dpto_id": "1",
+    "name": "NOR CINTI"
+  },
+  {
+    "id": "108",
+    "dpto_id": "1",
+    "name": "BELISARIO BOETO"
+  },
+  {
+    "id": "109",
+    "dpto_id": "1",
+    "name": "SUD CINTI"
+  },
+  {
+    "id": "110",
+    "dpto_id": "1",
+    "name": "LUIS CALVO"
+  },
+  {
+    "id": "201",
+    "dpto_id": "2",
+    "name": "MURILLO"
+  },
+  {
+    "id": "202",
+    "dpto_id": "2",
+    "name": "OMASUYOS"
+  },
+  {
+    "id": "203",
+    "dpto_id": "2",
+    "name": "PACAJES"
+  },
+  {
+    "id": "204",
+    "dpto_id": "2",
+    "name": "CAMACHO"
+  },
+  {
+    "id": "205",
+    "dpto_id": "2",
+    "name": "MUÑECAS"
+  },
+  {
+    "id": "206",
+    "dpto_id": "2",
+    "name": "LARECAJA"
+  },
+  {
+    "id": "207",
+    "dpto_id": "2",
+    "name": "FRANZ TAMAYO"
+  },
+  {
+    "id": "208",
+    "dpto_id": "2",
+    "name": "INGAVI"
+  },
+  {
+    "id": "209",
+    "dpto_id": "2",
+    "name": "LOAYZA"
+  },
+  {
+    "id": "210",
+    "dpto_id": "2",
+    "name": "INQUISIVI"
+  },
+  {
+    "id": "211",
+    "dpto_id": "2",
+    "name": "SUD YUNGAS"
+  },
+  {
+    "id": "212",
+    "dpto_id": "2",
+    "name": "LOS ANDES"
+  },
+  {
+    "id": "213",
+    "dpto_id": "2",
+    "name": "AROMA"
+  },
+  {
+    "id": "214",
+    "dpto_id": "2",
+    "name": "NOR YUNGAS"
+  },
+  {
+    "id": "215",
+    "dpto_id": "2",
+    "name": "ABEL ITURRALDE"
+  },
+  {
+    "id": "216",
+    "dpto_id": "2",
+    "name": "BAUTISTA SAAVEDRA"
+  },
+  {
+    "id": "217",
+    "dpto_id": "2",
+    "name": "MANCO KAPAC"
+  },
+  {
+    "id": "218",
+    "dpto_id": "2",
+    "name": "GUALBERTO VILLARROEL"
+  },
+  {
+    "id": "219",
+    "dpto_id": "2",
+    "name": "JOSÉ MANUEL PANDO"
+  },
+  {
+    "id": "220",
+    "dpto_id": "2",
+    "name": "CARANAVI"
+  },
+  {
+    "id": "301",
+    "dpto_id": "3",
+    "name": "CERCADO"
+  },
+  {
+    "id": "302",
+    "dpto_id": "3",
+    "name": "CAMPERO"
+  },
+  {
+    "id": "303",
+    "dpto_id": "3",
+    "name": "AYOPAYA"
+  },
+  {
+    "id": "304",
+    "dpto_id": "3",
+    "name": "ESTEBAN ARCE"
+  },
+  {
+    "id": "305",
+    "dpto_id": "3",
+    "name": "ARANI"
+  },
+  {
+    "id": "306",
+    "dpto_id": "3",
+    "name": "ARQUE"
+  },
+  {
+    "id": "307",
+    "dpto_id": "3",
+    "name": "CAPINOTA"
+  },
+  {
+    "id": "308",
+    "dpto_id": "3",
+    "name": "GERMAN JORDÁN"
+  },
+  {
+    "id": "309",
+    "dpto_id": "3",
+    "name": "QUILLACOLLO"
+  },
+  {
+    "id": "310",
+    "dpto_id": "3",
+    "name": "CHAPARE"
+  },
+  {
+    "id": "311",
+    "dpto_id": "3",
+    "name": "TAPACARÍ"
+  },
+  {
+    "id": "312",
+    "dpto_id": "3",
+    "name": "CARRASCO"
+  },
+  {
+    "id": "313",
+    "dpto_id": "3",
+    "name": "MIZQUE"
+  },
+  {
+    "id": "314",
+    "dpto_id": "3",
+    "name": "PUNATA"
+  },
+  {
+    "id": "315",
+    "dpto_id": "3",
+    "name": "BOLÍVAR"
+  },
+  {
+    "id": "316",
+    "dpto_id": "3",
+    "name": "TIRAQUE"
+  },
+  {
+    "id": "401",
+    "dpto_id": "4",
+    "name": "CERCADO"
+  },
+  {
+    "id": "402",
+    "dpto_id": "4",
+    "name": "EDUARDO AVAROA"
+  },
+  {
+    "id": "403",
+    "dpto_id": "4",
+    "name": "CARANGAS"
+  },
+  {
+    "id": "404",
+    "dpto_id": "4",
+    "name": "SAJAMA"
+  },
+  {
+    "id": "405",
+    "dpto_id": "4",
+    "name": "LITORAL DE ATACAMA"
+  },
+  {
+    "id": "406",
+    "dpto_id": "4",
+    "name": "POOPO"
+  },
+  {
+    "id": "407",
+    "dpto_id": "4",
+    "name": "PANTALEON DALENCE"
+  },
+  {
+    "id": "408",
+    "dpto_id": "4",
+    "name": "LADISLAO CABRERA"
+  },
+  {
+    "id": "409",
+    "dpto_id": "4",
+    "name": "ATAHUALLPA"
+  },
+  {
+    "id": "410",
+    "dpto_id": "4",
+    "name": "SAUCARI"
+  },
+  {
+    "id": "411",
+    "dpto_id": "4",
+    "name": "TOMAS BARRON"
+  },
+  {
+    "id": "412",
+    "dpto_id": "4",
+    "name": "SUD CARANGAS"
+  },
+  {
+    "id": "413",
+    "dpto_id": "4",
+    "name": "SAN PEDRO DE TOTORA"
+  },
+  {
+    "id": "414",
+    "dpto_id": "4",
+    "name": "SEBASTIÁN PAGADOR"
+  },
+  {
+    "id": "415",
+    "dpto_id": "4",
+    "name": "PUERTO DE MEJILLONES"
+  },
+  {
+    "id": "416",
+    "dpto_id": "4",
+    "name": "NOR CARANGAS"
+  },
+  {
+    "id": "501",
+    "dpto_id": "5",
+    "name": "TOMAS FRIAS"
+  },
+  {
+    "id": "502",
+    "dpto_id": "5",
+    "name": "RAFAEL BUSTILLO"
+  },
+  {
+    "id": "503",
+    "dpto_id": "5",
+    "name": "CORNELIO SAAVEDRA"
+  },
+  {
+    "id": "504",
+    "dpto_id": "5",
+    "name": "CHAYANTA"
+  },
+  {
+    "id": "505",
+    "dpto_id": "5",
+    "name": "CHARCAS"
+  },
+  {
+    "id": "506",
+    "dpto_id": "5",
+    "name": "NOR CHICHAS"
+  },
+  {
+    "id": "507",
+    "dpto_id": "5",
+    "name": "ALONSO DE IBAÑEZ"
+  },
+  {
+    "id": "508",
+    "dpto_id": "5",
+    "name": "SUR CHICHAS"
+  },
+  {
+    "id": "509",
+    "dpto_id": "5",
+    "name": "NOR LÍPEZ"
+  },
+  {
+    "id": "510",
+    "dpto_id": "5",
+    "name": "SUR LÍPEZ"
+  },
+  {
+    "id": "511",
+    "dpto_id": "5",
+    "name": "JOSÉ MARIA LINARES"
+  },
+  {
+    "id": "512",
+    "dpto_id": "5",
+    "name": "ANTONIO QUIJARRO"
+  },
+  {
+    "id": "513",
+    "dpto_id": "5",
+    "name": "BERNARDINO BILBAO RIOJA"
+  },
+  {
+    "id": "514",
+    "dpto_id": "5",
+    "name": "DANIEL CAMPOS"
+  },
+  {
+    "id": "515",
+    "dpto_id": "5",
+    "name": "MODESTO OMISTE"
+  },
+  {
+    "id": "516",
+    "dpto_id": "5",
+    "name": "ENRIQUE BALDIVIESO"
+  },
+  {
+    "id": "601",
+    "dpto_id": "6",
+    "name": "CERCADO"
+  },
+  {
+    "id": "602",
+    "dpto_id": "6",
+    "name": "ANICETO ARCE"
+  },
+  {
+    "id": "603",
+    "dpto_id": "6",
+    "name": "GRAN CHACO"
+  },
+  {
+    "id": "604",
+    "dpto_id": "6",
+    "name": "AVILES"
+  },
+  {
+    "id": "605",
+    "dpto_id": "6",
+    "name": "MÉNDEZ"
+  },
+  {
+    "id": "606",
+    "dpto_id": "6",
+    "name": "BURNET O OCONNOR"
+  },
+  {
+    "id": "701",
+    "dpto_id": "7",
+    "name": "ANDRÉS IBAÑEZ"
+  },
+  {
+    "id": "702",
+    "dpto_id": "7",
+    "name": "WARNES"
+  },
+  {
+    "id": "703",
+    "dpto_id": "7",
+    "name": "VELASCO"
+  },
+  {
+    "id": "704",
+    "dpto_id": "7",
+    "name": "ICHILO"
+  },
+  {
+    "id": "705",
+    "dpto_id": "7",
+    "name": "CHIQUITOS"
+  },
+  {
+    "id": "706",
+    "dpto_id": "7",
+    "name": "SARA"
+  },
+  {
+    "id": "707",
+    "dpto_id": "7",
+    "name": "CORDILLERA"
+  },
+  {
+    "id": "708",
+    "dpto_id": "7",
+    "name": "VALLEGRANDE"
+  },
+  {
+    "id": "709",
+    "dpto_id": "7",
+    "name": "FLORIDA"
+  },
+  {
+    "id": "710",
+    "dpto_id": "7",
+    "name": "OBISPO SANTIESTEVAN"
+  },
+  {
+    "id": "711",
+    "dpto_id": "7",
+    "name": "ÑUFLO DE CHÁVEZ"
+  },
+  {
+    "id": "712",
+    "dpto_id": "7",
+    "name": "ANGEL SANDOVAL"
+  },
+  {
+    "id": "713",
+    "dpto_id": "7",
+    "name": "MANUEL MARIA CABALLERO"
+  },
+  {
+    "id": "714",
+    "dpto_id": "7",
+    "name": "GERMAN BUSCH"
+  },
+  {
+    "id": "715",
+    "dpto_id": "7",
+    "name": "GUARAYOS"
+  },
+  {
+    "id": "801",
+    "dpto_id": "8",
+    "name": "CERCADO"
+  },
+  {
+    "id": "802",
+    "dpto_id": "8",
+    "name": "VACA DIEZ"
+  },
+  {
+    "id": "803",
+    "dpto_id": "8",
+    "name": "JOSÉ BALLIVIÁN"
+  },
+  {
+    "id": "804",
+    "dpto_id": "8",
+    "name": "YACUMA"
+  },
+  {
+    "id": "805",
+    "dpto_id": "8",
+    "name": "MOXOS"
+  },
+  {
+    "id": "806",
+    "dpto_id": "8",
+    "name": "MARBAN"
+  },
+  {
+    "id": "807",
+    "dpto_id": "8",
+    "name": "MAMORE"
+  },
+  {
+    "id": "808",
+    "dpto_id": "8",
+    "name": "ITENEZ"
+  },
+  {
+    "id": "901",
+    "dpto_id": "9",
+    "name": "NICOLÁS SUÁREZ"
+  },
+  {
+    "id": "902",
+    "dpto_id": "9",
+    "name": "MANURIPI"
+  },
+  {
+    "id": "903",
+    "dpto_id": "9",
+    "name": "MADRE DE DIOS"
+  },
+  {
+    "id": "904",
+    "dpto_id": "9",
+    "name": "ABUNA"
+  },
+  {
+    "id": "905",
+    "dpto_id": "9",
+    "name": "FEDERICO ROMÁN"
+  }
+]

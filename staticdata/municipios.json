@@ -1,0 +1,1697 @@
+[
+  {
+    "id": "10101",
+    "prov_id": "101",
+    "name": "CAPITAL (SUCRE)"
+  },
+  {
+    "id": "10102",
+    "prov_id": "101",
+    "name": "YOTALA"
+  },
+  {
+    "id": "10103",
+    "prov_id": "101",
+    "name": "POROMA"
+  },
+  {
+    "id": "10201",
+    "prov_id": "102",
+    "name": "VILLA AZURDUY"
+  },
+  {
+    "id": "10202",
+    "prov_id": "102",
+    "name": "TARVITA (VILLA ORIAS)"
+  },
+  {
+    "id": "10301",
+    "prov_id": "103",
+    "name": "VILLA ZUDANEZ (TACOPAYA)"
+  },
+  {
+    "id": "10302",
+    "prov_id": "103",
+    "name": "PRESTO"
+  },
+  {
+    "id": "10303",
+    "prov_id": "103",
+    "name": "VILLA MOJOCOYA"
+  },
+  {
+    "id": "10304",
+    "prov_id": "103",
+    "name": "ICLA"
+  },
+  {
+    "id": "10401",
+    "prov_id": "104",
+    "name": "PADILLA"
+  },
+  {
+    "id": "10402",
+    "prov_id": "104",
+    "name": "TOMINA"
+  },
+  {
+    "id": "10403",
+    "prov_id": "104",
+    "name": "SOPACHUY"
+  },
+  {
+    "id": "10404",
+    "prov_id": "104",
+    "name": "VILLA ALCALA"
+  },
+  {
+    "id": "10405",
+    "prov_id": "104",
+    "name": "EL VILLAR"
+  },
+  {
+    "id": "10501",
+    "prov_id": "105",
+    "name": "MONTEAGUDO"
+  },
+  {
+    "id": "10502",
+    "prov_id": "105",
+    "name": "SAN PABLO DE HUACARETA"
+  },
+  {
+    "id": "10601",
+    "prov_id": "106",
+    "name": "TARABUCO"
+  },
+  {
+    "id": "10602",
+    "prov_id": "106",
+    "name": "YAMPARAEZ"
+  },
+  {
+    "id": "10701",
+    "prov_id": "107",
+    "name": "CAMARGO"
+  },
+  {
+    "id": "10702",
+    "prov_id": "107",
+    "name": "SAN LUCAS"
+  },
+  {
+    "id": "10703",
+    "prov_id": "107",
+    "name": "INCAHUASI"
+  },
+  {
+    "id": "10704",
+    "prov_id": "107",
+    "name": "VILLA CHARCAS"
+  },
+  {
+    "id": "10801",
+    "prov_id": "108",
+    "name": "VILLA SERRANO"
+  },
+  {
+    "id": "10901",
+    "prov_id": "109",
+    "name": "CAMATAQUI (VILLA ABECIA)"
+  },
+  {
+    "id": "10902",
+    "prov_id": "109",
+    "name": "CULPINA"
+  },
+  {
+    "id": "10903",
+    "prov_id": "109",
+    "name": "LAS CARRERAS"
+  },
+  {
+    "id": "11001",
+    "prov_id": "110",
+    "name": "VILLA VACA GUZMAN (MUYUPAMPA)"
+  },
+  {
+    "id": "11002",
+    "prov_id": "110",
+    "name": "VILLA DE HUACAYA"
+  },
+  {
+    "id": "11003",
+    "prov_id": "110",
+    "name": "MACHARETI"
+  },
+  {
+    "id": "20101",
+    "prov_id": "201",
+    "name": "CAPITAL (LA PAZ)"
+  },
+  {
+    "id": "20102",
+    "prov_id": "201",
+    "name": "PALCA"
+  },
+  {
+    "id": "20103",
+    "prov_id": "201",
+    "name": "MECAPACA"
+  },
+  {
+    "id": "20104",
+    "prov_id": "201",
+    "name": "ACHOCALLA"
+  },
+  {
+    "id": "20105",
+    "prov_id": "201",
+    "name": "EL ALTO"
+  },
+  {
+    "id": "20201",
+    "prov_id": "202",
+    "name": "ACHACACHI"
+  },
+  {
+    "id": "20202",
+    "prov_id": "202",
+    "name": "ANCORAIMES"
+  },
+  {
+    "id": "20203",
+    "prov_id": "202",
+    "name": "CHUA COCANI"
+  },
+  {
+    "id": "20204",
+    "prov_id": "202",
+    "name": "HUARINA"
+  },
+  {
+    "id": "20205",
+    "prov_id": "202",
+    "name": "SANTIAGO DE HUATA"
+  },
+  {
+    "id": "20206",
+    "prov_id": "202",
+    "name": "HUATAJATA"
+  },
+  {
+    "id": "20301",
+    "prov_id": "203",
+    "name": "COROCORO"
+  },
+  {
+    "id": "20302",
+    "prov_id": "203",
+    "name": "CAQUIAVIRI"
+  },
+  {
+    "id": "20303",
+    "prov_id": "203",
+    "name": "CALACOTO"
+  },
+  {
+    "id": "20304",
+    "prov_id": "203",
+    "name": "COMANCHE"
+  },
+  {
+    "id": "20305",
+    "prov_id": "203",
+    "name": "CHARAÑA"
+  },
+  {
+    "id": "20306",
+    "prov_id": "203",
+    "name": "WALDO BALLIVIAN"
+  },
+  {
+    "id": "20307",
+    "prov_id": "203",
+    "name": "NAZACARA DE PACAJES"
+  },
+  {
+    "id": "20308",
+    "prov_id": "203",
+    "name": "SANTIAGO DE CALLAPA"
+  },
+  {
+    "id": "20401",
+    "prov_id": "204",
+    "name": "PUERTO ACOSTA"
+  },
+  {
+    "id": "20402",
+    "prov_id": "204",
+    "name": "MOCOMOCO"
+  },
+  {
+    "id": "20403",
+    "prov_id": "204",
+    "name": "CARABUCO"
+  },
+  {
+    "id": "20404",
+    "prov_id": "204",
+    "name": "HUMANATA"
+  },
+  {
+    "id": "20405",
+    "prov_id": "204",
+    "name": "ESCOMA"
+  },
+  {
+    "id": "20501",
+    "prov_id": "205",
+    "name": "CHUMA"
+  },
+  {
+    "id": "20502",
+    "prov_id": "205",
+    "name": "AYATA"
+  },
+  {
+    "id": "20503",
+    "prov_id": "205",
+    "name": "AUCAPATA"
+  },
+  {
+    "id": "20601",
+    "prov_id": "206",
+    "name": "SORATA"
+  },
+  {
+    "id": "20602",
+    "prov_id": "206",
+    "name": "GUANAY"
+  },
+  {
+    "id": "20603",
+    "prov_id": "206",
+    "name": "TACACOMA"
+  },
+  {
+    "id": "20604",
+    "prov_id": "206",
+    "name": "QUIABAYA"
+  },
+  {
+    "id": "20605",
+    "prov_id": "206",
+    "name": "COMBAYA"
+  },
+  {
+    "id": "20606",
+    "prov_id": "206",
+    "name": "TIPUANI"
+  },
+  {
+    "id": "20607",
+    "prov_id": "206",
+    "name": "MAPIRI"
+  },
+  {
+    "id": "20608",
+    "prov_id": "206",
+    "name": "TEOPONTE"
+  },
+  {
+    "id": "20701",
+    "prov_id": "207",
+    "name": "APOLO"
+  },
+  {
+    "id": "20702",
+    "prov_id": "207",
+    "name": "PELECHUCO"
+  },
+  {
+    "id": "20801",
+    "prov_id": "208",
+    "name": "VIACHA"
+  },
+  {
+    "id": "20802",
+    "prov_id": "208",
+    "name": "GUAQUI"
+  },
+  {
+    "id": "20803",
+    "prov_id": "208",
+    "name": "TIAHUANACU"
+  },
+  {
+    "id": "20804",
+    "prov_id": "208",
+    "name": "DESAGUADERO"
+  },
+  {
+    "id": "20805",
+    "prov_id": "208",
+    "name": "SAN ANDRES DE MACHACA"
+  },
+  {
+    "id": "20806",
+    "prov_id": "208",
+    "name": "JESUS DE MACHACA"
+  },
+  {
+    "id": "20807",
+    "prov_id": "208",
+    "name": "TARACO"
+  },
+  {
+    "id": "20901",
+    "prov_id": "209",
+    "name": "LURIBAY"
+  },
+  {
+    "id": "20902",
+    "prov_id": "209",
+    "name": "SAPAHAQUI"
+  },
+  {
+    "id": "20903",
+    "prov_id": "209",
+    "name": "YACO"
+  },
+  {
+    "id": "20904",
+    "prov_id": "209",
+    "name": "MALLA"
+  },
+  {
+    "id": "20905",
+    "prov_id": "209",
+    "name": "CAIROMA"
+  },
+  {
+    "id": "21001",
+    "prov_id": "210",
+    "name": "INQUISIVI"
+  },
+  {
+    "id": "21002",
+    "prov_id": "210",
+    "name": "QUIME"
+  },
+  {
+    "id": "21003",
+    "prov_id": "210",
+    "name": "CAJUATA"
+  },
+  {
+    "id": "21004",
+    "prov_id": "210",
+    "name": "COLQUIRI"
+  },
+  {
+    "id": "21005",
+    "prov_id": "210",
+    "name": "ICHOCA"
+  },
+  {
+    "id": "21006",
+    "prov_id": "210",
+    "name": "VILLA LIBERTAD LICOMA"
+  },
+  {
+    "id": "21101",
+    "prov_id": "211",
+    "name": "CHULUMANI (VILLA DE LA LIBERTAD)"
+  },
+  {
+    "id": "21102",
+    "prov_id": "211",
+    "name": "IRUPANA (VILLA DE LANZA)"
+  },
+  {
+    "id": "21103",
+    "prov_id": "211",
+    "name": "YANACACHI"
+  },
+  {
+    "id": "21104",
+    "prov_id": "211",
+    "name": "PALOS BLANCOS"
+  },
+  {
+    "id": "21105",
+    "prov_id": "211",
+    "name": "LA ASUNTA"
+  },
+  {
+    "id": "21201",
+    "prov_id": "212",
+    "name": "PUCARANI"
+  },
+  {
+    "id": "21202",
+    "prov_id": "212",
+    "name": "LAJA"
+  },
+  {
+    "id": "21203",
+    "prov_id": "212",
+    "name": "BATALLAS"
+  },
+  {
+    "id": "21204",
+    "prov_id": "212",
+    "name": "PUERTO PEREZ"
+  },
+  {
+    "id": "21301",
+    "prov_id": "213",
+    "name": "SICA SICA (VILLA AROMA)"
+  },
+  {
+    "id": "21302",
+    "prov_id": "213",
+    "name": "UMALA"
+  },
+  {
+    "id": "21303",
+    "prov_id": "213",
+    "name": "AYO AYO"
+  },
+  {
+    "id": "21304",
+    "prov_id": "213",
+    "name": "CALAMARCA"
+  },
+  {
+    "id": "21305",
+    "prov_id": "213",
+    "name": "PATACAMAYA"
+  },
+  {
+    "id": "21306",
+    "prov_id": "213",
+    "name": "COLQUENCHA"
+  },
+  {
+    "id": "21307",
+    "prov_id": "213",
+    "name": "COLLANA"
+  },
+  {
+    "id": "21401",
+    "prov_id": "214",
+    "name": "COROICO"
+  },
+  {
+    "id": "21402",
+    "prov_id": "214",
+    "name": "CORIPATA"
+  },
+  {
+    "id": "21501",
+    "prov_id": "215",
+    "name": "IXIAMAS"
+  },
+  {
+    "id": "21502",
+    "prov_id": "215",
+    "name": "SAN BUENAVENTURA"
+  },
+  {
+    "id": "21601",
+    "prov_id": "216",
+    "name": "GRAL. J.J. PEREZ (CHARAZANI)"
+  },
+  {
+    "id": "21602",
+    "prov_id": "216",
+    "name": "CURVA"
+  },
+  {
+    "id": "21701",
+    "prov_id": "217",
+    "name": "COPACABANA"
+  },
+  {
+    "id": "21702",
+    "prov_id": "217",
+    "name": "SAN PEDRO DE TIQUINA"
+  },
+  {
+    "id": "21703",
+    "prov_id": "217",
+    "name": "TITO YUPANQUI"
+  },
+  {
+    "id": "21801",
+    "prov_id": "218",
+    "name": "SAN PEDRO DE CURAHUARA"
+  },
+  {
+    "id": "21802",
+    "prov_id": "218",
+    "name": "PAPEL PAMPA"
+  },
+  {
+    "id": "21803",
+    "prov_id": "218",
+    "name": "CHACARILLA"
+  },
+  {
+    "id": "21901",
+    "prov_id": "219",
+    "name": "SANTIAGO DE MACHACA"
+  },
+  {
+    "id": "21902",
+    "prov_id": "219",
+    "name": "CATACORA"
+  },
+  {
+    "id": "22001",
+    "prov_id": "220",
+    "name": "CARANAVI"
+  },
+  {
+    "id": "22002",
+    "prov_id": "220",
+    "name": "ALTO BENI"
+  },
+  {
+    "id": "30101",
+    "prov_id": "301",
+    "name": "CAPITAL (COCHABAMBA)"
+  },
+  {
+    "id": "30201",
+    "prov_id": "302",
+    "name": "AIQUILE"
+  },
+  {
+    "id": "30202",
+    "prov_id": "302",
+    "name": "PASORAPA"
+  },
+  {
+    "id": "30203",
+    "prov_id": "302",
+    "name": "OMEREQUE"
+  },
+  {
+    "id": "30301",
+    "prov_id": "303",
+    "name": "INDEPENDENCIA"
+  },
+  {
+    "id": "30302",
+    "prov_id": "303",
+    "name": "MOROCHATA"
+  },
+  {
+    "id": "30303",
+    "prov_id": "303",
+    "name": "COCAPATA"
+  },
+  {
+    "id": "30401",
+    "prov_id": "304",
+    "name": "TARATA"
+  },
+  {
+    "id": "30402",
+    "prov_id": "304",
+    "name": "ANZALDO"
+  },
+  {
+    "id": "30403",
+    "prov_id": "304",
+    "name": "ARBIETO"
+  },
+  {
+    "id": "30404",
+    "prov_id": "304",
+    "name": "SACABAMBA"
+  },
+  {
+    "id": "30501",
+    "prov_id": "305",
+    "name": "ARANI"
+  },
+  {
+    "id": "30502",
+    "prov_id": "305",
+    "name": "VACAS"
+  },
+  {
+    "id": "30601",
+    "prov_id": "306",
+    "name": "ARQUE"
+  },
+  {
+    "id": "30602",
+    "prov_id": "306",
+    "name": "TACOPAYA"
+  },
+  {
+    "id": "30701",
+    "prov_id": "307",
+    "name": "CAPINOTA"
+  },
+  {
+    "id": "30702",
+    "prov_id": "307",
+    "name": "SANTIVANEZ"
+  },
+  {
+    "id": "30703",
+    "prov_id": "307",
+    "name": "SICAYA"
+  },
+  {
+    "id": "30801",
+    "prov_id": "308",
+    "name": "CLIZA"
+  },
+  {
+    "id": "30802",
+    "prov_id": "308",
+    "name": "TOCO"
+  },
+  {
+    "id": "30803",
+    "prov_id": "308",
+    "name": "TOLATA"
+  },
+  {
+    "id": "30901",
+    "prov_id": "309",
+    "name": "QUILLACOLLO"
+  },
+  {
+    "id": "30902",
+    "prov_id": "309",
+    "name": "SIPESIPE"
+  },
+  {
+    "id": "30903",
+    "prov_id": "309",
+    "name": "TIQUIPAYA"
+  },
+  {
+    "id": "30904",
+    "prov_id": "309",
+    "name": "VINTO"
+  },
+  {
+    "id": "30905",
+    "prov_id": "309",
+    "name": "COLCAPIRHUA"
+  },
+  {
+    "id": "31001",
+    "prov_id": "310",
+    "name": "SACABA"
+  },
+  {
+    "id": "31002",
+    "prov_id": "310",
+    "name": "COLOMI"
+  },
+  {
+    "id": "31003",
+    "prov_id": "310",
+    "name": "VILLA TUNARI"
+  },
+  {
+    "id": "31101",
+    "prov_id": "311",
+    "name": "TAPACARI"
+  },
+  {
+    "id": "31201",
+    "prov_id": "312",
+    "name": "TOTORA"
+  },
+  {
+    "id": "31202",
+    "prov_id": "312",
+    "name": "POJO"
+  },
+  {
+    "id": "31203",
+    "prov_id": "312",
+    "name": "POCONA"
+  },
+  {
+    "id": "31204",
+    "prov_id": "312",
+    "name": "CHIMORE"
+  },
+  {
+    "id": "31205",
+    "prov_id": "312",
+    "name": "PUERTO VILLARROEL"
+  },
+  {
+    "id": "31206",
+    "prov_id": "312",
+    "name": "ENTRE RIOS"
+  },
+  {
+    "id": "31301",
+    "prov_id": "313",
+    "name": "MIZQUE"
+  },
+  {
+    "id": "31302",
+    "prov_id": "313",
+    "name": "VILA VILA"
+  },
+  {
+    "id": "31303",
+    "prov_id": "313",
+    "name": "ALALAY"
+  },
+  {
+    "id": "31401",
+    "prov_id": "314",
+    "name": "PUNATA"
+  },
+  {
+    "id": "31402",
+    "prov_id": "314",
+    "name": "VILLA RIVERO"
+  },
+  {
+    "id": "31403",
+    "prov_id": "314",
+    "name": "SAN BENITO"
+  },
+  {
+    "id": "31404",
+    "prov_id": "314",
+    "name": "TACACHI"
+  },
+  {
+    "id": "31405",
+    "prov_id": "314",
+    "name": "VILLA G. VILLARROEL (CUCHUMUELA)"
+  },
+  {
+    "id": "31501",
+    "prov_id": "315",
+    "name": "BOLIVAR"
+  },
+  {
+    "id": "31601",
+    "prov_id": "316",
+    "name": "TIRAQUE"
+  },
+  {
+    "id": "31602",
+    "prov_id": "316",
+    "name": "SHINAHOTA"
+  },
+  {
+    "id": "40101",
+    "prov_id": "401",
+    "name": "CAPITAL (ORURO)"
+  },
+  {
+    "id": "40102",
+    "prov_id": "401",
+    "name": "CARACOLLO"
+  },
+  {
+    "id": "40103",
+    "prov_id": "401",
+    "name": "EL CHORO"
+  },
+  {
+    "id": "40104",
+    "prov_id": "401",
+    "name": "SORACACHI"
+  },
+  {
+    "id": "40201",
+    "prov_id": "402",
+    "name": "CHALLAPATA"
+  },
+  {
+    "id": "40202",
+    "prov_id": "402",
+    "name": "SANTUARIO DE QUILLACAS"
+  },
+  {
+    "id": "40301",
+    "prov_id": "403",
+    "name": "CORQUE"
+  },
+  {
+    "id": "40302",
+    "prov_id": "403",
+    "name": "CHOQUECOTA"
+  },
+  {
+    "id": "40401",
+    "prov_id": "404",
+    "name": "CURAHUARA DE CARANGAS"
+  },
+  {
+    "id": "40402",
+    "prov_id": "404",
+    "name": "TURCO"
+  },
+  {
+    "id": "40501",
+    "prov_id": "405",
+    "name": "HUACHACALLA"
+  },
+  {
+    "id": "40502",
+    "prov_id": "405",
+    "name": "ESCARA"
+  },
+  {
+    "id": "40503",
+    "prov_id": "405",
+    "name": "CRUZ DE MACHACAMARCA"
+  },
+  {
+    "id": "40504",
+    "prov_id": "405",
+    "name": "YUNGUYO DE LITORAL"
+  },
+  {
+    "id": "40505",
+    "prov_id": "405",
+    "name": "ESMERALDA"
+  },
+  {
+    "id": "40601",
+    "prov_id": "406",
+    "name": "POOPO (VILLA POOPO)"
+  },
+  {
+    "id": "40602",
+    "prov_id": "406",
+    "name": "PAZNA"
+  },
+  {
+    "id": "40603",
+    "prov_id": "406",
+    "name": "ANTEQUERA"
+  },
+  {
+    "id": "40701",
+    "prov_id": "407",
+    "name": "HUANUNI"
+  },
+  {
+    "id": "40702",
+    "prov_id": "407",
+    "name": "MACHACAMARCA"
+  },
+  {
+    "id": "40801",
+    "prov_id": "408",
+    "name": "SALINAS DE GARCI MENDOZA"
+  },
+  {
+    "id": "40802",
+    "prov_id": "408",
+    "name": "PAMPA AULLAGAS"
+  },
+  {
+    "id": "40901",
+    "prov_id": "409",
+    "name": "SABAYA"
+  },
+  {
+    "id": "40902",
+    "prov_id": "409",
+    "name": "COIPASA"
+  },
+  {
+    "id": "40903",
+    "prov_id": "409",
+    "name": "CHIPAYA"
+  },
+  {
+    "id": "41001",
+    "prov_id": "410",
+    "name": "TOLEDO"
+  },
+  {
+    "id": "41101",
+    "prov_id": "411",
+    "name": "EUCALIPTUS"
+  },
+  {
+    "id": "41201",
+    "prov_id": "412",
+    "name": "SANTIAGO DE ANDAMARCA"
+  },
+  {
+    "id": "41202",
+    "prov_id": "412",
+    "name": "BELEN DE ANDAMARCA"
+  },
+  {
+    "id": "41301",
+    "prov_id": "413",
+    "name": "TOTORA"
+  },
+  {
+    "id": "41401",
+    "prov_id": "414",
+    "name": "SANTIAGO DE HUARI"
+  },
+  {
+    "id": "41501",
+    "prov_id": "415",
+    "name": "LA RIVERA"
+  },
+  {
+    "id": "41502",
+    "prov_id": "415",
+    "name": "TODOS SANTOS"
+  },
+  {
+    "id": "41503",
+    "prov_id": "415",
+    "name": "CARANGAS"
+  },
+  {
+    "id": "41601",
+    "prov_id": "416",
+    "name": "HUAYLLAMARCA"
+  },
+  {
+    "id": "50101",
+    "prov_id": "501",
+    "name": "CAPITAL (POTOSI)"
+  },
+  {
+    "id": "50102",
+    "prov_id": "501",
+    "name": "TINGUIPAYA"
+  },
+  {
+    "id": "50103",
+    "prov_id": "501",
+    "name": "YOCALLA"
+  },
+  {
+    "id": "50104",
+    "prov_id": "501",
+    "name": "URMIRI"
+  },
+  {
+    "id": "50201",
+    "prov_id": "502",
+    "name": "UNCIA"
+  },
+  {
+    "id": "50202",
+    "prov_id": "502",
+    "name": "CHAYANTA"
+  },
+  {
+    "id": "50203",
+    "prov_id": "502",
+    "name": "LLALLAGUA"
+  },
+  {
+    "id": "50204",
+    "prov_id": "502",
+    "name": "CHUQUIHUTA AYLLU JUCUMANI"
+  },
+  {
+    "id": "50301",
+    "prov_id": "503",
+    "name": "BETANZOS"
+  },
+  {
+    "id": "50302",
+    "prov_id": "503",
+    "name": "CHAQUI"
+  },
+  {
+    "id": "50303",
+    "prov_id": "503",
+    "name": "TACOBAMBA"
+  },
+  {
+    "id": "50401",
+    "prov_id": "504",
+    "name": "COLQUECHACA"
+  },
+  {
+    "id": "50402",
+    "prov_id": "504",
+    "name": "RAVELO"
+  },
+  {
+    "id": "50403",
+    "prov_id": "504",
+    "name": "POCOATA"
+  },
+  {
+    "id": "50404",
+    "prov_id": "504",
+    "name": "OCURI"
+  },
+  {
+    "id": "50501",
+    "prov_id": "505",
+    "name": "SAN PEDRO DE BUENA VISTA"
+  },
+  {
+    "id": "50502",
+    "prov_id": "505",
+    "name": "TORO TORO"
+  },
+  {
+    "id": "50601",
+    "prov_id": "506",
+    "name": "COTAGAITA"
+  },
+  {
+    "id": "50602",
+    "prov_id": "506",
+    "name": "VITICHI"
+  },
+  {
+    "id": "50701",
+    "prov_id": "507",
+    "name": "SACACA (VILLA DE SACACA)"
+  },
+  {
+    "id": "50702",
+    "prov_id": "507",
+    "name": "CARIPUYO"
+  },
+  {
+    "id": "50801",
+    "prov_id": "508",
+    "name": "TUPIZA"
+  },
+  {
+    "id": "50802",
+    "prov_id": "508",
+    "name": "ATOCHA"
+  },
+  {
+    "id": "50901",
+    "prov_id": "509",
+    "name": "COLCHA K (VILLA MARTIN)"
+  },
+  {
+    "id": "50902",
+    "prov_id": "509",
+    "name": "SAN PEDRO DE QUEMES"
+  },
+  {
+    "id": "51001",
+    "prov_id": "510",
+    "name": "SAN PABLO DE LIPEZ"
+  },
+  {
+    "id": "51002",
+    "prov_id": "510",
+    "name": "MOJINETE"
+  },
+  {
+    "id": "51003",
+    "prov_id": "510",
+    "name": "SAN ANTONIO DE ESMORUCO"
+  },
+  {
+    "id": "51101",
+    "prov_id": "511",
+    "name": "PUNA (VILLA TALAVERA)"
+  },
+  {
+    "id": "51102",
+    "prov_id": "511",
+    "name": "CAIZA D"
+  },
+  {
+    "id": "51103",
+    "prov_id": "511",
+    "name": "CKOCHAS"
+  },
+  {
+    "id": "51201",
+    "prov_id": "512",
+    "name": "UYUNI"
+  },
+  {
+    "id": "51202",
+    "prov_id": "512",
+    "name": "TOMAVE"
+  },
+  {
+    "id": "51203",
+    "prov_id": "512",
+    "name": "PORCO"
+  },
+  {
+    "id": "51301",
+    "prov_id": "513",
+    "name": "ARAMPAMPA"
+  },
+  {
+    "id": "51302",
+    "prov_id": "513",
+    "name": "ACASIO"
+  },
+  {
+    "id": "51401",
+    "prov_id": "514",
+    "name": "LLICA"
+  },
+  {
+    "id": "51402",
+    "prov_id": "514",
+    "name": "TAHUA"
+  },
+  {
+    "id": "51501",
+    "prov_id": "515",
+    "name": "VILLAZON"
+  },
+  {
+    "id": "51601",
+    "prov_id": "516",
+    "name": "SAN AGUSTIN"
+  },
+  {
+    "id": "60101",
+    "prov_id": "601",
+    "name": "CAPITAL (TARIJA)"
+  },
+  {
+    "id": "60201",
+    "prov_id": "602",
+    "name": "PADCAYA"
+  },
+  {
+    "id": "60202",
+    "prov_id": "602",
+    "name": "BERMEJO"
+  },
+  {
+    "id": "60301",
+    "prov_id": "603",
+    "name": "YACUIBA"
+  },
+  {
+    "id": "60302",
+    "prov_id": "603",
+    "name": "CARAPARI"
+  },
+  {
+    "id": "60303",
+    "prov_id": "603",
+    "name": "VILLAMONTES"
+  },
+  {
+    "id": "60401",
+    "prov_id": "604",
+    "name": "URIONDO (CONCEPCION)"
+  },
+  {
+    "id": "60402",
+    "prov_id": "604",
+    "name": "YUNCHARA"
+  },
+  {
+    "id": "60501",
+    "prov_id": "605",
+    "name": "SAN LORENZO"
+  },
+  {
+    "id": "60502",
+    "prov_id": "605",
+    "name": "EL PUENTE"
+  },
+  {
+    "id": "60601",
+    "prov_id": "606",
+    "name": "ENTRE RIOS"
+  },
+  {
+    "id": "70101",
+    "prov_id": "701",
+    "name": "CAPITAL (SANTA CRUZ DE LA SIERRA)"
+  },
+  {
+    "id": "70102",
+    "prov_id": "701",
+    "name": "COTOCA"
+  },
+  {
+    "id": "70103",
+    "prov_id": "701",
+    "name": "PORONGO (AYACUCHO)"
+  },
+  {
+    "id": "70104",
+    "prov_id": "701",
+    "name": "LA GUARDIA"
+  },
+  {
+    "id": "70105",
+    "prov_id": "701",
+    "name": "EL TORNO"
+  },
+  {
+    "id": "70201",
+    "prov_id": "702",
+    "name": "WARNES"
+  },
+  {
+    "id": "70202",
+    "prov_id": "702",
+    "name": "OKINAWA UNO"
+  },
+  {
+    "id": "70301",
+    "prov_id": "703",
+    "name": "SAN IGNACIO DE VELASCO"
+  },
+  {
+    "id": "70302",
+    "prov_id": "703",
+    "name": "SAN MIGUEL DE VELASCO"
+  },
+  {
+    "id": "70303",
+    "prov_id": "703",
+    "name": "SAN RAFAEL"
+  },
+  {
+    "id": "70401",
+    "prov_id": "704",
+    "name": "BUENA VISTA"
+  },
+  {
+    "id": "70402",
+    "prov_id": "704",
+    "name": "SAN CARLOS"
+  },
+  {
+    "id": "70403",
+    "prov_id": "704",
+    "name": "YAPACANI"
+  },
+  {
+    "id": "70404",
+    "prov_id": "704",
+    "name": "SAN JUAN"
+  },
+  {
+    "id": "70501",
+    "prov_id": "705",
+    "name": "SAN JOSE DE CHIQUITOS"
+  },
+  {
+    "id": "70502",
+    "prov_id": "705",
+    "name": "PAILON"
+  },
+  {
+    "id": "70503",
+    "prov_id": "705",
+    "name": "ROBORE"
+  },
+  {
+    "id": "70601",
+    "prov_id": "706",
+    "name": "PORTACHUELO"
+  },
+  {
+    "id": "70602",
+    "prov_id": "706",
+    "name": "SANTA ROSA DEL SARA"
+  },
+  {
+    "id": "70603",
+    "prov_id": "706",
+    "name": "COLPA BELGICA"
+  },
+  {
+    "id": "70701",
+    "prov_id": "707",
+    "name": "LAGUNILLAS"
+  },
+  {
+    "id": "70702",
+    "prov_id": "707",
+    "name": "CHARAGUA"
+  },
+  {
+    "id": "70703",
+    "prov_id": "707",
+    "name": "CABEZAS"
+  },
+  {
+    "id": "70704",
+    "prov_id": "707",
+    "name": "CUEVO"
+  },
+  {
+    "id": "70705",
+    "prov_id": "707",
+    "name": "GUTIERREZ"
+  },
+  {
+    "id": "70706",
+    "prov_id": "707",
+    "name": "CAMIRI"
+  },
+  {
+    "id": "70707",
+    "prov_id": "707",
+    "name": "BOYUIBE"
+  },
+  {
+    "id": "70801",
+    "prov_id": "708",
+    "name": "VALLEGRANDE"
+  },
+  {
+    "id": "70802",
+    "prov_id": "708",
+    "name": "TRIGAL"
+  },
+  {
+    "id": "70803",
+    "prov_id": "708",
+    "name": "MORO MORO"
+  },
+  {
+    "id": "70804",
+    "prov_id": "708",
+    "name": "POSTRER VALLE"
+  },
+  {
+    "id": "70805",
+    "prov_id": "708",
+    "name": "PUCARA"
+  },
+  {
+    "id": "70901",
+    "prov_id": "709",
+    "name": "SAMAIPATA"
+  },
+  {
+    "id": "70902",
+    "prov_id": "709",
+    "name": "PAMPA GRANDE"
+  },
+  {
+    "id": "70903",
+    "prov_id": "709",
+    "name": "MAIRANA"
+  },
+  {
+    "id": "70904",
+    "prov_id": "709",
+    "name": "QUIRUSILLAS"
+  },
+  {
+    "id": "71001",
+    "prov_id": "710",
+    "name": "MONTERO"
+  },
+  {
+    "id": "71002",
+    "prov_id": "710",
+    "name": "GENERAL AGUSTIN SAAVEDRA"
+  },
+  {
+    "id": "71003",
+    "prov_id": "710",
+    "name": "MINEROS"
+  },
+  {
+    "id": "71004",
+    "prov_id": "710",
+    "name": "FERNANDEZ ALONSO"
+  },
+  {
+    "id": "71005",
+    "prov_id": "710",
+    "name": "SAN PEDRO"
+  },
+  {
+    "id": "71101",
+    "prov_id": "711",
+    "name": "CONCEPCION"
+  },
+  {
+    "id": "71102",
+    "prov_id": "711",
+    "name": "SAN JAVIER"
+  },
+  {
+    "id": "71103",
+    "prov_id": "711",
+    "name": "SAN RAMON"
+  },
+  {
+    "id": "71104",
+    "prov_id": "711",
+    "name": "SAN JULIAN"
+  },
+  {
+    "id": "71105",
+    "prov_id": "711",
+    "name": "SAN ANTONIO DE LOMERIO"
+  },
+  {
+    "id": "71106",
+    "prov_id": "711",
+    "name": "CUATRO CANADAS"
+  },
+  {
+    "id": "71201",
+    "prov_id": "712",
+    "name": "SAN MATIAS"
+  },
+  {
+    "id": "71301",
+    "prov_id": "713",
+    "name": "COMARAPA"
+  },
+  {
+    "id": "71302",
+    "prov_id": "713",
+    "name": "SAIPINA"
+  },
+  {
+    "id": "71401",
+    "prov_id": "714",
+    "name": "PUERTO SUAREZ"
+  },
+  {
+    "id": "71402",
+    "prov_id": "714",
+    "name": "PUERTO QUIJARRO"
+  },
+  {
+    "id": "71403",
+    "prov_id": "714",
+    "name": "EL CARMEN RIVERO TORREZ"
+  },
+  {
+    "id": "71501",
+    "prov_id": "715",
+    "name": "ASCENSION DE GUARAYOS"
+  },
+  {
+    "id": "71502",
+    "prov_id": "715",
+    "name": "URUBICHA"
+  },
+  {
+    "id": "71503",
+    "prov_id": "715",
+    "name": "EL PUENTE"
+  },
+  {
+    "id": "80101",
+    "prov_id": "801",
+    "name": "CAPITAL (TRINIDAD)"
+  },
+  {
+    "id": "80102",
+    "prov_id": "801",
+    "name": "SAN JAVIER"
+  },
+  {
+    "id": "80201",
+    "prov_id": "802",
+    "name": "RIBERALTA"
+  },
+  {
+    "id": "80202",
+    "prov_id": "802",
+    "name": "PUERTO GUAYARAMERIN"
+  },
+  {
+    "id": "80301",
+    "prov_id": "803",
+    "name": "REYES"
+  },
+  {
+    "id": "80302",
+    "prov_id": "803",
+    "name": "SAN BORJA"
+  },
+  {
+    "id": "80303",
+    "prov_id": "803",
+    "name": "SANTA ROSA"
+  },
+  {
+    "id": "80304",
+    "prov_id": "803",
+    "name": "PUERTO RURRENABAQUE"
+  },
+  {
+    "id": "80401",
+    "prov_id": "804",
+    "name": "SANTA ANA DE YACUMA"
+  },
+  {
+    "id": "80402",
+    "prov_id": "804",
+    "name": "EXALTACION"
+  },
+  {
+    "id": "80501",
+    "prov_id": "805",
+    "name": "SAN IGNACIO"
+  },
+  {
+    "id": "80601",
+    "prov_id": "806",
+    "name": "LORETO"
+  },
+  {
+    "id": "80602",
+    "prov_id": "806",
+    "name": "SAN ANDRES"
+  },
+  {
+    "id": "80701",
+    "prov_id": "807",
+    "name": "SAN JOAQUIN"
+  },
+  {
+    "id": "80702",
+    "prov_id": "807",
+    "name": "SAN RAMON"
+  },
+  {
+    "id": "80703",
+    "prov_id": "807",
+    "name": "PUERTO SILES"
+  },
+  {
+    "id": "80801",
+    "prov_id": "808",
+    "name": "MAGDALENA"
+  },
+  {
+    "id": "80802",
+    "prov_id": "808",
+    "name": "BAURES"
+  },
+  {
+    "id": "80803",
+    "prov_id": "808",
+    "name": "HUACARAJE"
+  },
+  {
+    "id": "90101",
+    "prov_id": "901",
+    "name": "CAPITAL (COBIJA)"
+  },
+  {
+    "id": "90102",
+    "prov_id": "901",
+    "name": "PORVENIR"
+  },
+  {
+    "id": "90103",
+    "prov_id": "901",
+    "name": "BOLPEBRA"
+  },
+  {
+    "id": "90104",
+    "prov_id": "901",
+    "name": "BELLA FLOR"
+  },
+  {
+    "id": "90201",
+    "prov_id": "902",
+    "name": "PUERTO RICO"
+  },
+  {
+    "id": "90202",
+    "prov_id": "902",
+    "name": "SAN PEDRO"
+  },
+  {
+    "id": "90203",
+    "prov_id": "902",
+    "name": "FILADELFIA"
+  },
+  {
+    "id": "90301",
+    "prov_id": "903",
+    "name": "PUERTO GONZALO MORENO"
+  },
+  {
+    "id": "90302",
+    "prov_id": "903",
+    "name": "SAN LORENZO"
+  },
+  {
+    "id": "90303",
+    "prov_id": "903",
+    "name": "SENA"
+  },
+  {
+    "id": "90401",
+    "prov_id": "904",
+    "name": "SANTA ROSA DEL ABUNA"
+  },
+  {
+    "id": "90402",
+    "prov_id": "904",
+    "name": "INGAVI (HUMAITA)"
+  },
+  {
+    "id": "90501",
+    "prov_id": "905",
+    "name": "NUEVA ESPERANZA"
+  },
+  {
+    "id": "90502",
+    "prov_id": "905",
+    "name": "VILLA NUEVA (LOMA ALTA)"
+  },
+  {
+    "id": "90503",
+    "prov_id": "905",
+    "name": "SANTOS MERCADO"
+  }
+]

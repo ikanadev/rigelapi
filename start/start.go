@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/lib/pq"
 	"github.com/vmkevv/rigelapi/ent"
 )
@@ -14,19 +16,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed opening connection to postgres: %v", err)
 	}
-	ctx := context.Background()
 	defer client.Close()
+	ctx := context.Background()
 	err = client.Schema.Create(ctx)
 	if err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
-	}
-	if err := client.Schema.Create(ctx); err != nil {
-		log.Fatalf("failed creating uuid: %v", err)
+		log.Fatalf("failed creating schema: %v", err)
 	}
 
-	// CreateUser(ctx, client)
-	// CreateCars(ctx, client)
-	// AddCars(ctx, client)
-	// QueryCarUsers(ctx, client)
-	log.Println("All right")
+	app := fiber.New()
+	app.Use(cors.New())
+
+	app.Listen(":8000")
 }
