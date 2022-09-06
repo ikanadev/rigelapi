@@ -22,6 +22,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed creating schema: %v", err)
 	}
+  if err := PopulateStaticJsonData(client, ctx); err != nil {
+		log.Fatalf("failed populating static json data: %v", err)
+  }
   if err := PopulateStaticData(client, ctx); err != nil {
 		log.Fatalf("failed populating static data: %v", err)
   }
