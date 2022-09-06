@@ -39,10 +39,7 @@ func populateSubjects(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Subject.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateGrades(client *ent.Client, ctx context.Context) error {
@@ -72,10 +69,7 @@ func populateGrades(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Grade.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateYears(client *ent.Client, ctx context.Context) error {
@@ -101,10 +95,7 @@ func populateYears(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Year.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateAreas(client *ent.Client, ctx context.Context) error {
@@ -139,10 +130,11 @@ func populateAreas(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Area.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
+}
+
+func populatePeriods(client *ent.Client, ctx context.Context) error {
+  return nil
 }
 
 func PopulateStaticData(client *ent.Client, ctx context.Context) error {

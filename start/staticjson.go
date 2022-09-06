@@ -58,10 +58,7 @@ func populateDepartamentos(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Dpto.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateProvincias(client *ent.Client, ctx context.Context) error {
@@ -92,10 +89,7 @@ func populateProvincias(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Provincia.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateMunicipios(client *ent.Client, ctx context.Context) error {
@@ -126,10 +120,7 @@ func populateMunicipios(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Municipio.CreateBulk(toSave...).Save(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func populateColegios(client *ent.Client, ctx context.Context) error {
@@ -186,10 +177,7 @@ func populateColegios(client *ent.Client, ctx context.Context) error {
 	} else {
 		_, err = client.School.CreateBulk(toSave...).Save(ctx)
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+  return err
 }
 
 func PopulateStaticJsonData(client *ent.Client, ctx context.Context) error {
