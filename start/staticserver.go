@@ -10,29 +10,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type Dpto struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-type Prov struct {
-	ID    string `json:"id"`
-	DepID string `json:"dpto_id"`
-	Name  string `json:"name"`
-}
-type Mun struct {
-	ID     string `json:"id"`
-	ProvID string `json:"prov_id"`
-	Name   string `json:"name"`
-}
-type School struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Lat   string `json:"lat"`
-	Lon   string `json:"lon"`
-	MunID string `json:"mun_id"`
-}
-
-
 func CreateFile(name string) *os.File {
 	file, _ := os.Create(name)
 	return file
