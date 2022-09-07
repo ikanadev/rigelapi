@@ -14,20 +14,33 @@ import (
 )
 
 type Server struct {
-	db      *ent.Client
-	config  config.Config
-	app     *fiber.App
-	newID func() string
+	db     *ent.Client
+	config config.Config
+	app    *fiber.App
+	newID  func() string
+}
+type errMsg struct {
+	Message string `json:"message"`
 }
 
 func NewServer(db *ent.Client, config config.Config) Server {
-  type util struct {}
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			msg := "Unespected internal server error"
+			if err, ok := err.(handlers.ClientErr); ok {
+				code = err.Status
+				msg = err.Error()
+			}
+			return c.Status(code).JSON(errMsg{Message: msg})
+		},
+	})
 	return Server{
-    db,
-    config,
-    fiber.New(),
-    utils.NanoIDGenerator(),
-  }
+		db,
+		config,
+		app,
+		utils.NanoIDGenerator(),
+	}
 }
 
 func (server Server) Run() {

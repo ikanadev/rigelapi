@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,11 +30,16 @@ func SignUpHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
     var reqData req
     err := c.BodyParser(&reqData)
     if err != nil {
-      return c.Status(500).JSON(newErrMsg("Bad request data"))
+      return err
     }
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), bcrypt.MinCost)
     if err != nil {
-      return c.Status(http.StatusInternalServerError).JSON(newErrMsg("Error hashing password"))
+      return err
+    }
+    _, err = db.Teacher.Query().Where(teacher.EmailEQ(reqData.Email)).First(c.Context())
+    // err nil means that teacher exists
+    if err == nil {
+      return NewClientErr(fiber.StatusBadRequest, "Ups! ya existe una cuenta con ese correo.")
     }
     _, err = db.Teacher.
       Create().
@@ -44,7 +50,7 @@ func SignUpHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
       SetPassword(string(hashedPassword)).
       Save(c.Context())
     if err != nil {
-      return c.Status(http.StatusInternalServerError).JSON(newErrMsg("Error saving teacher data"))
+      return err
     }
 		return c.SendStatus(http.StatusCreated)
 	}

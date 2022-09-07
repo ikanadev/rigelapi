@@ -1,8 +1,12 @@
 package handlers
 
-type errMsg struct {
-  message string `json:"message"`
+type ClientErr struct {
+  Status int
+  Message string
 }
-func newErrMsg(msg string) errMsg {
-  return errMsg{msg}
+func (c ClientErr) Error() string {
+  return c.Message
+}
+func NewClientErr(code int, msg string) ClientErr {
+  return ClientErr{code, msg}
 }
