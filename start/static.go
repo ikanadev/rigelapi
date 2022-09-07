@@ -39,7 +39,7 @@ func populateSubjects(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Subject.CreateBulk(toSave...).Save(ctx)
-  return err
+	return err
 }
 
 func populateGrades(client *ent.Client, ctx context.Context) error {
@@ -69,7 +69,7 @@ func populateGrades(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Grade.CreateBulk(toSave...).Save(ctx)
-  return err
+	return err
 }
 
 func populateYears(client *ent.Client, ctx context.Context) error {
@@ -95,17 +95,17 @@ func populateYears(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Year.CreateBulk(toSave...).Save(ctx)
-  return err
+	return err
 }
 
 func populateAreas(client *ent.Client, ctx context.Context) error {
-	type Areas struct {
+	type Area struct {
 		id     string
 		name   string
 		points int
 		yearId string
 	}
-	staticAreas := []Areas{
+	staticAreas := []Area{
 		{"1", "Ser", 10, "1"},
 		{"2", "Saber", 35, "1"},
 		{"3", "Hacer", 35, "1"},
@@ -130,11 +130,39 @@ func populateAreas(client *ent.Client, ctx context.Context) error {
 		}
 	}
 	_, err = client.Area.CreateBulk(toSave...).Save(ctx)
-  return err
+	return err
 }
 
 func populatePeriods(client *ent.Client, ctx context.Context) error {
-  return nil
+	type Period struct {
+		id     string
+		name   string
+		yearId string
+	}
+	staticPeriods := []Period{
+		{"1", "1er Trimestre", "1"},
+		{"2", "2do Trimestre", "1"},
+		{"3", "3er Trimestre", "1"},
+	}
+	dbPeriods, err := client.Period.Query().All(ctx)
+	if err != nil {
+		return err
+	}
+	toSave := []*ent.PeriodCreate{}
+	for _, staticPeriod := range staticPeriods {
+		exists := false
+		for _, dbPeriod := range dbPeriods {
+			if staticPeriod.id == dbPeriod.ID {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			toSave = append(toSave, client.Period.Create().SetID(staticPeriod.id).SetName(staticPeriod.name).SetYearID(staticPeriod.yearId))
+		}
+	}
+	_, err = client.Period.CreateBulk(toSave...).Save(ctx)
+	return err
 }
 
 func PopulateStaticData(client *ent.Client, ctx context.Context) error {
@@ -148,6 +176,9 @@ func PopulateStaticData(client *ent.Client, ctx context.Context) error {
 		return err
 	}
 	if err := populateAreas(client, ctx); err != nil {
+		return err
+	}
+	if err := populatePeriods(client, ctx); err != nil {
 		return err
 	}
 	return nil
