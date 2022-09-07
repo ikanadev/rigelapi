@@ -1,0 +1,79 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Backend json services for Rigel WebApp",
+        "title": "Rigel API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "https://t.me/vmkevv",
+            "email": "vargaskevv@gmail.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:4000",
+    "basePath": "/",
+    "paths": {
+        "/teacher/signup": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "registers a new teacher",
+                "parameters": [
+                    {
+                        "description": "teacher signup data",
+                        "name": "teacher",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SignUpHandler.req"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SignUpHandler.res"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.SignUpHandler.req": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.SignUpHandler.res": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

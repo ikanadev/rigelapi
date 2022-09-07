@@ -1,0 +1,52 @@
+basePath: /
+definitions:
+  handlers.SignUpHandler.req:
+    properties:
+      email:
+        type: string
+      last_name:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  handlers.SignUpHandler.res:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:4000
+info:
+  contact:
+    email: vargaskevv@gmail.com
+    name: API Support
+    url: https://t.me/vmkevv
+  description: Backend json services for Rigel WebApp
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Rigel API
+  version: "1.0"
+paths:
+  /teacher/signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: teacher signup data
+        in: body
+        name: teacher
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SignUpHandler.req'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SignUpHandler.res'
+      summary: registers a new teacher
+swagger: "2.0"
