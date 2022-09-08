@@ -18,6 +18,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 // ClassCreate is the builder for creating a Class entity.
@@ -173,6 +174,25 @@ func (cc *ClassCreate) SetNillableGradeID(id *string) *ClassCreate {
 // SetGrade sets the "grade" edge to the Grade entity.
 func (cc *ClassCreate) SetGrade(g *Grade) *ClassCreate {
 	return cc.SetGradeID(g.ID)
+}
+
+// SetYearID sets the "year" edge to the Year entity by ID.
+func (cc *ClassCreate) SetYearID(id string) *ClassCreate {
+	cc.mutation.SetYearID(id)
+	return cc
+}
+
+// SetNillableYearID sets the "year" edge to the Year entity by ID if the given value is not nil.
+func (cc *ClassCreate) SetNillableYearID(id *string) *ClassCreate {
+	if id != nil {
+		cc = cc.SetYearID(*id)
+	}
+	return cc
+}
+
+// SetYear sets the "year" edge to the Year entity.
+func (cc *ClassCreate) SetYear(y *Year) *ClassCreate {
+	return cc.SetYearID(y.ID)
 }
 
 // Mutation returns the ClassMutation object of the builder.
@@ -452,6 +472,26 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.grade_classes = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.YearIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   class.YearTable,
+			Columns: []string{class.YearColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: year.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.year_classes = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -30,5 +30,6 @@ func (Class) Edges() []ent.Edge {
 		edge.From("teacher", Teacher.Type).Ref("classes").Unique(),
 		edge.From("subject", Subject.Type).Ref("classes").Unique(),
 		edge.From("grade", Grade.Type).Ref("classes").Unique(),
+		edge.From("year", Year.Type).Ref("classes").Unique(),
 	}
 }

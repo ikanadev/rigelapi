@@ -20,6 +20,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 // ClassUpdate is the builder for updating Class entities.
@@ -177,6 +178,25 @@ func (cu *ClassUpdate) SetGrade(g *Grade) *ClassUpdate {
 	return cu.SetGradeID(g.ID)
 }
 
+// SetYearID sets the "year" edge to the Year entity by ID.
+func (cu *ClassUpdate) SetYearID(id string) *ClassUpdate {
+	cu.mutation.SetYearID(id)
+	return cu
+}
+
+// SetNillableYearID sets the "year" edge to the Year entity by ID if the given value is not nil.
+func (cu *ClassUpdate) SetNillableYearID(id *string) *ClassUpdate {
+	if id != nil {
+		cu = cu.SetYearID(*id)
+	}
+	return cu
+}
+
+// SetYear sets the "year" edge to the Year entity.
+func (cu *ClassUpdate) SetYear(y *Year) *ClassUpdate {
+	return cu.SetYearID(y.ID)
+}
+
 // Mutation returns the ClassMutation object of the builder.
 func (cu *ClassUpdate) Mutation() *ClassMutation {
 	return cu.mutation
@@ -287,6 +307,12 @@ func (cu *ClassUpdate) ClearSubject() *ClassUpdate {
 // ClearGrade clears the "grade" edge to the Grade entity.
 func (cu *ClassUpdate) ClearGrade() *ClassUpdate {
 	cu.mutation.ClearGrade()
+	return cu
+}
+
+// ClearYear clears the "year" edge to the Year entity.
+func (cu *ClassUpdate) ClearYear() *ClassUpdate {
+	cu.mutation.ClearYear()
 	return cu
 }
 
@@ -725,6 +751,41 @@ func (cu *ClassUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if cu.mutation.YearCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   class.YearTable,
+			Columns: []string{class.YearColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: year.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.YearIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   class.YearTable,
+			Columns: []string{class.YearColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: year.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{class.Label}
@@ -886,6 +947,25 @@ func (cuo *ClassUpdateOne) SetGrade(g *Grade) *ClassUpdateOne {
 	return cuo.SetGradeID(g.ID)
 }
 
+// SetYearID sets the "year" edge to the Year entity by ID.
+func (cuo *ClassUpdateOne) SetYearID(id string) *ClassUpdateOne {
+	cuo.mutation.SetYearID(id)
+	return cuo
+}
+
+// SetNillableYearID sets the "year" edge to the Year entity by ID if the given value is not nil.
+func (cuo *ClassUpdateOne) SetNillableYearID(id *string) *ClassUpdateOne {
+	if id != nil {
+		cuo = cuo.SetYearID(*id)
+	}
+	return cuo
+}
+
+// SetYear sets the "year" edge to the Year entity.
+func (cuo *ClassUpdateOne) SetYear(y *Year) *ClassUpdateOne {
+	return cuo.SetYearID(y.ID)
+}
+
 // Mutation returns the ClassMutation object of the builder.
 func (cuo *ClassUpdateOne) Mutation() *ClassMutation {
 	return cuo.mutation
@@ -996,6 +1076,12 @@ func (cuo *ClassUpdateOne) ClearSubject() *ClassUpdateOne {
 // ClearGrade clears the "grade" edge to the Grade entity.
 func (cuo *ClassUpdateOne) ClearGrade() *ClassUpdateOne {
 	cuo.mutation.ClearGrade()
+	return cuo
+}
+
+// ClearYear clears the "year" edge to the Year entity.
+func (cuo *ClassUpdateOne) ClearYear() *ClassUpdateOne {
+	cuo.mutation.ClearYear()
 	return cuo
 }
 
@@ -1456,6 +1542,41 @@ func (cuo *ClassUpdateOne) sqlSave(ctx context.Context) (_node *Class, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: grade.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.YearCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   class.YearTable,
+			Columns: []string{class.YearColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: year.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.YearIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   class.YearTable,
+			Columns: []string{class.YearColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: year.FieldID,
 				},
 			},
 		}

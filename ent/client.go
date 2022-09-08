@@ -1086,6 +1086,22 @@ func (c *ClassClient) QueryGrade(cl *Class) *GradeQuery {
 	return query
 }
 
+// QueryYear queries the year edge of a Class.
+func (c *ClassClient) QueryYear(cl *Class) *YearQuery {
+	query := &YearQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cl.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(class.Table, class.FieldID, id),
+			sqlgraph.To(year.Table, year.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, class.YearTable, class.YearColumn),
+		)
+		fromV = sqlgraph.Neighbors(cl.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ClassClient) Hooks() []Hook {
 	return c.hooks.Class

@@ -25,6 +25,8 @@ const (
 	EdgeSubject = "subject"
 	// EdgeGrade holds the string denoting the grade edge name in mutations.
 	EdgeGrade = "grade"
+	// EdgeYear holds the string denoting the year edge name in mutations.
+	EdgeYear = "year"
 	// Table holds the table name of the class in the database.
 	Table = "classes"
 	// StudentsTable is the table that holds the students relation/edge.
@@ -83,6 +85,13 @@ const (
 	GradeInverseTable = "grades"
 	// GradeColumn is the table column denoting the grade relation/edge.
 	GradeColumn = "grade_classes"
+	// YearTable is the table that holds the year relation/edge.
+	YearTable = "classes"
+	// YearInverseTable is the table name for the Year entity.
+	// It exists in this package in order to avoid circular dependency with the "year" package.
+	YearInverseTable = "years"
+	// YearColumn is the table column denoting the year relation/edge.
+	YearColumn = "year_classes"
 )
 
 // Columns holds all SQL columns for class fields.

@@ -12,6 +12,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 // Class is the model entity for the Class schema.
@@ -49,9 +50,11 @@ type ClassEdges struct {
 	Subject *Subject `json:"subject,omitempty"`
 	// Grade holds the value of the grade edge.
 	Grade *Grade `json:"grade,omitempty"`
+	// Year holds the value of the year edge.
+	Year *Year `json:"year,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 }
 
 // StudentsOrErr returns the Students value or an error if the edge
@@ -140,6 +143,19 @@ func (e ClassEdges) GradeOrErr() (*Grade, error) {
 		return e.Grade, nil
 	}
 	return nil, &NotLoadedError{edge: "grade"}
+}
+
+// YearOrErr returns the Year value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ClassEdges) YearOrErr() (*Year, error) {
+	if e.loadedTypes[8] {
+		if e.Year == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: year.Label}
+		}
+		return e.Year, nil
+	}
+	return nil, &NotLoadedError{edge: "year"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -264,6 +280,11 @@ func (c *Class) QuerySubject() *SubjectQuery {
 // QueryGrade queries the "grade" edge of the Class entity.
 func (c *Class) QueryGrade() *GradeQuery {
 	return (&ClassClient{config: c.config}).QueryGrade(c)
+}
+
+// QueryYear queries the "year" edge of the Class entity.
+func (c *Class) QueryYear() *YearQuery {
+	return (&ClassClient{config: c.config}).QueryYear(c)
 }
 
 // Update returns a builder for updating this Class.

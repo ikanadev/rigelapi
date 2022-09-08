@@ -21,6 +21,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 // ClassQuery is the builder for querying Class entities.
@@ -40,6 +41,7 @@ type ClassQuery struct {
 	withTeacher          *TeacherQuery
 	withSubject          *SubjectQuery
 	withGrade            *GradeQuery
+	withYear             *YearQuery
 	withFKs              bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -253,6 +255,28 @@ func (cq *ClassQuery) QueryGrade() *GradeQuery {
 	return query
 }
 
+// QueryYear chains the current query on the "year" edge.
+func (cq *ClassQuery) QueryYear() *YearQuery {
+	query := &YearQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(class.Table, class.FieldID, selector),
+			sqlgraph.To(year.Table, year.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, class.YearTable, class.YearColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Class entity from the query.
 // Returns a *NotFoundError when no Class was found.
 func (cq *ClassQuery) First(ctx context.Context) (*Class, error) {
@@ -442,6 +466,7 @@ func (cq *ClassQuery) Clone() *ClassQuery {
 		withTeacher:          cq.withTeacher.Clone(),
 		withSubject:          cq.withSubject.Clone(),
 		withGrade:            cq.withGrade.Clone(),
+		withYear:             cq.withYear.Clone(),
 		// clone intermediate query.
 		sql:    cq.sql.Clone(),
 		path:   cq.path,
@@ -537,6 +562,17 @@ func (cq *ClassQuery) WithGrade(opts ...func(*GradeQuery)) *ClassQuery {
 	return cq
 }
 
+// WithYear tells the query-builder to eager-load the nodes that are connected to
+// the "year" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *ClassQuery) WithYear(opts ...func(*YearQuery)) *ClassQuery {
+	query := &YearQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withYear = query
+	return cq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -606,7 +642,7 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 		nodes       = []*Class{}
 		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			cq.withStudents != nil,
 			cq.withClassPeriods != nil,
 			cq.withClassPeriodSyncs != nil,
@@ -615,9 +651,10 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 			cq.withTeacher != nil,
 			cq.withSubject != nil,
 			cq.withGrade != nil,
+			cq.withYear != nil,
 		}
 	)
-	if cq.withSchool != nil || cq.withTeacher != nil || cq.withSubject != nil || cq.withGrade != nil {
+	if cq.withSchool != nil || cq.withTeacher != nil || cq.withSubject != nil || cq.withGrade != nil || cq.withYear != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -690,6 +727,12 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 	if query := cq.withGrade; query != nil {
 		if err := cq.loadGrade(ctx, query, nodes, nil,
 			func(n *Class, e *Grade) { n.Edges.Grade = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := cq.withYear; query != nil {
+		if err := cq.loadYear(ctx, query, nodes, nil,
+			func(n *Class, e *Year) { n.Edges.Year = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -929,6 +972,35 @@ func (cq *ClassQuery) loadGrade(ctx context.Context, query *GradeQuery, nodes []
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "grade_classes" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (cq *ClassQuery) loadYear(ctx context.Context, query *YearQuery, nodes []*Class, init func(*Class), assign func(*Class, *Year)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Class)
+	for i := range nodes {
+		if nodes[i].year_classes == nil {
+			continue
+		}
+		fk := *nodes[i].year_classes
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(year.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "year_classes" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

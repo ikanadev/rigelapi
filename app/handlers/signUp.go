@@ -12,7 +12,7 @@ import (
 func SignUpHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 	type req struct {
 		Name     string `json:"name"`
-		LastName string `json:"last_name"`
+		LastName string `json:"lastName"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}

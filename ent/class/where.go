@@ -409,6 +409,34 @@ func HasGradeWith(preds ...predicate.Grade) predicate.Class {
 	})
 }
 
+// HasYear applies the HasEdge predicate on the "year" edge.
+func HasYear() predicate.Class {
+	return predicate.Class(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(YearTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasYearWith applies the HasEdge predicate on the "year" edge with a given conditions (other predicates).
+func HasYearWith(preds ...predicate.Year) predicate.Class {
+	return predicate.Class(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(YearInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Class) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {

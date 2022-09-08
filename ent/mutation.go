@@ -2536,6 +2536,8 @@ type ClassMutation struct {
 	clearedsubject          bool
 	grade                   *string
 	clearedgrade            bool
+	year                    *string
+	clearedyear             bool
 	done                    bool
 	oldValue                func(context.Context) (*Class, error)
 	predicates              []predicate.Class
@@ -3053,6 +3055,45 @@ func (m *ClassMutation) ResetGrade() {
 	m.clearedgrade = false
 }
 
+// SetYearID sets the "year" edge to the Year entity by id.
+func (m *ClassMutation) SetYearID(id string) {
+	m.year = &id
+}
+
+// ClearYear clears the "year" edge to the Year entity.
+func (m *ClassMutation) ClearYear() {
+	m.clearedyear = true
+}
+
+// YearCleared reports if the "year" edge to the Year entity was cleared.
+func (m *ClassMutation) YearCleared() bool {
+	return m.clearedyear
+}
+
+// YearID returns the "year" edge ID in the mutation.
+func (m *ClassMutation) YearID() (id string, exists bool) {
+	if m.year != nil {
+		return *m.year, true
+	}
+	return
+}
+
+// YearIDs returns the "year" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YearID instead. It exists only for internal usage by the builders.
+func (m *ClassMutation) YearIDs() (ids []string) {
+	if id := m.year; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYear resets all changes to the "year" edge.
+func (m *ClassMutation) ResetYear() {
+	m.year = nil
+	m.clearedyear = false
+}
+
 // Where appends a list predicates to the ClassMutation builder.
 func (m *ClassMutation) Where(ps ...predicate.Class) {
 	m.predicates = append(m.predicates, ps...)
@@ -3171,7 +3212,7 @@ func (m *ClassMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ClassMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.students != nil {
 		edges = append(edges, class.EdgeStudents)
 	}
@@ -3195,6 +3236,9 @@ func (m *ClassMutation) AddedEdges() []string {
 	}
 	if m.grade != nil {
 		edges = append(edges, class.EdgeGrade)
+	}
+	if m.year != nil {
+		edges = append(edges, class.EdgeYear)
 	}
 	return edges
 }
@@ -3243,13 +3287,17 @@ func (m *ClassMutation) AddedIDs(name string) []ent.Value {
 		if id := m.grade; id != nil {
 			return []ent.Value{*id}
 		}
+	case class.EdgeYear:
+		if id := m.year; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ClassMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedstudents != nil {
 		edges = append(edges, class.EdgeStudents)
 	}
@@ -3299,7 +3347,7 @@ func (m *ClassMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ClassMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedstudents {
 		edges = append(edges, class.EdgeStudents)
 	}
@@ -3324,6 +3372,9 @@ func (m *ClassMutation) ClearedEdges() []string {
 	if m.clearedgrade {
 		edges = append(edges, class.EdgeGrade)
 	}
+	if m.clearedyear {
+		edges = append(edges, class.EdgeYear)
+	}
 	return edges
 }
 
@@ -3347,6 +3398,8 @@ func (m *ClassMutation) EdgeCleared(name string) bool {
 		return m.clearedsubject
 	case class.EdgeGrade:
 		return m.clearedgrade
+	case class.EdgeYear:
+		return m.clearedyear
 	}
 	return false
 }
@@ -3366,6 +3419,9 @@ func (m *ClassMutation) ClearEdge(name string) error {
 		return nil
 	case class.EdgeGrade:
 		m.ClearGrade()
+		return nil
+	case class.EdgeYear:
+		m.ClearYear()
 		return nil
 	}
 	return fmt.Errorf("unknown Class unique edge %s", name)
@@ -3398,6 +3454,9 @@ func (m *ClassMutation) ResetEdge(name string) error {
 		return nil
 	case class.EdgeGrade:
 		m.ResetGrade()
+		return nil
+	case class.EdgeYear:
+		m.ResetYear()
 		return nil
 	}
 	return fmt.Errorf("unknown Class edge %s", name)
