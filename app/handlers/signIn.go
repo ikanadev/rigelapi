@@ -15,7 +15,7 @@ import (
 // @Produce json
 // @Param   teacher body     handlers.SignInHandler.req true "teacher signup data"
 // @Success 200     {object} handlers.SignInHandler.res
-// @Router  /teacher/signin [post]
+// @Router  /signin [post]
 func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error {
 	type req struct {
 		Email    string `json:"email"`

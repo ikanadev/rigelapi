@@ -18,7 +18,26 @@
     "host": "localhost:4000",
     "basePath": "/",
     "paths": {
-        "/teacher/signin": {
+        "/api/deps": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List all deps",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ent.Dpto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/signin": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -48,7 +67,7 @@
                 }
             }
         },
-        "/teacher/signup": {
+        "/signup": {
             "post": {
                 "consumes": [
                     "application/json"

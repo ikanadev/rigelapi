@@ -623,7 +623,19 @@ info:
   title: Rigel API
   version: "1.0"
 paths:
-  /teacher/signin:
+  /api/deps:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ent.Dpto'
+            type: array
+      summary: List all deps
+  /signin:
     post:
       consumes:
       - application/json
@@ -642,7 +654,7 @@ paths:
           schema:
             $ref: '#/definitions/handlers.SignInHandler.res'
       summary: login and generate token
-  /teacher/signup:
+  /signup:
     post:
       consumes:
       - application/json

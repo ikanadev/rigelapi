@@ -25,7 +25,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/teacher/signin": {
+        "/api/deps": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List all deps",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ent.Dpto"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/signin": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -55,7 +74,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teacher/signup": {
+        "/signup": {
             "post": {
                 "consumes": [
                     "application/json"

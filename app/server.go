@@ -51,8 +51,11 @@ func (server Server) Run() {
 	server.app.Use(cors.New())
 	// Swagger handler
 	server.app.Get("/swagger/*", swagger.HandlerDefault)
-	server.app.Post("/teacher/signup", handlers.SignUpHandler(server.db, server.newID))
-	server.app.Post("/teacher/signin", handlers.SignInHandler(server.db, server.config))
-	// TODO: serve routes here
+	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
+	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
+
+	protected := server.app.Group("/api", authMiddleware(server.config))
+	protected.Get("/deps", handlers.DepsHandler(server.db))
+
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
