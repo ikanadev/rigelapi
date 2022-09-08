@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -32,6 +33,9 @@ func NewServer(db *ent.Client, config config.Config) Server {
 				code = err.Status
 				msg = err.Error()
 			}
+      if code == fiber.StatusInternalServerError {
+        log.Printf("Fatal: %v\n", err)
+      }
 			return c.Status(code).JSON(errMsg{Message: msg})
 		},
 	})
@@ -48,6 +52,7 @@ func (server Server) Run() {
 	// Swagger handler
 	server.app.Get("/swagger/*", swagger.HandlerDefault)
 	server.app.Post("/teacher/signup", handlers.SignUpHandler(server.db, server.newID))
+	server.app.Post("/teacher/signin", handlers.SignInHandler(server.db, server.config))
 	// TODO: serve routes here
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }

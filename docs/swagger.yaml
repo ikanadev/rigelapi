@@ -1,5 +1,598 @@
 basePath: /
 definitions:
+  ent.Activity:
+    properties:
+      date:
+        description: Date holds the value of the "date" field.
+        type: string
+      edges:
+        $ref: '#/definitions/ent.ActivityEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ActivityQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.ActivityEdges:
+    properties:
+      area:
+        $ref: '#/definitions/ent.Area'
+        description: Area holds the value of the area edge.
+      classPeriod:
+        $ref: '#/definitions/ent.ClassPeriod'
+        description: ClassPeriod holds the value of the classPeriod edge.
+      scoreSyncs:
+        description: ScoreSyncs holds the value of the scoreSyncs edge.
+        items:
+          $ref: '#/definitions/ent.ScoreSync'
+        type: array
+      scores:
+        description: Scores holds the value of the scores edge.
+        items:
+          $ref: '#/definitions/ent.Score'
+        type: array
+    type: object
+  ent.ActivitySync:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ActivitySyncEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ActivitySyncQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_sync_id:
+        description: LastSyncID holds the value of the "last_sync_id" field.
+        type: string
+    type: object
+  ent.ActivitySyncEdges:
+    properties:
+      classPeriod:
+        $ref: '#/definitions/ent.ClassPeriod'
+        description: ClassPeriod holds the value of the classPeriod edge.
+    type: object
+  ent.Area:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.AreaEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the AreaQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      points:
+        description: Points holds the value of the "points" field.
+        type: integer
+    type: object
+  ent.AreaEdges:
+    properties:
+      activities:
+        description: Activities holds the value of the activities edge.
+        items:
+          $ref: '#/definitions/ent.Activity'
+        type: array
+      year:
+        $ref: '#/definitions/ent.Year'
+        description: Year holds the value of the year edge.
+    type: object
+  ent.Attendance:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.AttendanceEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the AttendanceQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      value:
+        description: Value holds the value of the "value" field.
+        type: string
+    type: object
+  ent.AttendanceEdges:
+    properties:
+      classPeriod:
+        $ref: '#/definitions/ent.ClassPeriod'
+        description: ClassPeriod holds the value of the classPeriod edge.
+      student:
+        $ref: '#/definitions/ent.Student'
+        description: Student holds the value of the student edge.
+    type: object
+  ent.AttendanceSync:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.AttendanceSyncEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the AttendanceSyncQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_sync_id:
+        description: LastSyncID holds the value of the "last_sync_id" field.
+        type: string
+    type: object
+  ent.AttendanceSyncEdges:
+    properties:
+      classPeriod:
+        $ref: '#/definitions/ent.ClassPeriod'
+        description: ClassPeriod holds the value of the classPeriod edge.
+    type: object
+  ent.Class:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ClassEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ClassQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      parallel:
+        description: Parallel holds the value of the "parallel" field.
+        type: string
+    type: object
+  ent.ClassEdges:
+    properties:
+      classPeriodSyncs:
+        description: ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
+        items:
+          $ref: '#/definitions/ent.ClassPeriodSync'
+        type: array
+      classPeriods:
+        description: ClassPeriods holds the value of the classPeriods edge.
+        items:
+          $ref: '#/definitions/ent.ClassPeriod'
+        type: array
+      grade:
+        $ref: '#/definitions/ent.Grade'
+        description: Grade holds the value of the grade edge.
+      school:
+        $ref: '#/definitions/ent.School'
+        description: School holds the value of the school edge.
+      studentSyncs:
+        description: StudentSyncs holds the value of the studentSyncs edge.
+        items:
+          $ref: '#/definitions/ent.StudentSync'
+        type: array
+      students:
+        description: Students holds the value of the students edge.
+        items:
+          $ref: '#/definitions/ent.Student'
+        type: array
+      subject:
+        $ref: '#/definitions/ent.Subject'
+        description: Subject holds the value of the subject edge.
+      teacher:
+        $ref: '#/definitions/ent.Teacher'
+        description: Teacher holds the value of the teacher edge.
+    type: object
+  ent.ClassPeriod:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ClassPeriodEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ClassPeriodQuery when eager-loading is set.
+      end:
+        description: End holds the value of the "end" field.
+        type: string
+      finished:
+        description: Finished holds the value of the "finished" field.
+        type: boolean
+      id:
+        description: ID of the ent.
+        type: string
+      start:
+        description: Start holds the value of the "start" field.
+        type: string
+    type: object
+  ent.ClassPeriodEdges:
+    properties:
+      activities:
+        description: Activities holds the value of the activities edge.
+        items:
+          $ref: '#/definitions/ent.Activity'
+        type: array
+      activitySyncs:
+        description: ActivitySyncs holds the value of the activitySyncs edge.
+        items:
+          $ref: '#/definitions/ent.ActivitySync'
+        type: array
+      attendanceSyncs:
+        description: AttendanceSyncs holds the value of the attendanceSyncs edge.
+        items:
+          $ref: '#/definitions/ent.AttendanceSync'
+        type: array
+      attendances:
+        description: Attendances holds the value of the attendances edge.
+        items:
+          $ref: '#/definitions/ent.Attendance'
+        type: array
+      class:
+        $ref: '#/definitions/ent.Class'
+        description: Class holds the value of the class edge.
+      period:
+        $ref: '#/definitions/ent.Period'
+        description: Period holds the value of the period edge.
+    type: object
+  ent.ClassPeriodSync:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ClassPeriodSyncEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ClassPeriodSyncQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_sync_id:
+        description: LastSyncID holds the value of the "last_sync_id" field.
+        type: string
+    type: object
+  ent.ClassPeriodSyncEdges:
+    properties:
+      class:
+        $ref: '#/definitions/ent.Class'
+        description: Class holds the value of the class edge.
+    type: object
+  ent.Dpto:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.DptoEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the DptoQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.DptoEdges:
+    properties:
+      provincias:
+        description: Provincias holds the value of the provincias edge.
+        items:
+          $ref: '#/definitions/ent.Provincia'
+        type: array
+    type: object
+  ent.Grade:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.GradeEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the GradeQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.GradeEdges:
+    properties:
+      classes:
+        description: Classes holds the value of the classes edge.
+        items:
+          $ref: '#/definitions/ent.Class'
+        type: array
+    type: object
+  ent.Municipio:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.MunicipioEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the MunicipioQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.MunicipioEdges:
+    properties:
+      provincia:
+        $ref: '#/definitions/ent.Provincia'
+        description: Provincia holds the value of the provincia edge.
+      schools:
+        description: Schools holds the value of the schools edge.
+        items:
+          $ref: '#/definitions/ent.School'
+        type: array
+    type: object
+  ent.Period:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.PeriodEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the PeriodQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.PeriodEdges:
+    properties:
+      classPeriods:
+        description: ClassPeriods holds the value of the classPeriods edge.
+        items:
+          $ref: '#/definitions/ent.ClassPeriod'
+        type: array
+      year:
+        $ref: '#/definitions/ent.Year'
+        description: Year holds the value of the year edge.
+    type: object
+  ent.Provincia:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ProvinciaEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ProvinciaQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.ProvinciaEdges:
+    properties:
+      departamento:
+        $ref: '#/definitions/ent.Dpto'
+        description: Departamento holds the value of the departamento edge.
+      municipios:
+        description: Municipios holds the value of the municipios edge.
+        items:
+          $ref: '#/definitions/ent.Municipio'
+        type: array
+    type: object
+  ent.School:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.SchoolEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the SchoolQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      lat:
+        description: Lat holds the value of the "lat" field.
+        type: string
+      lon:
+        description: Lon holds the value of the "lon" field.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.SchoolEdges:
+    properties:
+      classes:
+        description: Classes holds the value of the classes edge.
+        items:
+          $ref: '#/definitions/ent.Class'
+        type: array
+      municipio:
+        $ref: '#/definitions/ent.Municipio'
+        description: Municipio holds the value of the municipio edge.
+    type: object
+  ent.Score:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ScoreEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ScoreQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      points:
+        description: Points holds the value of the "points" field.
+        type: integer
+    type: object
+  ent.ScoreEdges:
+    properties:
+      activity:
+        $ref: '#/definitions/ent.Activity'
+        description: Activity holds the value of the activity edge.
+      student:
+        $ref: '#/definitions/ent.Student'
+        description: Student holds the value of the student edge.
+    type: object
+  ent.ScoreSync:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.ScoreSyncEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the ScoreSyncQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_sync_id:
+        description: LastSyncID holds the value of the "last_sync_id" field.
+        type: string
+    type: object
+  ent.ScoreSyncEdges:
+    properties:
+      activity:
+        $ref: '#/definitions/ent.Activity'
+        description: Activity holds the value of the activity edge.
+    type: object
+  ent.Student:
+    properties:
+      ci:
+        description: Ci holds the value of the "ci" field.
+        type: string
+      edges:
+        $ref: '#/definitions/ent.StudentEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the StudentQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_name:
+        description: LastName holds the value of the "last_name" field.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.StudentEdges:
+    properties:
+      attendances:
+        description: Attendances holds the value of the attendances edge.
+        items:
+          $ref: '#/definitions/ent.Attendance'
+        type: array
+      class:
+        $ref: '#/definitions/ent.Class'
+        description: Class holds the value of the class edge.
+      scores:
+        description: Scores holds the value of the scores edge.
+        items:
+          $ref: '#/definitions/ent.Score'
+        type: array
+    type: object
+  ent.StudentSync:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.StudentSyncEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the StudentSyncQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      last_sync_id:
+        description: LastSyncID holds the value of the "last_sync_id" field.
+        type: string
+    type: object
+  ent.StudentSyncEdges:
+    properties:
+      class:
+        $ref: '#/definitions/ent.Class'
+        description: Class holds the value of the class edge.
+    type: object
+  ent.Subject:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.SubjectEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the SubjectQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+    type: object
+  ent.SubjectEdges:
+    properties:
+      classes:
+        description: Classes holds the value of the classes edge.
+        items:
+          $ref: '#/definitions/ent.Class'
+        type: array
+    type: object
+  ent.Teacher:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.TeacherEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the TeacherQuery when eager-loading is set.
+      email:
+        description: Email holds the value of the "email" field.
+        type: string
+      id:
+        description: ID of the ent.
+        type: string
+      last_name:
+        description: LastName holds the value of the "last_name" field.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      password:
+        description: Password holds the value of the "password" field.
+        type: string
+    type: object
+  ent.TeacherEdges:
+    properties:
+      classes:
+        description: Classes holds the value of the classes edge.
+        items:
+          $ref: '#/definitions/ent.Class'
+        type: array
+    type: object
+  ent.Year:
+    properties:
+      edges:
+        $ref: '#/definitions/ent.YearEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the YearQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      value:
+        description: Value holds the value of the "value" field.
+        type: integer
+    type: object
+  ent.YearEdges:
+    properties:
+      areas:
+        description: Areas holds the value of the areas edge.
+        items:
+          $ref: '#/definitions/ent.Area'
+        type: array
+      classes:
+        description: Classes holds the value of the classes edge.
+        items:
+          $ref: '#/definitions/ent.Class'
+        type: array
+      periods:
+        description: Periods holds the value of the periods edge.
+        items:
+          $ref: '#/definitions/ent.Period'
+        type: array
+    type: object
+  handlers.SignInHandler.req:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handlers.SignInHandler.res:
+    properties:
+      jwt:
+        type: string
+      teacher:
+        $ref: '#/definitions/ent.Teacher'
+    type: object
   handlers.SignUpHandler.req:
     properties:
       email:
@@ -30,6 +623,25 @@ info:
   title: Rigel API
   version: "1.0"
 paths:
+  /teacher/signin:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: teacher signup data
+        in: body
+        name: teacher
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SignInHandler.req'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SignInHandler.res'
+      summary: login and generate token
   /teacher/signup:
     post:
       consumes:

@@ -27,31 +27,31 @@ func SignUpHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 		Message string `json:"message"`
 	}
 	return func(c *fiber.Ctx) error {
-    var reqData req
-    err := c.BodyParser(&reqData)
-    if err != nil {
-      return err
-    }
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), bcrypt.MinCost)
-    if err != nil {
-      return err
-    }
-    _, err = db.Teacher.Query().Where(teacher.EmailEQ(reqData.Email)).First(c.Context())
-    // err nil means that teacher exists
-    if err == nil {
-      return NewClientErr(fiber.StatusBadRequest, "Ups! ya existe una cuenta con ese correo.")
-    }
-    _, err = db.Teacher.
-      Create().
-      SetID(newID()).
-      SetName(reqData.Name).
-      SetEmail(reqData.Email).
-      SetLastName(reqData.LastName).
-      SetPassword(string(hashedPassword)).
-      Save(c.Context())
-    if err != nil {
-      return err
-    }
+		var reqData req
+		err := c.BodyParser(&reqData)
+		if err != nil {
+			return err
+		}
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		_, err = db.Teacher.Query().Where(teacher.EmailEQ(reqData.Email)).First(c.Context())
+		// err nil means that teacher exists
+		if err == nil {
+			return NewClientErr(fiber.StatusBadRequest, "Ups! ya existe una cuenta con ese correo.")
+		}
+		_, err = db.Teacher.
+			Create().
+			SetID(newID()).
+			SetName(reqData.Name).
+			SetEmail(reqData.Email).
+			SetLastName(reqData.LastName).
+			SetPassword(string(hashedPassword)).
+			Save(c.Context())
+		if err != nil {
+			return err
+		}
 		return c.SendStatus(http.StatusCreated)
 	}
 }
