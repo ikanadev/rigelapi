@@ -75,7 +75,6 @@ func populateGrades(client *ent.Client, ctx context.Context) error {
 func populateYears(client *ent.Client, ctx context.Context) error {
 	yearsMap := map[string]int{
 		"1": 2022,
-		"2": 2023,
 	}
 	dbYears, err := client.Year.Query().All(ctx)
 	if err != nil {
