@@ -53,11 +53,12 @@ func (server Server) Run() {
 	server.app.Get("/swagger/*", swagger.HandlerDefault)
 	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
+	server.app.Get("/deps", handlers.DepsHandler(server.db))
+	server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
+	server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
+	server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
 
-	protected := server.app.Group("/api", authMiddleware(server.config))
-	protected.Get("/deps", handlers.DepsHandler(server.db))
-	protected.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
-	protected.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
+	// protected := server.app.Group("/v1", authMiddleware(server.config))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }

@@ -9,7 +9,7 @@ import (
 // @Summary List all deps
 // @Produce json
 // @Success 200 {object} handlers.DepsHandler.res
-// @Router  /api/deps [get]
+// @Router  /deps [get]
 func DepsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	type res = []*ent.Dpto
 	return func(c *fiber.Ctx) error {
