@@ -9,13 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// SignInHandler godoc
-// @Summary login and generate token
-// @Accept  json
-// @Produce json
-// @Param   teacher body     handlers.SignInHandler.req true "teacher signup data"
-// @Success 200     {object} handlers.SignInHandler.res
-// @Router  /signin [post]
 func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error {
 	type req struct {
 		Email    string `json:"email"`

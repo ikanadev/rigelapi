@@ -6,10 +6,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/swagger"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/config"
-	_ "github.com/vmkevv/rigelapi/docs"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/utils"
 )
@@ -50,7 +48,6 @@ func NewServer(db *ent.Client, config config.Config) Server {
 func (server Server) Run() {
 	server.app.Use(cors.New())
 	// Swagger handler
-	server.app.Get("/swagger/*", swagger.HandlerDefault)
 	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	server.app.Get("/deps", handlers.DepsHandler(server.db))
