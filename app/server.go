@@ -55,6 +55,7 @@ func (server Server) Run() {
 	server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
 	server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
 	server.app.Get("/years", handlers.YearlyDataHandler(server.db))
+	server.app.Get("/static", handlers.StaticDataHandler(server.db))
 
 	// protected := server.app.Group("/v1", authMiddleware(server.config))
 
