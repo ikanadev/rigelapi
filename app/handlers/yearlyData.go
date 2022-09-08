@@ -6,11 +6,11 @@ import (
 )
 
 func YearlyDataHandler(db *ent.Client) func(*fiber.Ctx) error {
-  return func(c *fiber.Ctx) error {
-    years, err := db.Year.Query().WithAreas().WithPeriods().All(c.Context())
-    if err != nil {
-      return err
-    }
-    return c.JSON(years)
-  }
+	return func(c *fiber.Ctx) error {
+		years, err := db.Year.Query().WithAreas().WithPeriods().All(c.Context())
+		if err != nil {
+			return err
+		}
+		return c.JSON(years)
+	}
 }
