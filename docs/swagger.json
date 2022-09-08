@@ -37,12 +37,40 @@
                 }
             }
         },
+        "/muns/prov/{provid}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List all municipios from prov with {provid}",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Provincia ID",
+                        "name": "provid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ent.Municipio"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/provs/dep/{depid}": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
-                "summary": "List all deps",
+                "summary": "List all provinvias from dep with {depid}",
                 "parameters": [
                     {
                         "type": "integer",

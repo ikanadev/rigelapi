@@ -8,7 +8,7 @@ import (
 )
 
 // ProvsHandler godoc
-// @Summary List all deps
+// @Summary List all provinvias from dep with {depid}
 // @Produce json
 // @Param   depid path     int true "Departamento ID"
 // @Success 200   {object} handlers.ProvsHandler.res
