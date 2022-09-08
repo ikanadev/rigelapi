@@ -635,6 +635,24 @@ paths:
               $ref: '#/definitions/ent.Dpto'
             type: array
       summary: List all deps
+  /provs/dep/{depid}:
+    get:
+      parameters:
+      - description: Departamento ID
+        in: path
+        name: depid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ent.Provincia'
+            type: array
+      summary: List all deps
   /signin:
     post:
       consumes:

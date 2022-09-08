@@ -56,6 +56,7 @@ func (server Server) Run() {
 
 	protected := server.app.Group("/api", authMiddleware(server.config))
 	protected.Get("/deps", handlers.DepsHandler(server.db))
+	protected.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }

@@ -37,6 +37,34 @@
                 }
             }
         },
+        "/provs/dep/{depid}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List all deps",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Departamento ID",
+                        "name": "depid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ent.Provincia"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/signin": {
             "post": {
                 "consumes": [
