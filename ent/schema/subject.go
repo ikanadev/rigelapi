@@ -14,14 +14,14 @@ type Subject struct {
 // Fields of the Subject.
 func (Subject) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-  }
+		field.String("id"),
+		field.String("name"),
+	}
 }
 
 // Edges of the Subject.
 func (Subject) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("classes", Class.Type),
-  }
+		edge.To("classes", Class.Type),
+	}
 }

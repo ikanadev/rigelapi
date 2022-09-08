@@ -14,15 +14,15 @@ type Municipio struct {
 // Fields of the Municipio.
 func (Municipio) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-  }
+		field.String("id"),
+		field.String("name"),
+	}
 }
 
 // Edges of the Municipio.
 func (Municipio) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("schools", School.Type),
-    edge.From("provincia", Provincia.Type).Ref("municipios").Unique(),
-  }
+		edge.To("schools", School.Type),
+		edge.From("provincia", Provincia.Type).Ref("municipios").Unique(),
+	}
 }

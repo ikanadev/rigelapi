@@ -14,15 +14,15 @@ type Period struct {
 // Fields of the Period.
 func (Period) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-  }
+		field.String("id"),
+		field.String("name"),
+	}
 }
 
 // Edges of the Period.
 func (Period) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("classPeriods", ClassPeriod.Type),
-    edge.From("year", Year.Type).Ref("periods").Unique(),
-  }
+		edge.To("classPeriods", ClassPeriod.Type),
+		edge.From("year", Year.Type).Ref("periods").Unique(),
+	}
 }

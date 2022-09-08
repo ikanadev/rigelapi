@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	_ "github.com/lib/pq"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
-	_ "github.com/lib/pq"
 )
 
 func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
@@ -26,19 +26,19 @@ func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 		),
 	)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 	log.Println("creating schema...")
 	err = client.Schema.Create(ctx)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 	log.Println("populating static data...")
 	if err := PopulateStaticJsonData(client, ctx); err != nil {
-    return nil, err
+		return nil, err
 	}
 	if err := PopulateStaticData(client, ctx); err != nil {
-    return nil, err
+		return nil, err
 	}
-  return client, nil
+	return client, nil
 }

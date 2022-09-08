@@ -14,17 +14,17 @@ type Teacher struct {
 // Fields of the Teacher.
 func (Teacher) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-    field.String("last_name"),
-    field.String("email"),
-    field.String("password"),
-  }
+		field.String("id"),
+		field.String("name"),
+		field.String("last_name"),
+		field.String("email"),
+		field.String("password"),
+	}
 }
 
 // Edges of the Teacher.
 func (Teacher) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("classes", Class.Type),
-  }
+		edge.To("classes", Class.Type),
+	}
 }

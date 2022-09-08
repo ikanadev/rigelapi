@@ -14,15 +14,15 @@ type Attendance struct {
 // Fields of the Attendance.
 func (Attendance) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.Enum("value").Values("Asistencia", "Falta", "Atraso", "Licencia"),
-  }
+		field.String("id"),
+		field.Enum("value").Values("Asistencia", "Falta", "Atraso", "Licencia"),
+	}
 }
 
 // Edges of the Attendance.
 func (Attendance) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.From("classPeriod", ClassPeriod.Type).Ref("attendances").Unique(),
-    edge.From("student", Student.Type).Ref("attendances").Unique(),
-  }
+		edge.From("classPeriod", ClassPeriod.Type).Ref("attendances").Unique(),
+		edge.From("student", Student.Type).Ref("attendances").Unique(),
+	}
 }

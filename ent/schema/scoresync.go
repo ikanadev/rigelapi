@@ -14,14 +14,14 @@ type ScoreSync struct {
 // Fields of the ScoreSync.
 func (ScoreSync) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("last_sync_id"),
-  }
+		field.String("id"),
+		field.String("last_sync_id"),
+	}
 }
 
 // Edges of the ScoreSync.
 func (ScoreSync) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.From("activity", Activity.Type).Ref("scoreSyncs").Unique(),
-  }
+		edge.From("activity", Activity.Type).Ref("scoreSyncs").Unique(),
+	}
 }

@@ -14,16 +14,16 @@ type Area struct {
 // Fields of the Area.
 func (Area) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-    field.Int("points"),
-  }
+		field.String("id"),
+		field.String("name"),
+		field.Int("points"),
+	}
 }
 
 // Edges of the Area.
 func (Area) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("activities", Activity.Type),
-    edge.From("year", Year.Type).Ref("areas").Unique(),
-  }
+		edge.To("activities", Activity.Type),
+		edge.From("year", Year.Type).Ref("areas").Unique(),
+	}
 }

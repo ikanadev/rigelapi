@@ -14,14 +14,14 @@ type Dpto struct {
 // Fields of the Dpto.
 func (Dpto) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-  }
+		field.String("id"),
+		field.String("name"),
+	}
 }
 
 // Edges of the Dpto.
 func (Dpto) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("provincias", Provincia.Type),
-  }
+		edge.To("provincias", Provincia.Type),
+	}
 }

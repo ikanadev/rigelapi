@@ -14,15 +14,15 @@ type Score struct {
 // Fields of the Score.
 func (Score) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.Int("points"),
-  }
+		field.String("id"),
+		field.Int("points"),
+	}
 }
 
 // Edges of the Score.
 func (Score) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.From("activity", Activity.Type).Ref("scores").Unique(),
-    edge.From("student", Student.Type).Ref("scores").Unique(),
-  }
+		edge.From("activity", Activity.Type).Ref("scores").Unique(),
+		edge.From("student", Student.Type).Ref("scores").Unique(),
+	}
 }

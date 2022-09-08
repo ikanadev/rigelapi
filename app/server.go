@@ -33,9 +33,9 @@ func NewServer(db *ent.Client, config config.Config) Server {
 				code = err.Status
 				msg = err.Error()
 			}
-      if code == fiber.StatusInternalServerError {
-        log.Printf("Fatal: %v\n", err)
-      }
+			if code == fiber.StatusInternalServerError {
+				log.Printf("Fatal: %v\n", err)
+			}
 			return c.Status(code).JSON(errMsg{Message: msg})
 		},
 	})

@@ -22,8 +22,8 @@ func (Year) Fields() []ent.Field {
 // Edges of the Year.
 func (Year) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("classes", Class.Type),
-    edge.To("periods", Period.Type),
-    edge.To("areas", Area.Type),
-  }
+		edge.To("classes", Class.Type),
+		edge.To("periods", Period.Type),
+		edge.To("areas", Area.Type),
+	}
 }

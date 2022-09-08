@@ -14,14 +14,14 @@ type Grade struct {
 // Fields of the Grade.
 func (Grade) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-  }
+		field.String("id"),
+		field.String("name"),
+	}
 }
 
 // Edges of the Grade.
 func (Grade) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("classes", Class.Type),
-  }
+		edge.To("classes", Class.Type),
+	}
 }

@@ -14,14 +14,14 @@ type ActivitySync struct {
 // Fields of the ActivitySync.
 func (ActivitySync) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("last_sync_id"),
-  }
+		field.String("id"),
+		field.String("last_sync_id"),
+	}
 }
 
 // Edges of the ActivitySync.
 func (ActivitySync) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.From("classPeriod", ClassPeriod.Type).Ref("activitySyncs").Unique(),
-  }
+		edge.From("classPeriod", ClassPeriod.Type).Ref("activitySyncs").Unique(),
+	}
 }

@@ -14,18 +14,18 @@ type Activity struct {
 // Fields of the Activity.
 func (Activity) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("name"),
-    field.Time("date"),
-  }
+		field.String("id"),
+		field.String("name"),
+		field.Time("date"),
+	}
 }
 
 // Edges of the Activity.
 func (Activity) Edges() []ent.Edge {
 	return []ent.Edge{
-    edge.To("scores", Score.Type),
-    edge.To("scoreSyncs", ScoreSync.Type),
-    edge.From("area", Area.Type).Ref("activities").Unique(),
-    edge.From("classPeriod", ClassPeriod.Type).Ref("activities").Unique(),
-  }
+		edge.To("scores", Score.Type),
+		edge.To("scoreSyncs", ScoreSync.Type),
+		edge.From("area", Area.Type).Ref("activities").Unique(),
+		edge.From("classPeriod", ClassPeriod.Type).Ref("activities").Unique(),
+	}
 }
