@@ -10,7 +10,7 @@ import (
 func ClassListHandler(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		teacherID := c.Locals("id").(string)
-		classes, err := db.Class.Query().Where(class.HasTeacherWith(teacher.ID(teacherID))).All(c.Context())
+		classes, err := db.Class.Query().Where(class.HasTeacherWith(teacher.ID(teacherID))).WithGrade().WithSubject().WithYear().All(c.Context())
 		if err != nil {
 			return err
 		}
@@ -40,10 +40,13 @@ func NewClassHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error
 			SetGradeID(reqData.GradeID).
 			SetSubjectID(reqData.SubjectID).
 			SetSchoolID(reqData.SchoolID).
-			SetParallel(reqData.Parallel).Save(c.Context())
+			SetYearID(reqData.YearID).
+			SetParallel(reqData.Parallel).
+			Save(c.Context())
 		if err != nil {
 			return err
 		}
-		return nil
+    classes, err := db.Class.Query().Where(class.HasTeacherWith(teacher.ID(teacherID))).WithGrade().WithSubject().WithYear().All(c.Context())
+		return c.JSON(classes)
 	}
 }
