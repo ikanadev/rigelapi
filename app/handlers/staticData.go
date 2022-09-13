@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/subject"
 )
 
 func StaticDataHandler(db *ent.Client) func(*fiber.Ctx) error {
@@ -15,7 +16,7 @@ func StaticDataHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		subjects, err := db.Subject.Query().All(c.Context())
+		subjects, err := db.Subject.Query().Order(ent.Asc(subject.FieldName)).All(c.Context())
 		if err != nil {
 			return err
 		}

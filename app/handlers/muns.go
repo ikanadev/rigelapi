@@ -10,7 +10,7 @@ import (
 func MunsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		provID := c.Params("provid")
-		muns, err := db.Municipio.Query().Where(municipio.HasProvinciaWith(provincia.ID(provID))).All(c.Context())
+		muns, err := db.Municipio.Query().Where(municipio.HasProvinciaWith(provincia.ID(provID))).Order(ent.Asc(municipio.FieldName)).All(c.Context())
 		if err != nil {
 			return err
 		}

@@ -10,7 +10,7 @@ import (
 func ProvsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		depID := c.Params("depid")
-		provs, err := db.Provincia.Query().Where(provincia.HasDepartamentoWith(dpto.ID(depID))).All(c.Context())
+		provs, err := db.Provincia.Query().Where(provincia.HasDepartamentoWith(dpto.ID(depID))).Order(ent.Asc(provincia.FieldName)).All(c.Context())
 		if err != nil {
 			return err
 		}
