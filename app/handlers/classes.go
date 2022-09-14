@@ -5,12 +5,23 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 func ClassListHandler(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		teacherID := c.Locals("id").(string)
-		classes, err := db.Class.Query().Where(class.HasTeacherWith(teacher.ID(teacherID))).WithGrade().WithSubject().WithYear().All(c.Context())
+		yearID := c.Params("yearid")
+		classes, err := db.Class.
+			Query().
+			Where(
+				class.HasTeacherWith(teacher.ID(teacherID)),
+				class.HasYearWith(year.ID(yearID)),
+			).
+			WithGrade().
+			WithSubject().
+			WithYear().
+			All(c.Context())
 		if err != nil {
 			return err
 		}
@@ -46,7 +57,16 @@ func NewClassHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error
 		if err != nil {
 			return err
 		}
-    classes, err := db.Class.Query().Where(class.HasTeacherWith(teacher.ID(teacherID))).WithGrade().WithSubject().WithYear().All(c.Context())
+		classes, err := db.Class.
+			Query().
+			Where(
+				class.HasTeacherWith(teacher.ID(teacherID)),
+				class.HasYearWith(year.ID(reqData.YearID)),
+			).
+			WithGrade().
+			WithSubject().
+			WithYear().
+			All(c.Context())
 		return c.JSON(classes)
 	}
 }
