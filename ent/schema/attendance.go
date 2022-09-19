@@ -22,7 +22,7 @@ func (Attendance) Fields() []ent.Field {
 // Edges of the Attendance.
 func (Attendance) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("classPeriod", ClassPeriod.Type).Ref("attendances").Unique(),
+		edge.From("attendanceDay", AttendanceDay.Type).Ref("attendances").Unique(),
 		edge.From("student", Student.Type).Ref("attendances").Unique(),
 	}
 }
