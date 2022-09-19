@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/student"
 )
@@ -19,15 +19,15 @@ import (
 // AttendanceQuery is the builder for querying Attendance entities.
 type AttendanceQuery struct {
 	config
-	limit           *int
-	offset          *int
-	unique          *bool
-	order           []OrderFunc
-	fields          []string
-	predicates      []predicate.Attendance
-	withClassPeriod *ClassPeriodQuery
-	withStudent     *StudentQuery
-	withFKs         bool
+	limit             *int
+	offset            *int
+	unique            *bool
+	order             []OrderFunc
+	fields            []string
+	predicates        []predicate.Attendance
+	withAttendanceDay *AttendanceDayQuery
+	withStudent       *StudentQuery
+	withFKs           bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,9 +64,9 @@ func (aq *AttendanceQuery) Order(o ...OrderFunc) *AttendanceQuery {
 	return aq
 }
 
-// QueryClassPeriod chains the current query on the "classPeriod" edge.
-func (aq *AttendanceQuery) QueryClassPeriod() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: aq.config}
+// QueryAttendanceDay chains the current query on the "attendanceDay" edge.
+func (aq *AttendanceQuery) QueryAttendanceDay() *AttendanceDayQuery {
+	query := &AttendanceDayQuery{config: aq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -77,8 +77,8 @@ func (aq *AttendanceQuery) QueryClassPeriod() *ClassPeriodQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attendance.Table, attendance.FieldID, selector),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendance.ClassPeriodTable, attendance.ClassPeriodColumn),
+			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendance.AttendanceDayTable, attendance.AttendanceDayColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -284,13 +284,13 @@ func (aq *AttendanceQuery) Clone() *AttendanceQuery {
 		return nil
 	}
 	return &AttendanceQuery{
-		config:          aq.config,
-		limit:           aq.limit,
-		offset:          aq.offset,
-		order:           append([]OrderFunc{}, aq.order...),
-		predicates:      append([]predicate.Attendance{}, aq.predicates...),
-		withClassPeriod: aq.withClassPeriod.Clone(),
-		withStudent:     aq.withStudent.Clone(),
+		config:            aq.config,
+		limit:             aq.limit,
+		offset:            aq.offset,
+		order:             append([]OrderFunc{}, aq.order...),
+		predicates:        append([]predicate.Attendance{}, aq.predicates...),
+		withAttendanceDay: aq.withAttendanceDay.Clone(),
+		withStudent:       aq.withStudent.Clone(),
 		// clone intermediate query.
 		sql:    aq.sql.Clone(),
 		path:   aq.path,
@@ -298,14 +298,14 @@ func (aq *AttendanceQuery) Clone() *AttendanceQuery {
 	}
 }
 
-// WithClassPeriod tells the query-builder to eager-load the nodes that are connected to
-// the "classPeriod" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AttendanceQuery) WithClassPeriod(opts ...func(*ClassPeriodQuery)) *AttendanceQuery {
-	query := &ClassPeriodQuery{config: aq.config}
+// WithAttendanceDay tells the query-builder to eager-load the nodes that are connected to
+// the "attendanceDay" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AttendanceQuery) WithAttendanceDay(opts ...func(*AttendanceDayQuery)) *AttendanceQuery {
+	query := &AttendanceDayQuery{config: aq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	aq.withClassPeriod = query
+	aq.withAttendanceDay = query
 	return aq
 }
 
@@ -390,11 +390,11 @@ func (aq *AttendanceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 		withFKs     = aq.withFKs
 		_spec       = aq.querySpec()
 		loadedTypes = [2]bool{
-			aq.withClassPeriod != nil,
+			aq.withAttendanceDay != nil,
 			aq.withStudent != nil,
 		}
 	)
-	if aq.withClassPeriod != nil || aq.withStudent != nil {
+	if aq.withAttendanceDay != nil || aq.withStudent != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -418,9 +418,9 @@ func (aq *AttendanceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := aq.withClassPeriod; query != nil {
-		if err := aq.loadClassPeriod(ctx, query, nodes, nil,
-			func(n *Attendance, e *ClassPeriod) { n.Edges.ClassPeriod = e }); err != nil {
+	if query := aq.withAttendanceDay; query != nil {
+		if err := aq.loadAttendanceDay(ctx, query, nodes, nil,
+			func(n *Attendance, e *AttendanceDay) { n.Edges.AttendanceDay = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -433,20 +433,20 @@ func (aq *AttendanceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 	return nodes, nil
 }
 
-func (aq *AttendanceQuery) loadClassPeriod(ctx context.Context, query *ClassPeriodQuery, nodes []*Attendance, init func(*Attendance), assign func(*Attendance, *ClassPeriod)) error {
+func (aq *AttendanceQuery) loadAttendanceDay(ctx context.Context, query *AttendanceDayQuery, nodes []*Attendance, init func(*Attendance), assign func(*Attendance, *AttendanceDay)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*Attendance)
 	for i := range nodes {
-		if nodes[i].class_period_attendances == nil {
+		if nodes[i].attendance_day_attendances == nil {
 			continue
 		}
-		fk := *nodes[i].class_period_attendances
+		fk := *nodes[i].attendance_day_attendances
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(classperiod.IDIn(ids...))
+	query.Where(attendanceday.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -454,7 +454,7 @@ func (aq *AttendanceQuery) loadClassPeriod(ctx context.Context, query *ClassPeri
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_attendances" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "attendance_day_attendances" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

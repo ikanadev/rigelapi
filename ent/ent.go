@@ -14,6 +14,8 @@ import (
 	"github.com/vmkevv/rigelapi/ent/activitysync"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
+	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
@@ -51,27 +53,29 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		activity.Table:        activity.ValidColumn,
-		activitysync.Table:    activitysync.ValidColumn,
-		area.Table:            area.ValidColumn,
-		attendance.Table:      attendance.ValidColumn,
-		attendancesync.Table:  attendancesync.ValidColumn,
-		class.Table:           class.ValidColumn,
-		classperiod.Table:     classperiod.ValidColumn,
-		classperiodsync.Table: classperiodsync.ValidColumn,
-		dpto.Table:            dpto.ValidColumn,
-		grade.Table:           grade.ValidColumn,
-		municipio.Table:       municipio.ValidColumn,
-		period.Table:          period.ValidColumn,
-		provincia.Table:       provincia.ValidColumn,
-		school.Table:          school.ValidColumn,
-		score.Table:           score.ValidColumn,
-		scoresync.Table:       scoresync.ValidColumn,
-		student.Table:         student.ValidColumn,
-		studentsync.Table:     studentsync.ValidColumn,
-		subject.Table:         subject.ValidColumn,
-		teacher.Table:         teacher.ValidColumn,
-		year.Table:            year.ValidColumn,
+		activity.Table:           activity.ValidColumn,
+		activitysync.Table:       activitysync.ValidColumn,
+		area.Table:               area.ValidColumn,
+		attendance.Table:         attendance.ValidColumn,
+		attendanceday.Table:      attendanceday.ValidColumn,
+		attendancedaysyncs.Table: attendancedaysyncs.ValidColumn,
+		attendancesync.Table:     attendancesync.ValidColumn,
+		class.Table:              class.ValidColumn,
+		classperiod.Table:        classperiod.ValidColumn,
+		classperiodsync.Table:    classperiodsync.ValidColumn,
+		dpto.Table:               dpto.ValidColumn,
+		grade.Table:              grade.ValidColumn,
+		municipio.Table:          municipio.ValidColumn,
+		period.Table:             period.ValidColumn,
+		provincia.Table:          provincia.ValidColumn,
+		school.Table:             school.ValidColumn,
+		score.Table:              score.ValidColumn,
+		scoresync.Table:          scoresync.ValidColumn,
+		student.Table:            student.ValidColumn,
+		studentsync.Table:        studentsync.ValidColumn,
+		subject.Table:            subject.ValidColumn,
+		teacher.Table:            teacher.ValidColumn,
+		year.Table:               year.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

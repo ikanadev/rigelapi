@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/student"
 )
@@ -35,23 +35,23 @@ func (au *AttendanceUpdate) SetValue(a attendance.Value) *AttendanceUpdate {
 	return au
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (au *AttendanceUpdate) SetClassPeriodID(id string) *AttendanceUpdate {
-	au.mutation.SetClassPeriodID(id)
+// SetAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID.
+func (au *AttendanceUpdate) SetAttendanceDayID(id string) *AttendanceUpdate {
+	au.mutation.SetAttendanceDayID(id)
 	return au
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (au *AttendanceUpdate) SetNillableClassPeriodID(id *string) *AttendanceUpdate {
+// SetNillableAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID if the given value is not nil.
+func (au *AttendanceUpdate) SetNillableAttendanceDayID(id *string) *AttendanceUpdate {
 	if id != nil {
-		au = au.SetClassPeriodID(*id)
+		au = au.SetAttendanceDayID(*id)
 	}
 	return au
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (au *AttendanceUpdate) SetClassPeriod(c *ClassPeriod) *AttendanceUpdate {
-	return au.SetClassPeriodID(c.ID)
+// SetAttendanceDay sets the "attendanceDay" edge to the AttendanceDay entity.
+func (au *AttendanceUpdate) SetAttendanceDay(a *AttendanceDay) *AttendanceUpdate {
+	return au.SetAttendanceDayID(a.ID)
 }
 
 // SetStudentID sets the "student" edge to the Student entity by ID.
@@ -78,9 +78,9 @@ func (au *AttendanceUpdate) Mutation() *AttendanceMutation {
 	return au.mutation
 }
 
-// ClearClassPeriod clears the "classPeriod" edge to the ClassPeriod entity.
-func (au *AttendanceUpdate) ClearClassPeriod() *AttendanceUpdate {
-	au.mutation.ClearClassPeriod()
+// ClearAttendanceDay clears the "attendanceDay" edge to the AttendanceDay entity.
+func (au *AttendanceUpdate) ClearAttendanceDay() *AttendanceUpdate {
+	au.mutation.ClearAttendanceDay()
 	return au
 }
 
@@ -185,33 +185,33 @@ func (au *AttendanceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: attendance.FieldValue,
 		})
 	}
-	if au.mutation.ClassPeriodCleared() {
+	if au.mutation.AttendanceDayCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendance.ClassPeriodTable,
-			Columns: []string{attendance.ClassPeriodColumn},
+			Table:   attendance.AttendanceDayTable,
+			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.AttendanceDayIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendance.ClassPeriodTable,
-			Columns: []string{attendance.ClassPeriodColumn},
+			Table:   attendance.AttendanceDayTable,
+			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}
@@ -280,23 +280,23 @@ func (auo *AttendanceUpdateOne) SetValue(a attendance.Value) *AttendanceUpdateOn
 	return auo
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (auo *AttendanceUpdateOne) SetClassPeriodID(id string) *AttendanceUpdateOne {
-	auo.mutation.SetClassPeriodID(id)
+// SetAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID.
+func (auo *AttendanceUpdateOne) SetAttendanceDayID(id string) *AttendanceUpdateOne {
+	auo.mutation.SetAttendanceDayID(id)
 	return auo
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (auo *AttendanceUpdateOne) SetNillableClassPeriodID(id *string) *AttendanceUpdateOne {
+// SetNillableAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID if the given value is not nil.
+func (auo *AttendanceUpdateOne) SetNillableAttendanceDayID(id *string) *AttendanceUpdateOne {
 	if id != nil {
-		auo = auo.SetClassPeriodID(*id)
+		auo = auo.SetAttendanceDayID(*id)
 	}
 	return auo
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (auo *AttendanceUpdateOne) SetClassPeriod(c *ClassPeriod) *AttendanceUpdateOne {
-	return auo.SetClassPeriodID(c.ID)
+// SetAttendanceDay sets the "attendanceDay" edge to the AttendanceDay entity.
+func (auo *AttendanceUpdateOne) SetAttendanceDay(a *AttendanceDay) *AttendanceUpdateOne {
+	return auo.SetAttendanceDayID(a.ID)
 }
 
 // SetStudentID sets the "student" edge to the Student entity by ID.
@@ -323,9 +323,9 @@ func (auo *AttendanceUpdateOne) Mutation() *AttendanceMutation {
 	return auo.mutation
 }
 
-// ClearClassPeriod clears the "classPeriod" edge to the ClassPeriod entity.
-func (auo *AttendanceUpdateOne) ClearClassPeriod() *AttendanceUpdateOne {
-	auo.mutation.ClearClassPeriod()
+// ClearAttendanceDay clears the "attendanceDay" edge to the AttendanceDay entity.
+func (auo *AttendanceUpdateOne) ClearAttendanceDay() *AttendanceUpdateOne {
+	auo.mutation.ClearAttendanceDay()
 	return auo
 }
 
@@ -460,33 +460,33 @@ func (auo *AttendanceUpdateOne) sqlSave(ctx context.Context) (_node *Attendance,
 			Column: attendance.FieldValue,
 		})
 	}
-	if auo.mutation.ClassPeriodCleared() {
+	if auo.mutation.AttendanceDayCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendance.ClassPeriodTable,
-			Columns: []string{attendance.ClassPeriodColumn},
+			Table:   attendance.AttendanceDayTable,
+			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.AttendanceDayIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendance.ClassPeriodTable,
-			Columns: []string{attendance.ClassPeriodColumn},
+			Table:   attendance.AttendanceDayTable,
+			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}

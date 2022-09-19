@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/student"
 )
 
@@ -33,23 +33,23 @@ func (ac *AttendanceCreate) SetID(s string) *AttendanceCreate {
 	return ac
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (ac *AttendanceCreate) SetClassPeriodID(id string) *AttendanceCreate {
-	ac.mutation.SetClassPeriodID(id)
+// SetAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID.
+func (ac *AttendanceCreate) SetAttendanceDayID(id string) *AttendanceCreate {
+	ac.mutation.SetAttendanceDayID(id)
 	return ac
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (ac *AttendanceCreate) SetNillableClassPeriodID(id *string) *AttendanceCreate {
+// SetNillableAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID if the given value is not nil.
+func (ac *AttendanceCreate) SetNillableAttendanceDayID(id *string) *AttendanceCreate {
 	if id != nil {
-		ac = ac.SetClassPeriodID(*id)
+		ac = ac.SetAttendanceDayID(*id)
 	}
 	return ac
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (ac *AttendanceCreate) SetClassPeriod(c *ClassPeriod) *AttendanceCreate {
-	return ac.SetClassPeriodID(c.ID)
+// SetAttendanceDay sets the "attendanceDay" edge to the AttendanceDay entity.
+func (ac *AttendanceCreate) SetAttendanceDay(a *AttendanceDay) *AttendanceCreate {
+	return ac.SetAttendanceDayID(a.ID)
 }
 
 // SetStudentID sets the "student" edge to the Student entity by ID.
@@ -199,24 +199,24 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 		})
 		_node.Value = value
 	}
-	if nodes := ac.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.AttendanceDayIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendance.ClassPeriodTable,
-			Columns: []string{attendance.ClassPeriodColumn},
+			Table:   attendance.AttendanceDayTable,
+			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.class_period_attendances = &nodes[0]
+		_node.attendance_day_attendances = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ac.mutation.StudentIDs(); len(nodes) > 0 {

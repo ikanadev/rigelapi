@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/attendance"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
+	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/period"
@@ -50,34 +50,34 @@ func (cpc *ClassPeriodCreate) SetID(s string) *ClassPeriodCreate {
 	return cpc
 }
 
-// AddAttendanceIDs adds the "attendances" edge to the Attendance entity by IDs.
-func (cpc *ClassPeriodCreate) AddAttendanceIDs(ids ...string) *ClassPeriodCreate {
-	cpc.mutation.AddAttendanceIDs(ids...)
+// AddAttendanceDayIDs adds the "attendanceDays" edge to the AttendanceDay entity by IDs.
+func (cpc *ClassPeriodCreate) AddAttendanceDayIDs(ids ...string) *ClassPeriodCreate {
+	cpc.mutation.AddAttendanceDayIDs(ids...)
 	return cpc
 }
 
-// AddAttendances adds the "attendances" edges to the Attendance entity.
-func (cpc *ClassPeriodCreate) AddAttendances(a ...*Attendance) *ClassPeriodCreate {
+// AddAttendanceDays adds the "attendanceDays" edges to the AttendanceDay entity.
+func (cpc *ClassPeriodCreate) AddAttendanceDays(a ...*AttendanceDay) *ClassPeriodCreate {
 	ids := make([]string, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
-	return cpc.AddAttendanceIDs(ids...)
+	return cpc.AddAttendanceDayIDs(ids...)
 }
 
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (cpc *ClassPeriodCreate) AddAttendanceSyncIDs(ids ...string) *ClassPeriodCreate {
-	cpc.mutation.AddAttendanceSyncIDs(ids...)
+// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
+func (cpc *ClassPeriodCreate) AddAttendanceDaySyncIDs(ids ...string) *ClassPeriodCreate {
+	cpc.mutation.AddAttendanceDaySyncIDs(ids...)
 	return cpc
 }
 
-// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
-func (cpc *ClassPeriodCreate) AddAttendanceSyncs(a ...*AttendanceSync) *ClassPeriodCreate {
+// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (cpc *ClassPeriodCreate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *ClassPeriodCreate {
 	ids := make([]string, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
-	return cpc.AddAttendanceSyncIDs(ids...)
+	return cpc.AddAttendanceDaySyncIDs(ids...)
 }
 
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
@@ -293,17 +293,17 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 		})
 		_node.Finished = value
 	}
-	if nodes := cpc.mutation.AttendancesIDs(); len(nodes) > 0 {
+	if nodes := cpc.mutation.AttendanceDaysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   classperiod.AttendancesTable,
-			Columns: []string{classperiod.AttendancesColumn},
+			Table:   classperiod.AttendanceDaysTable,
+			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: attendance.FieldID,
+					Column: attendanceday.FieldID,
 				},
 			},
 		}
@@ -312,17 +312,17 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := cpc.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
+	if nodes := cpc.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   classperiod.AttendanceSyncsTable,
-			Columns: []string{classperiod.AttendanceSyncsColumn},
+			Table:   classperiod.AttendanceDaySyncsTable,
+			Columns: []string{classperiod.AttendanceDaySyncsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
+					Column: attendancedaysyncs.FieldID,
 				},
 			},
 		}

@@ -81,7 +81,7 @@ var (
 	AttendancesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "value", Type: field.TypeEnum, Enums: []string{"Asistencia", "Falta", "Atraso", "Licencia"}},
-		{Name: "class_period_attendances", Type: field.TypeString, Nullable: true},
+		{Name: "attendance_day_attendances", Type: field.TypeString, Nullable: true},
 		{Name: "student_attendances", Type: field.TypeString, Nullable: true},
 	}
 	// AttendancesTable holds the schema information for the "attendances" table.
@@ -91,9 +91,9 @@ var (
 		PrimaryKey: []*schema.Column{AttendancesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "attendances_class_periods_attendances",
+				Symbol:     "attendances_attendance_days_attendances",
 				Columns:    []*schema.Column{AttendancesColumns[2]},
-				RefColumns: []*schema.Column{ClassPeriodsColumns[0]},
+				RefColumns: []*schema.Column{AttendanceDaysColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
@@ -104,11 +104,51 @@ var (
 			},
 		},
 	}
+	// AttendanceDaysColumns holds the columns for the "attendance_days" table.
+	AttendanceDaysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "day", Type: field.TypeTime},
+		{Name: "class_period_attendance_days", Type: field.TypeString, Nullable: true},
+	}
+	// AttendanceDaysTable holds the schema information for the "attendance_days" table.
+	AttendanceDaysTable = &schema.Table{
+		Name:       "attendance_days",
+		Columns:    AttendanceDaysColumns,
+		PrimaryKey: []*schema.Column{AttendanceDaysColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "attendance_days_class_periods_attendanceDays",
+				Columns:    []*schema.Column{AttendanceDaysColumns[2]},
+				RefColumns: []*schema.Column{ClassPeriodsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// AttendanceDaySyncsColumns holds the columns for the "attendance_day_syncs" table.
+	AttendanceDaySyncsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "last_sync_id", Type: field.TypeString},
+		{Name: "class_period_attendance_day_syncs", Type: field.TypeString, Nullable: true},
+	}
+	// AttendanceDaySyncsTable holds the schema information for the "attendance_day_syncs" table.
+	AttendanceDaySyncsTable = &schema.Table{
+		Name:       "attendance_day_syncs",
+		Columns:    AttendanceDaySyncsColumns,
+		PrimaryKey: []*schema.Column{AttendanceDaySyncsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "attendance_day_syncs_class_periods_attendanceDaySyncs",
+				Columns:    []*schema.Column{AttendanceDaySyncsColumns[2]},
+				RefColumns: []*schema.Column{ClassPeriodsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// AttendanceSyncsColumns holds the columns for the "attendance_syncs" table.
 	AttendanceSyncsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "class_period_attendance_syncs", Type: field.TypeString, Nullable: true},
+		{Name: "attendance_day_attendance_syncs", Type: field.TypeString, Nullable: true},
 	}
 	// AttendanceSyncsTable holds the schema information for the "attendance_syncs" table.
 	AttendanceSyncsTable = &schema.Table{
@@ -117,9 +157,9 @@ var (
 		PrimaryKey: []*schema.Column{AttendanceSyncsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "attendance_syncs_class_periods_attendanceSyncs",
+				Symbol:     "attendance_syncs_attendance_days_attendanceSyncs",
 				Columns:    []*schema.Column{AttendanceSyncsColumns[2]},
-				RefColumns: []*schema.Column{ClassPeriodsColumns[0]},
+				RefColumns: []*schema.Column{AttendanceDaysColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -456,6 +496,8 @@ var (
 		ActivitySyncsTable,
 		AreasTable,
 		AttendancesTable,
+		AttendanceDaysTable,
+		AttendanceDaySyncsTable,
 		AttendanceSyncsTable,
 		ClassesTable,
 		ClassPeriodsTable,
@@ -481,9 +523,11 @@ func init() {
 	ActivitiesTable.ForeignKeys[1].RefTable = ClassPeriodsTable
 	ActivitySyncsTable.ForeignKeys[0].RefTable = ClassPeriodsTable
 	AreasTable.ForeignKeys[0].RefTable = YearsTable
-	AttendancesTable.ForeignKeys[0].RefTable = ClassPeriodsTable
+	AttendancesTable.ForeignKeys[0].RefTable = AttendanceDaysTable
 	AttendancesTable.ForeignKeys[1].RefTable = StudentsTable
-	AttendanceSyncsTable.ForeignKeys[0].RefTable = ClassPeriodsTable
+	AttendanceDaysTable.ForeignKeys[0].RefTable = ClassPeriodsTable
+	AttendanceDaySyncsTable.ForeignKeys[0].RefTable = ClassPeriodsTable
+	AttendanceSyncsTable.ForeignKeys[0].RefTable = AttendanceDaysTable
 	ClassesTable.ForeignKeys[0].RefTable = GradesTable
 	ClassesTable.ForeignKeys[1].RefTable = SchoolsTable
 	ClassesTable.ForeignKeys[2].RefTable = SubjectsTable

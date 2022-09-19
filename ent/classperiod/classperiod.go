@@ -13,10 +13,10 @@ const (
 	FieldEnd = "end"
 	// FieldFinished holds the string denoting the finished field in the database.
 	FieldFinished = "finished"
-	// EdgeAttendances holds the string denoting the attendances edge name in mutations.
-	EdgeAttendances = "attendances"
-	// EdgeAttendanceSyncs holds the string denoting the attendancesyncs edge name in mutations.
-	EdgeAttendanceSyncs = "attendanceSyncs"
+	// EdgeAttendanceDays holds the string denoting the attendancedays edge name in mutations.
+	EdgeAttendanceDays = "attendanceDays"
+	// EdgeAttendanceDaySyncs holds the string denoting the attendancedaysyncs edge name in mutations.
+	EdgeAttendanceDaySyncs = "attendanceDaySyncs"
 	// EdgeActivities holds the string denoting the activities edge name in mutations.
 	EdgeActivities = "activities"
 	// EdgeActivitySyncs holds the string denoting the activitysyncs edge name in mutations.
@@ -27,20 +27,20 @@ const (
 	EdgePeriod = "period"
 	// Table holds the table name of the classperiod in the database.
 	Table = "class_periods"
-	// AttendancesTable is the table that holds the attendances relation/edge.
-	AttendancesTable = "attendances"
-	// AttendancesInverseTable is the table name for the Attendance entity.
-	// It exists in this package in order to avoid circular dependency with the "attendance" package.
-	AttendancesInverseTable = "attendances"
-	// AttendancesColumn is the table column denoting the attendances relation/edge.
-	AttendancesColumn = "class_period_attendances"
-	// AttendanceSyncsTable is the table that holds the attendanceSyncs relation/edge.
-	AttendanceSyncsTable = "attendance_syncs"
-	// AttendanceSyncsInverseTable is the table name for the AttendanceSync entity.
-	// It exists in this package in order to avoid circular dependency with the "attendancesync" package.
-	AttendanceSyncsInverseTable = "attendance_syncs"
-	// AttendanceSyncsColumn is the table column denoting the attendanceSyncs relation/edge.
-	AttendanceSyncsColumn = "class_period_attendance_syncs"
+	// AttendanceDaysTable is the table that holds the attendanceDays relation/edge.
+	AttendanceDaysTable = "attendance_days"
+	// AttendanceDaysInverseTable is the table name for the AttendanceDay entity.
+	// It exists in this package in order to avoid circular dependency with the "attendanceday" package.
+	AttendanceDaysInverseTable = "attendance_days"
+	// AttendanceDaysColumn is the table column denoting the attendanceDays relation/edge.
+	AttendanceDaysColumn = "class_period_attendance_days"
+	// AttendanceDaySyncsTable is the table that holds the attendanceDaySyncs relation/edge.
+	AttendanceDaySyncsTable = "attendance_day_syncs"
+	// AttendanceDaySyncsInverseTable is the table name for the AttendanceDaySyncs entity.
+	// It exists in this package in order to avoid circular dependency with the "attendancedaysyncs" package.
+	AttendanceDaySyncsInverseTable = "attendance_day_syncs"
+	// AttendanceDaySyncsColumn is the table column denoting the attendanceDaySyncs relation/edge.
+	AttendanceDaySyncsColumn = "class_period_attendance_day_syncs"
 	// ActivitiesTable is the table that holds the activities relation/edge.
 	ActivitiesTable = "activities"
 	// ActivitiesInverseTable is the table name for the Activity entity.

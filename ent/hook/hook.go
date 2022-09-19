@@ -61,6 +61,32 @@ func (f AttendanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return f(ctx, mv)
 }
 
+// The AttendanceDayFunc type is an adapter to allow the use of ordinary
+// function as AttendanceDay mutator.
+type AttendanceDayFunc func(context.Context, *ent.AttendanceDayMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttendanceDayFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttendanceDayMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttendanceDayMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The AttendanceDaySyncsFunc type is an adapter to allow the use of ordinary
+// function as AttendanceDaySyncs mutator.
+type AttendanceDaySyncsFunc func(context.Context, *ent.AttendanceDaySyncsMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AttendanceDaySyncsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AttendanceDaySyncsMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttendanceDaySyncsMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The AttendanceSyncFunc type is an adapter to allow the use of ordinary
 // function as AttendanceSync mutator.
 type AttendanceSyncFunc func(context.Context, *ent.AttendanceSyncMutation) (ent.Value, error)

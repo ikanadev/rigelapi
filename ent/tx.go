@@ -20,6 +20,10 @@ type Tx struct {
 	Area *AreaClient
 	// Attendance is the client for interacting with the Attendance builders.
 	Attendance *AttendanceClient
+	// AttendanceDay is the client for interacting with the AttendanceDay builders.
+	AttendanceDay *AttendanceDayClient
+	// AttendanceDaySyncs is the client for interacting with the AttendanceDaySyncs builders.
+	AttendanceDaySyncs *AttendanceDaySyncsClient
 	// AttendanceSync is the client for interacting with the AttendanceSync builders.
 	AttendanceSync *AttendanceSyncClient
 	// Class is the client for interacting with the Class builders.
@@ -193,6 +197,8 @@ func (tx *Tx) init() {
 	tx.ActivitySync = NewActivitySyncClient(tx.config)
 	tx.Area = NewAreaClient(tx.config)
 	tx.Attendance = NewAttendanceClient(tx.config)
+	tx.AttendanceDay = NewAttendanceDayClient(tx.config)
+	tx.AttendanceDaySyncs = NewAttendanceDaySyncsClient(tx.config)
 	tx.AttendanceSync = NewAttendanceSyncClient(tx.config)
 	tx.Class = NewClassClient(tx.config)
 	tx.ClassPeriod = NewClassPeriodClient(tx.config)

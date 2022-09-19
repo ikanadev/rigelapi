@@ -13,19 +13,19 @@ const (
 	FieldID = "id"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
-	// EdgeClassPeriod holds the string denoting the classperiod edge name in mutations.
-	EdgeClassPeriod = "classPeriod"
+	// EdgeAttendanceDay holds the string denoting the attendanceday edge name in mutations.
+	EdgeAttendanceDay = "attendanceDay"
 	// EdgeStudent holds the string denoting the student edge name in mutations.
 	EdgeStudent = "student"
 	// Table holds the table name of the attendance in the database.
 	Table = "attendances"
-	// ClassPeriodTable is the table that holds the classPeriod relation/edge.
-	ClassPeriodTable = "attendances"
-	// ClassPeriodInverseTable is the table name for the ClassPeriod entity.
-	// It exists in this package in order to avoid circular dependency with the "classperiod" package.
-	ClassPeriodInverseTable = "class_periods"
-	// ClassPeriodColumn is the table column denoting the classPeriod relation/edge.
-	ClassPeriodColumn = "class_period_attendances"
+	// AttendanceDayTable is the table that holds the attendanceDay relation/edge.
+	AttendanceDayTable = "attendances"
+	// AttendanceDayInverseTable is the table name for the AttendanceDay entity.
+	// It exists in this package in order to avoid circular dependency with the "attendanceday" package.
+	AttendanceDayInverseTable = "attendance_days"
+	// AttendanceDayColumn is the table column denoting the attendanceDay relation/edge.
+	AttendanceDayColumn = "attendance_day_attendances"
 	// StudentTable is the table that holds the student relation/edge.
 	StudentTable = "attendances"
 	// StudentInverseTable is the table name for the Student entity.
@@ -44,7 +44,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "attendances"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"class_period_attendances",
+	"attendance_day_attendances",
 	"student_attendances",
 }
 

@@ -244,25 +244,25 @@ func FinishedNEQ(v bool) predicate.ClassPeriod {
 	})
 }
 
-// HasAttendances applies the HasEdge predicate on the "attendances" edge.
-func HasAttendances() predicate.ClassPeriod {
+// HasAttendanceDays applies the HasEdge predicate on the "attendanceDays" edge.
+func HasAttendanceDays() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendancesTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendancesTable, AttendancesColumn),
+			sqlgraph.To(AttendanceDaysTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaysTable, AttendanceDaysColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasAttendancesWith applies the HasEdge predicate on the "attendances" edge with a given conditions (other predicates).
-func HasAttendancesWith(preds ...predicate.Attendance) predicate.ClassPeriod {
+// HasAttendanceDaysWith applies the HasEdge predicate on the "attendanceDays" edge with a given conditions (other predicates).
+func HasAttendanceDaysWith(preds ...predicate.AttendanceDay) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendancesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendancesTable, AttendancesColumn),
+			sqlgraph.To(AttendanceDaysInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaysTable, AttendanceDaysColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -272,25 +272,25 @@ func HasAttendancesWith(preds ...predicate.Attendance) predicate.ClassPeriod {
 	})
 }
 
-// HasAttendanceSyncs applies the HasEdge predicate on the "attendanceSyncs" edge.
-func HasAttendanceSyncs() predicate.ClassPeriod {
+// HasAttendanceDaySyncs applies the HasEdge predicate on the "attendanceDaySyncs" edge.
+func HasAttendanceDaySyncs() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceSyncsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceSyncsTable, AttendanceSyncsColumn),
+			sqlgraph.To(AttendanceDaySyncsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaySyncsTable, AttendanceDaySyncsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasAttendanceSyncsWith applies the HasEdge predicate on the "attendanceSyncs" edge with a given conditions (other predicates).
-func HasAttendanceSyncsWith(preds ...predicate.AttendanceSync) predicate.ClassPeriod {
+// HasAttendanceDaySyncsWith applies the HasEdge predicate on the "attendanceDaySyncs" edge with a given conditions (other predicates).
+func HasAttendanceDaySyncsWith(preds ...predicate.AttendanceDaySyncs) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceSyncsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceSyncsTable, AttendanceSyncsColumn),
+			sqlgraph.To(AttendanceDaySyncsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaySyncsTable, AttendanceDaySyncsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

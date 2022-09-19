@@ -18,6 +18,12 @@ type Area func(*sql.Selector)
 // Attendance is the predicate function for attendance builders.
 type Attendance func(*sql.Selector)
 
+// AttendanceDay is the predicate function for attendanceday builders.
+type AttendanceDay func(*sql.Selector)
+
+// AttendanceDaySyncs is the predicate function for attendancedaysyncs builders.
+type AttendanceDaySyncs func(*sql.Selector)
+
 // AttendanceSync is the predicate function for attendancesync builders.
 type AttendanceSync func(*sql.Selector)
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
 )
 
 // AttendanceSync is the model entity for the AttendanceSync schema.
@@ -20,30 +20,30 @@ type AttendanceSync struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AttendanceSyncQuery when eager-loading is set.
-	Edges                         AttendanceSyncEdges `json:"edges"`
-	class_period_attendance_syncs *string
+	Edges                           AttendanceSyncEdges `json:"edges"`
+	attendance_day_attendance_syncs *string
 }
 
 // AttendanceSyncEdges holds the relations/edges for other nodes in the graph.
 type AttendanceSyncEdges struct {
-	// ClassPeriod holds the value of the classPeriod edge.
-	ClassPeriod *ClassPeriod `json:"classPeriod,omitempty"`
+	// AttendanceDay holds the value of the attendanceDay edge.
+	AttendanceDay *AttendanceDay `json:"attendanceDay,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ClassPeriodOrErr returns the ClassPeriod value or an error if the edge
+// AttendanceDayOrErr returns the AttendanceDay value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e AttendanceSyncEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
+func (e AttendanceSyncEdges) AttendanceDayOrErr() (*AttendanceDay, error) {
 	if e.loadedTypes[0] {
-		if e.ClassPeriod == nil {
+		if e.AttendanceDay == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: classperiod.Label}
+			return nil, &NotFoundError{label: attendanceday.Label}
 		}
-		return e.ClassPeriod, nil
+		return e.AttendanceDay, nil
 	}
-	return nil, &NotLoadedError{edge: "classPeriod"}
+	return nil, &NotLoadedError{edge: "attendanceDay"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*AttendanceSync) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case attendancesync.FieldID, attendancesync.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case attendancesync.ForeignKeys[0]: // class_period_attendance_syncs
+		case attendancesync.ForeignKeys[0]: // attendance_day_attendance_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type AttendanceSync", columns[i])
@@ -84,19 +84,19 @@ func (as *AttendanceSync) assignValues(columns []string, values []interface{}) e
 			}
 		case attendancesync.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field class_period_attendance_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field attendance_day_attendance_syncs", values[i])
 			} else if value.Valid {
-				as.class_period_attendance_syncs = new(string)
-				*as.class_period_attendance_syncs = value.String
+				as.attendance_day_attendance_syncs = new(string)
+				*as.attendance_day_attendance_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryClassPeriod queries the "classPeriod" edge of the AttendanceSync entity.
-func (as *AttendanceSync) QueryClassPeriod() *ClassPeriodQuery {
-	return (&AttendanceSyncClient{config: as.config}).QueryClassPeriod(as)
+// QueryAttendanceDay queries the "attendanceDay" edge of the AttendanceSync entity.
+func (as *AttendanceSync) QueryAttendanceDay() *AttendanceDayQuery {
+	return (&AttendanceSyncClient{config: as.config}).QueryAttendanceDay(as)
 }
 
 // Update returns a builder for updating this AttendanceSync.

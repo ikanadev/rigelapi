@@ -33,10 +33,10 @@ type ClassPeriod struct {
 
 // ClassPeriodEdges holds the relations/edges for other nodes in the graph.
 type ClassPeriodEdges struct {
-	// Attendances holds the value of the attendances edge.
-	Attendances []*Attendance `json:"attendances,omitempty"`
-	// AttendanceSyncs holds the value of the attendanceSyncs edge.
-	AttendanceSyncs []*AttendanceSync `json:"attendanceSyncs,omitempty"`
+	// AttendanceDays holds the value of the attendanceDays edge.
+	AttendanceDays []*AttendanceDay `json:"attendanceDays,omitempty"`
+	// AttendanceDaySyncs holds the value of the attendanceDaySyncs edge.
+	AttendanceDaySyncs []*AttendanceDaySyncs `json:"attendanceDaySyncs,omitempty"`
 	// Activities holds the value of the activities edge.
 	Activities []*Activity `json:"activities,omitempty"`
 	// ActivitySyncs holds the value of the activitySyncs edge.
@@ -50,22 +50,22 @@ type ClassPeriodEdges struct {
 	loadedTypes [6]bool
 }
 
-// AttendancesOrErr returns the Attendances value or an error if the edge
+// AttendanceDaysOrErr returns the AttendanceDays value or an error if the edge
 // was not loaded in eager-loading.
-func (e ClassPeriodEdges) AttendancesOrErr() ([]*Attendance, error) {
+func (e ClassPeriodEdges) AttendanceDaysOrErr() ([]*AttendanceDay, error) {
 	if e.loadedTypes[0] {
-		return e.Attendances, nil
+		return e.AttendanceDays, nil
 	}
-	return nil, &NotLoadedError{edge: "attendances"}
+	return nil, &NotLoadedError{edge: "attendanceDays"}
 }
 
-// AttendanceSyncsOrErr returns the AttendanceSyncs value or an error if the edge
+// AttendanceDaySyncsOrErr returns the AttendanceDaySyncs value or an error if the edge
 // was not loaded in eager-loading.
-func (e ClassPeriodEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
+func (e ClassPeriodEdges) AttendanceDaySyncsOrErr() ([]*AttendanceDaySyncs, error) {
 	if e.loadedTypes[1] {
-		return e.AttendanceSyncs, nil
+		return e.AttendanceDaySyncs, nil
 	}
-	return nil, &NotLoadedError{edge: "attendanceSyncs"}
+	return nil, &NotLoadedError{edge: "attendanceDaySyncs"}
 }
 
 // ActivitiesOrErr returns the Activities value or an error if the edge
@@ -185,14 +185,14 @@ func (cp *ClassPeriod) assignValues(columns []string, values []interface{}) erro
 	return nil
 }
 
-// QueryAttendances queries the "attendances" edge of the ClassPeriod entity.
-func (cp *ClassPeriod) QueryAttendances() *AttendanceQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryAttendances(cp)
+// QueryAttendanceDays queries the "attendanceDays" edge of the ClassPeriod entity.
+func (cp *ClassPeriod) QueryAttendanceDays() *AttendanceDayQuery {
+	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceDays(cp)
 }
 
-// QueryAttendanceSyncs queries the "attendanceSyncs" edge of the ClassPeriod entity.
-func (cp *ClassPeriod) QueryAttendanceSyncs() *AttendanceSyncQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceSyncs(cp)
+// QueryAttendanceDaySyncs queries the "attendanceDaySyncs" edge of the ClassPeriod entity.
+func (cp *ClassPeriod) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
+	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceDaySyncs(cp)
 }
 
 // QueryActivities queries the "activities" edge of the ClassPeriod entity.

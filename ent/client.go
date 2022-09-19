@@ -14,6 +14,8 @@ import (
 	"github.com/vmkevv/rigelapi/ent/activitysync"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
+	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
@@ -50,6 +52,10 @@ type Client struct {
 	Area *AreaClient
 	// Attendance is the client for interacting with the Attendance builders.
 	Attendance *AttendanceClient
+	// AttendanceDay is the client for interacting with the AttendanceDay builders.
+	AttendanceDay *AttendanceDayClient
+	// AttendanceDaySyncs is the client for interacting with the AttendanceDaySyncs builders.
+	AttendanceDaySyncs *AttendanceDaySyncsClient
 	// AttendanceSync is the client for interacting with the AttendanceSync builders.
 	AttendanceSync *AttendanceSyncClient
 	// Class is the client for interacting with the Class builders.
@@ -101,6 +107,8 @@ func (c *Client) init() {
 	c.ActivitySync = NewActivitySyncClient(c.config)
 	c.Area = NewAreaClient(c.config)
 	c.Attendance = NewAttendanceClient(c.config)
+	c.AttendanceDay = NewAttendanceDayClient(c.config)
+	c.AttendanceDaySyncs = NewAttendanceDaySyncsClient(c.config)
 	c.AttendanceSync = NewAttendanceSyncClient(c.config)
 	c.Class = NewClassClient(c.config)
 	c.ClassPeriod = NewClassPeriodClient(c.config)
@@ -149,29 +157,31 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:             ctx,
-		config:          cfg,
-		Activity:        NewActivityClient(cfg),
-		ActivitySync:    NewActivitySyncClient(cfg),
-		Area:            NewAreaClient(cfg),
-		Attendance:      NewAttendanceClient(cfg),
-		AttendanceSync:  NewAttendanceSyncClient(cfg),
-		Class:           NewClassClient(cfg),
-		ClassPeriod:     NewClassPeriodClient(cfg),
-		ClassPeriodSync: NewClassPeriodSyncClient(cfg),
-		Dpto:            NewDptoClient(cfg),
-		Grade:           NewGradeClient(cfg),
-		Municipio:       NewMunicipioClient(cfg),
-		Period:          NewPeriodClient(cfg),
-		Provincia:       NewProvinciaClient(cfg),
-		School:          NewSchoolClient(cfg),
-		Score:           NewScoreClient(cfg),
-		ScoreSync:       NewScoreSyncClient(cfg),
-		Student:         NewStudentClient(cfg),
-		StudentSync:     NewStudentSyncClient(cfg),
-		Subject:         NewSubjectClient(cfg),
-		Teacher:         NewTeacherClient(cfg),
-		Year:            NewYearClient(cfg),
+		ctx:                ctx,
+		config:             cfg,
+		Activity:           NewActivityClient(cfg),
+		ActivitySync:       NewActivitySyncClient(cfg),
+		Area:               NewAreaClient(cfg),
+		Attendance:         NewAttendanceClient(cfg),
+		AttendanceDay:      NewAttendanceDayClient(cfg),
+		AttendanceDaySyncs: NewAttendanceDaySyncsClient(cfg),
+		AttendanceSync:     NewAttendanceSyncClient(cfg),
+		Class:              NewClassClient(cfg),
+		ClassPeriod:        NewClassPeriodClient(cfg),
+		ClassPeriodSync:    NewClassPeriodSyncClient(cfg),
+		Dpto:               NewDptoClient(cfg),
+		Grade:              NewGradeClient(cfg),
+		Municipio:          NewMunicipioClient(cfg),
+		Period:             NewPeriodClient(cfg),
+		Provincia:          NewProvinciaClient(cfg),
+		School:             NewSchoolClient(cfg),
+		Score:              NewScoreClient(cfg),
+		ScoreSync:          NewScoreSyncClient(cfg),
+		Student:            NewStudentClient(cfg),
+		StudentSync:        NewStudentSyncClient(cfg),
+		Subject:            NewSubjectClient(cfg),
+		Teacher:            NewTeacherClient(cfg),
+		Year:               NewYearClient(cfg),
 	}, nil
 }
 
@@ -189,29 +199,31 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:             ctx,
-		config:          cfg,
-		Activity:        NewActivityClient(cfg),
-		ActivitySync:    NewActivitySyncClient(cfg),
-		Area:            NewAreaClient(cfg),
-		Attendance:      NewAttendanceClient(cfg),
-		AttendanceSync:  NewAttendanceSyncClient(cfg),
-		Class:           NewClassClient(cfg),
-		ClassPeriod:     NewClassPeriodClient(cfg),
-		ClassPeriodSync: NewClassPeriodSyncClient(cfg),
-		Dpto:            NewDptoClient(cfg),
-		Grade:           NewGradeClient(cfg),
-		Municipio:       NewMunicipioClient(cfg),
-		Period:          NewPeriodClient(cfg),
-		Provincia:       NewProvinciaClient(cfg),
-		School:          NewSchoolClient(cfg),
-		Score:           NewScoreClient(cfg),
-		ScoreSync:       NewScoreSyncClient(cfg),
-		Student:         NewStudentClient(cfg),
-		StudentSync:     NewStudentSyncClient(cfg),
-		Subject:         NewSubjectClient(cfg),
-		Teacher:         NewTeacherClient(cfg),
-		Year:            NewYearClient(cfg),
+		ctx:                ctx,
+		config:             cfg,
+		Activity:           NewActivityClient(cfg),
+		ActivitySync:       NewActivitySyncClient(cfg),
+		Area:               NewAreaClient(cfg),
+		Attendance:         NewAttendanceClient(cfg),
+		AttendanceDay:      NewAttendanceDayClient(cfg),
+		AttendanceDaySyncs: NewAttendanceDaySyncsClient(cfg),
+		AttendanceSync:     NewAttendanceSyncClient(cfg),
+		Class:              NewClassClient(cfg),
+		ClassPeriod:        NewClassPeriodClient(cfg),
+		ClassPeriodSync:    NewClassPeriodSyncClient(cfg),
+		Dpto:               NewDptoClient(cfg),
+		Grade:              NewGradeClient(cfg),
+		Municipio:          NewMunicipioClient(cfg),
+		Period:             NewPeriodClient(cfg),
+		Provincia:          NewProvinciaClient(cfg),
+		School:             NewSchoolClient(cfg),
+		Score:              NewScoreClient(cfg),
+		ScoreSync:          NewScoreSyncClient(cfg),
+		Student:            NewStudentClient(cfg),
+		StudentSync:        NewStudentSyncClient(cfg),
+		Subject:            NewSubjectClient(cfg),
+		Teacher:            NewTeacherClient(cfg),
+		Year:               NewYearClient(cfg),
 	}, nil
 }
 
@@ -244,6 +256,8 @@ func (c *Client) Use(hooks ...Hook) {
 	c.ActivitySync.Use(hooks...)
 	c.Area.Use(hooks...)
 	c.Attendance.Use(hooks...)
+	c.AttendanceDay.Use(hooks...)
+	c.AttendanceDaySyncs.Use(hooks...)
 	c.AttendanceSync.Use(hooks...)
 	c.Class.Use(hooks...)
 	c.ClassPeriod.Use(hooks...)
@@ -730,15 +744,15 @@ func (c *AttendanceClient) GetX(ctx context.Context, id string) *Attendance {
 	return obj
 }
 
-// QueryClassPeriod queries the classPeriod edge of a Attendance.
-func (c *AttendanceClient) QueryClassPeriod(a *Attendance) *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: c.config}
+// QueryAttendanceDay queries the attendanceDay edge of a Attendance.
+func (c *AttendanceClient) QueryAttendanceDay(a *Attendance) *AttendanceDayQuery {
+	query := &AttendanceDayQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attendance.Table, attendance.FieldID, id),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendance.ClassPeriodTable, attendance.ClassPeriodColumn),
+			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendance.AttendanceDayTable, attendance.AttendanceDayColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -765,6 +779,250 @@ func (c *AttendanceClient) QueryStudent(a *Attendance) *StudentQuery {
 // Hooks returns the client hooks.
 func (c *AttendanceClient) Hooks() []Hook {
 	return c.hooks.Attendance
+}
+
+// AttendanceDayClient is a client for the AttendanceDay schema.
+type AttendanceDayClient struct {
+	config
+}
+
+// NewAttendanceDayClient returns a client for the AttendanceDay from the given config.
+func NewAttendanceDayClient(c config) *AttendanceDayClient {
+	return &AttendanceDayClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `attendanceday.Hooks(f(g(h())))`.
+func (c *AttendanceDayClient) Use(hooks ...Hook) {
+	c.hooks.AttendanceDay = append(c.hooks.AttendanceDay, hooks...)
+}
+
+// Create returns a builder for creating a AttendanceDay entity.
+func (c *AttendanceDayClient) Create() *AttendanceDayCreate {
+	mutation := newAttendanceDayMutation(c.config, OpCreate)
+	return &AttendanceDayCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AttendanceDay entities.
+func (c *AttendanceDayClient) CreateBulk(builders ...*AttendanceDayCreate) *AttendanceDayCreateBulk {
+	return &AttendanceDayCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AttendanceDay.
+func (c *AttendanceDayClient) Update() *AttendanceDayUpdate {
+	mutation := newAttendanceDayMutation(c.config, OpUpdate)
+	return &AttendanceDayUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AttendanceDayClient) UpdateOne(ad *AttendanceDay) *AttendanceDayUpdateOne {
+	mutation := newAttendanceDayMutation(c.config, OpUpdateOne, withAttendanceDay(ad))
+	return &AttendanceDayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AttendanceDayClient) UpdateOneID(id string) *AttendanceDayUpdateOne {
+	mutation := newAttendanceDayMutation(c.config, OpUpdateOne, withAttendanceDayID(id))
+	return &AttendanceDayUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AttendanceDay.
+func (c *AttendanceDayClient) Delete() *AttendanceDayDelete {
+	mutation := newAttendanceDayMutation(c.config, OpDelete)
+	return &AttendanceDayDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AttendanceDayClient) DeleteOne(ad *AttendanceDay) *AttendanceDayDeleteOne {
+	return c.DeleteOneID(ad.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *AttendanceDayClient) DeleteOneID(id string) *AttendanceDayDeleteOne {
+	builder := c.Delete().Where(attendanceday.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AttendanceDayDeleteOne{builder}
+}
+
+// Query returns a query builder for AttendanceDay.
+func (c *AttendanceDayClient) Query() *AttendanceDayQuery {
+	return &AttendanceDayQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AttendanceDay entity by its id.
+func (c *AttendanceDayClient) Get(ctx context.Context, id string) (*AttendanceDay, error) {
+	return c.Query().Where(attendanceday.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AttendanceDayClient) GetX(ctx context.Context, id string) *AttendanceDay {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAttendances queries the attendances edge of a AttendanceDay.
+func (c *AttendanceDayClient) QueryAttendances(ad *AttendanceDay) *AttendanceQuery {
+	query := &AttendanceQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ad.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attendanceday.Table, attendanceday.FieldID, id),
+			sqlgraph.To(attendance.Table, attendance.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, attendanceday.AttendancesTable, attendanceday.AttendancesColumn),
+		)
+		fromV = sqlgraph.Neighbors(ad.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAttendanceSyncs queries the attendanceSyncs edge of a AttendanceDay.
+func (c *AttendanceDayClient) QueryAttendanceSyncs(ad *AttendanceDay) *AttendanceSyncQuery {
+	query := &AttendanceSyncQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ad.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attendanceday.Table, attendanceday.FieldID, id),
+			sqlgraph.To(attendancesync.Table, attendancesync.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, attendanceday.AttendanceSyncsTable, attendanceday.AttendanceSyncsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ad.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryClassPeriod queries the classPeriod edge of a AttendanceDay.
+func (c *AttendanceDayClient) QueryClassPeriod(ad *AttendanceDay) *ClassPeriodQuery {
+	query := &ClassPeriodQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ad.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attendanceday.Table, attendanceday.FieldID, id),
+			sqlgraph.To(classperiod.Table, classperiod.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendanceday.ClassPeriodTable, attendanceday.ClassPeriodColumn),
+		)
+		fromV = sqlgraph.Neighbors(ad.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AttendanceDayClient) Hooks() []Hook {
+	return c.hooks.AttendanceDay
+}
+
+// AttendanceDaySyncsClient is a client for the AttendanceDaySyncs schema.
+type AttendanceDaySyncsClient struct {
+	config
+}
+
+// NewAttendanceDaySyncsClient returns a client for the AttendanceDaySyncs from the given config.
+func NewAttendanceDaySyncsClient(c config) *AttendanceDaySyncsClient {
+	return &AttendanceDaySyncsClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `attendancedaysyncs.Hooks(f(g(h())))`.
+func (c *AttendanceDaySyncsClient) Use(hooks ...Hook) {
+	c.hooks.AttendanceDaySyncs = append(c.hooks.AttendanceDaySyncs, hooks...)
+}
+
+// Create returns a builder for creating a AttendanceDaySyncs entity.
+func (c *AttendanceDaySyncsClient) Create() *AttendanceDaySyncsCreate {
+	mutation := newAttendanceDaySyncsMutation(c.config, OpCreate)
+	return &AttendanceDaySyncsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AttendanceDaySyncs entities.
+func (c *AttendanceDaySyncsClient) CreateBulk(builders ...*AttendanceDaySyncsCreate) *AttendanceDaySyncsCreateBulk {
+	return &AttendanceDaySyncsCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AttendanceDaySyncs.
+func (c *AttendanceDaySyncsClient) Update() *AttendanceDaySyncsUpdate {
+	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdate)
+	return &AttendanceDaySyncsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AttendanceDaySyncsClient) UpdateOne(ads *AttendanceDaySyncs) *AttendanceDaySyncsUpdateOne {
+	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdateOne, withAttendanceDaySyncs(ads))
+	return &AttendanceDaySyncsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AttendanceDaySyncsClient) UpdateOneID(id string) *AttendanceDaySyncsUpdateOne {
+	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdateOne, withAttendanceDaySyncsID(id))
+	return &AttendanceDaySyncsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AttendanceDaySyncs.
+func (c *AttendanceDaySyncsClient) Delete() *AttendanceDaySyncsDelete {
+	mutation := newAttendanceDaySyncsMutation(c.config, OpDelete)
+	return &AttendanceDaySyncsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AttendanceDaySyncsClient) DeleteOne(ads *AttendanceDaySyncs) *AttendanceDaySyncsDeleteOne {
+	return c.DeleteOneID(ads.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *AttendanceDaySyncsClient) DeleteOneID(id string) *AttendanceDaySyncsDeleteOne {
+	builder := c.Delete().Where(attendancedaysyncs.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AttendanceDaySyncsDeleteOne{builder}
+}
+
+// Query returns a query builder for AttendanceDaySyncs.
+func (c *AttendanceDaySyncsClient) Query() *AttendanceDaySyncsQuery {
+	return &AttendanceDaySyncsQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AttendanceDaySyncs entity by its id.
+func (c *AttendanceDaySyncsClient) Get(ctx context.Context, id string) (*AttendanceDaySyncs, error) {
+	return c.Query().Where(attendancedaysyncs.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AttendanceDaySyncsClient) GetX(ctx context.Context, id string) *AttendanceDaySyncs {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryClassPeriod queries the classPeriod edge of a AttendanceDaySyncs.
+func (c *AttendanceDaySyncsClient) QueryClassPeriod(ads *AttendanceDaySyncs) *ClassPeriodQuery {
+	query := &ClassPeriodQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ads.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(attendancedaysyncs.Table, attendancedaysyncs.FieldID, id),
+			sqlgraph.To(classperiod.Table, classperiod.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.ClassPeriodTable, attendancedaysyncs.ClassPeriodColumn),
+		)
+		fromV = sqlgraph.Neighbors(ads.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AttendanceDaySyncsClient) Hooks() []Hook {
+	return c.hooks.AttendanceDaySyncs
 }
 
 // AttendanceSyncClient is a client for the AttendanceSync schema.
@@ -852,15 +1110,15 @@ func (c *AttendanceSyncClient) GetX(ctx context.Context, id string) *AttendanceS
 	return obj
 }
 
-// QueryClassPeriod queries the classPeriod edge of a AttendanceSync.
-func (c *AttendanceSyncClient) QueryClassPeriod(as *AttendanceSync) *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: c.config}
+// QueryAttendanceDay queries the attendanceDay edge of a AttendanceSync.
+func (c *AttendanceSyncClient) QueryAttendanceDay(as *AttendanceSync) *AttendanceDayQuery {
+	query := &AttendanceDayQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := as.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attendancesync.Table, attendancesync.FieldID, id),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendancesync.ClassPeriodTable, attendancesync.ClassPeriodColumn),
+			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendancesync.AttendanceDayTable, attendancesync.AttendanceDayColumn),
 		)
 		fromV = sqlgraph.Neighbors(as.driver.Dialect(), step)
 		return fromV, nil
@@ -1192,15 +1450,15 @@ func (c *ClassPeriodClient) GetX(ctx context.Context, id string) *ClassPeriod {
 	return obj
 }
 
-// QueryAttendances queries the attendances edge of a ClassPeriod.
-func (c *ClassPeriodClient) QueryAttendances(cp *ClassPeriod) *AttendanceQuery {
-	query := &AttendanceQuery{config: c.config}
+// QueryAttendanceDays queries the attendanceDays edge of a ClassPeriod.
+func (c *ClassPeriodClient) QueryAttendanceDays(cp *ClassPeriod) *AttendanceDayQuery {
+	query := &AttendanceDayQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := cp.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(classperiod.Table, classperiod.FieldID, id),
-			sqlgraph.To(attendance.Table, attendance.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendancesTable, classperiod.AttendancesColumn),
+			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaysTable, classperiod.AttendanceDaysColumn),
 		)
 		fromV = sqlgraph.Neighbors(cp.driver.Dialect(), step)
 		return fromV, nil
@@ -1208,15 +1466,15 @@ func (c *ClassPeriodClient) QueryAttendances(cp *ClassPeriod) *AttendanceQuery {
 	return query
 }
 
-// QueryAttendanceSyncs queries the attendanceSyncs edge of a ClassPeriod.
-func (c *ClassPeriodClient) QueryAttendanceSyncs(cp *ClassPeriod) *AttendanceSyncQuery {
-	query := &AttendanceSyncQuery{config: c.config}
+// QueryAttendanceDaySyncs queries the attendanceDaySyncs edge of a ClassPeriod.
+func (c *ClassPeriodClient) QueryAttendanceDaySyncs(cp *ClassPeriod) *AttendanceDaySyncsQuery {
+	query := &AttendanceDaySyncsQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := cp.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(classperiod.Table, classperiod.FieldID, id),
-			sqlgraph.To(attendancesync.Table, attendancesync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceSyncsTable, classperiod.AttendanceSyncsColumn),
+			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaySyncsTable, classperiod.AttendanceDaySyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(cp.driver.Dialect(), step)
 		return fromV, nil
