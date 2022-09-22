@@ -17,7 +17,7 @@ func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 	client, err := ent.Open(
 		"postgres",
 		fmt.Sprintf(
-			"host=%s port=%s user=%s dbname=%s password=%s",
+			"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 			dbConfig.Host,
 			dbConfig.Port,
 			dbConfig.User,
