@@ -15,7 +15,7 @@ type Attendance struct {
 func (Attendance) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id"),
-		field.Enum("value").Values("Asistencia", "Falta", "Atraso", "Licencia"),
+		field.Enum("value").Values("Presente", "Falta", "Atraso", "Licencia"),
 	}
 }
 

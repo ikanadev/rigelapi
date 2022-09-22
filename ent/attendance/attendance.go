@@ -68,10 +68,10 @@ type Value string
 
 // Value values.
 const (
-	ValueAsistencia Value = "Asistencia"
-	ValueFalta      Value = "Falta"
-	ValueAtraso     Value = "Atraso"
-	ValueLicencia   Value = "Licencia"
+	ValuePresente Value = "Presente"
+	ValueFalta    Value = "Falta"
+	ValueAtraso   Value = "Atraso"
+	ValueLicencia Value = "Licencia"
 )
 
 func (v Value) String() string {
@@ -81,7 +81,7 @@ func (v Value) String() string {
 // ValueValidator is a validator for the "value" field enum values. It is called by the builders before save.
 func ValueValidator(v Value) error {
 	switch v {
-	case ValueAsistencia, ValueFalta, ValueAtraso, ValueLicencia:
+	case ValuePresente, ValueFalta, ValueAtraso, ValueLicencia:
 		return nil
 	default:
 		return fmt.Errorf("attendance: invalid enum value for value field: %q", v)

@@ -80,7 +80,7 @@ var (
 	// AttendancesColumns holds the columns for the "attendances" table.
 	AttendancesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
-		{Name: "value", Type: field.TypeEnum, Enums: []string{"Asistencia", "Falta", "Atraso", "Licencia"}},
+		{Name: "value", Type: field.TypeEnum, Enums: []string{"Presente", "Falta", "Atraso", "Licencia"}},
 		{Name: "attendance_day_attendances", Type: field.TypeString, Nullable: true},
 		{Name: "student_attendances", Type: field.TypeString, Nullable: true},
 	}
