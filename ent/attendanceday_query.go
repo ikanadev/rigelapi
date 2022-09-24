@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 )
@@ -21,16 +20,15 @@ import (
 // AttendanceDayQuery is the builder for querying AttendanceDay entities.
 type AttendanceDayQuery struct {
 	config
-	limit               *int
-	offset              *int
-	unique              *bool
-	order               []OrderFunc
-	fields              []string
-	predicates          []predicate.AttendanceDay
-	withAttendances     *AttendanceQuery
-	withAttendanceSyncs *AttendanceSyncQuery
-	withClassPeriod     *ClassPeriodQuery
-	withFKs             bool
+	limit           *int
+	offset          *int
+	unique          *bool
+	order           []OrderFunc
+	fields          []string
+	predicates      []predicate.AttendanceDay
+	withAttendances *AttendanceQuery
+	withClassPeriod *ClassPeriodQuery
+	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -82,28 +80,6 @@ func (adq *AttendanceDayQuery) QueryAttendances() *AttendanceQuery {
 			sqlgraph.From(attendanceday.Table, attendanceday.FieldID, selector),
 			sqlgraph.To(attendance.Table, attendance.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, attendanceday.AttendancesTable, attendanceday.AttendancesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(adq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAttendanceSyncs chains the current query on the "attendanceSyncs" edge.
-func (adq *AttendanceDayQuery) QueryAttendanceSyncs() *AttendanceSyncQuery {
-	query := &AttendanceSyncQuery{config: adq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := adq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := adq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(attendanceday.Table, attendanceday.FieldID, selector),
-			sqlgraph.To(attendancesync.Table, attendancesync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, attendanceday.AttendanceSyncsTable, attendanceday.AttendanceSyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(adq.driver.Dialect(), step)
 		return fromU, nil
@@ -309,14 +285,13 @@ func (adq *AttendanceDayQuery) Clone() *AttendanceDayQuery {
 		return nil
 	}
 	return &AttendanceDayQuery{
-		config:              adq.config,
-		limit:               adq.limit,
-		offset:              adq.offset,
-		order:               append([]OrderFunc{}, adq.order...),
-		predicates:          append([]predicate.AttendanceDay{}, adq.predicates...),
-		withAttendances:     adq.withAttendances.Clone(),
-		withAttendanceSyncs: adq.withAttendanceSyncs.Clone(),
-		withClassPeriod:     adq.withClassPeriod.Clone(),
+		config:          adq.config,
+		limit:           adq.limit,
+		offset:          adq.offset,
+		order:           append([]OrderFunc{}, adq.order...),
+		predicates:      append([]predicate.AttendanceDay{}, adq.predicates...),
+		withAttendances: adq.withAttendances.Clone(),
+		withClassPeriod: adq.withClassPeriod.Clone(),
 		// clone intermediate query.
 		sql:    adq.sql.Clone(),
 		path:   adq.path,
@@ -332,17 +307,6 @@ func (adq *AttendanceDayQuery) WithAttendances(opts ...func(*AttendanceQuery)) *
 		opt(query)
 	}
 	adq.withAttendances = query
-	return adq
-}
-
-// WithAttendanceSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "attendanceSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (adq *AttendanceDayQuery) WithAttendanceSyncs(opts ...func(*AttendanceSyncQuery)) *AttendanceDayQuery {
-	query := &AttendanceSyncQuery{config: adq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	adq.withAttendanceSyncs = query
 	return adq
 }
 
@@ -426,9 +390,8 @@ func (adq *AttendanceDayQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		nodes       = []*AttendanceDay{}
 		withFKs     = adq.withFKs
 		_spec       = adq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [2]bool{
 			adq.withAttendances != nil,
-			adq.withAttendanceSyncs != nil,
 			adq.withClassPeriod != nil,
 		}
 	)
@@ -460,15 +423,6 @@ func (adq *AttendanceDayQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		if err := adq.loadAttendances(ctx, query, nodes,
 			func(n *AttendanceDay) { n.Edges.Attendances = []*Attendance{} },
 			func(n *AttendanceDay, e *Attendance) { n.Edges.Attendances = append(n.Edges.Attendances, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := adq.withAttendanceSyncs; query != nil {
-		if err := adq.loadAttendanceSyncs(ctx, query, nodes,
-			func(n *AttendanceDay) { n.Edges.AttendanceSyncs = []*AttendanceSync{} },
-			func(n *AttendanceDay, e *AttendanceSync) {
-				n.Edges.AttendanceSyncs = append(n.Edges.AttendanceSyncs, e)
-			}); err != nil {
 			return nil, err
 		}
 	}
@@ -507,37 +461,6 @@ func (adq *AttendanceDayQuery) loadAttendances(ctx context.Context, query *Atten
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "attendance_day_attendances" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (adq *AttendanceDayQuery) loadAttendanceSyncs(ctx context.Context, query *AttendanceSyncQuery, nodes []*AttendanceDay, init func(*AttendanceDay), assign func(*AttendanceDay, *AttendanceSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*AttendanceDay)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.AttendanceSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(attendanceday.AttendanceSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.attendance_day_attendance_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "attendance_day_attendance_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "attendance_day_attendance_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

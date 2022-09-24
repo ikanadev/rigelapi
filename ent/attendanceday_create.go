@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 )
 
@@ -48,21 +47,6 @@ func (adc *AttendanceDayCreate) AddAttendances(a ...*Attendance) *AttendanceDayC
 		ids[i] = a[i].ID
 	}
 	return adc.AddAttendanceIDs(ids...)
-}
-
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (adc *AttendanceDayCreate) AddAttendanceSyncIDs(ids ...string) *AttendanceDayCreate {
-	adc.mutation.AddAttendanceSyncIDs(ids...)
-	return adc
-}
-
-// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
-func (adc *AttendanceDayCreate) AddAttendanceSyncs(a ...*AttendanceSync) *AttendanceDayCreate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return adc.AddAttendanceSyncIDs(ids...)
 }
 
 // SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
@@ -218,25 +202,6 @@ func (adc *AttendanceDayCreate) createSpec() (*AttendanceDay, *sqlgraph.CreateSp
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: attendance.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := adc.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   attendanceday.AttendanceSyncsTable,
-			Columns: []string{attendanceday.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
 				},
 			},
 		}

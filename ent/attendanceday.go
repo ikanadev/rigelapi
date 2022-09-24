@@ -29,13 +29,11 @@ type AttendanceDay struct {
 type AttendanceDayEdges struct {
 	// Attendances holds the value of the attendances edge.
 	Attendances []*Attendance `json:"attendances,omitempty"`
-	// AttendanceSyncs holds the value of the attendanceSyncs edge.
-	AttendanceSyncs []*AttendanceSync `json:"attendanceSyncs,omitempty"`
 	// ClassPeriod holds the value of the classPeriod edge.
 	ClassPeriod *ClassPeriod `json:"classPeriod,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 }
 
 // AttendancesOrErr returns the Attendances value or an error if the edge
@@ -47,19 +45,10 @@ func (e AttendanceDayEdges) AttendancesOrErr() ([]*Attendance, error) {
 	return nil, &NotLoadedError{edge: "attendances"}
 }
 
-// AttendanceSyncsOrErr returns the AttendanceSyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e AttendanceDayEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
-	if e.loadedTypes[1] {
-		return e.AttendanceSyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "attendanceSyncs"}
-}
-
 // ClassPeriodOrErr returns the ClassPeriod value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e AttendanceDayEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		if e.ClassPeriod == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: classperiod.Label}
@@ -122,11 +111,6 @@ func (ad *AttendanceDay) assignValues(columns []string, values []interface{}) er
 // QueryAttendances queries the "attendances" edge of the AttendanceDay entity.
 func (ad *AttendanceDay) QueryAttendances() *AttendanceQuery {
 	return (&AttendanceDayClient{config: ad.config}).QueryAttendances(ad)
-}
-
-// QueryAttendanceSyncs queries the "attendanceSyncs" edge of the AttendanceDay entity.
-func (ad *AttendanceDay) QueryAttendanceSyncs() *AttendanceSyncQuery {
-	return (&AttendanceDayClient{config: ad.config}).QueryAttendanceSyncs(ad)
 }
 
 // QueryClassPeriod queries the "classPeriod" edge of the AttendanceDay entity.

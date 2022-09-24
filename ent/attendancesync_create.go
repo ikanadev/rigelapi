@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // AttendanceSyncCreate is the builder for creating a AttendanceSync entity.
@@ -32,23 +32,23 @@ func (asc *AttendanceSyncCreate) SetID(s string) *AttendanceSyncCreate {
 	return asc
 }
 
-// SetAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID.
-func (asc *AttendanceSyncCreate) SetAttendanceDayID(id string) *AttendanceSyncCreate {
-	asc.mutation.SetAttendanceDayID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (asc *AttendanceSyncCreate) SetTeacherID(id string) *AttendanceSyncCreate {
+	asc.mutation.SetTeacherID(id)
 	return asc
 }
 
-// SetNillableAttendanceDayID sets the "attendanceDay" edge to the AttendanceDay entity by ID if the given value is not nil.
-func (asc *AttendanceSyncCreate) SetNillableAttendanceDayID(id *string) *AttendanceSyncCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (asc *AttendanceSyncCreate) SetNillableTeacherID(id *string) *AttendanceSyncCreate {
 	if id != nil {
-		asc = asc.SetAttendanceDayID(*id)
+		asc = asc.SetTeacherID(*id)
 	}
 	return asc
 }
 
-// SetAttendanceDay sets the "attendanceDay" edge to the AttendanceDay entity.
-func (asc *AttendanceSyncCreate) SetAttendanceDay(a *AttendanceDay) *AttendanceSyncCreate {
-	return asc.SetAttendanceDayID(a.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (asc *AttendanceSyncCreate) SetTeacher(t *Teacher) *AttendanceSyncCreate {
+	return asc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the AttendanceSyncMutation object of the builder.
@@ -174,24 +174,24 @@ func (asc *AttendanceSyncCreate) createSpec() (*AttendanceSync, *sqlgraph.Create
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := asc.mutation.AttendanceDayIDs(); len(nodes) > 0 {
+	if nodes := asc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancesync.AttendanceDayTable,
-			Columns: []string{attendancesync.AttendanceDayColumn},
+			Table:   attendancesync.TeacherTable,
+			Columns: []string{attendancesync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.attendance_day_attendance_syncs = &nodes[0]
+		_node.teacher_attendance_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

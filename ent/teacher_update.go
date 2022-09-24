@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
@@ -100,6 +101,21 @@ func (tu *TeacherUpdate) AddActivitySyncs(a ...*ActivitySync) *TeacherUpdate {
 	return tu.AddActivitySyncIDs(ids...)
 }
 
+// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
+func (tu *TeacherUpdate) AddAttendanceSyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddAttendanceSyncIDs(ids...)
+	return tu
+}
+
+// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
+func (tu *TeacherUpdate) AddAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.AddAttendanceSyncIDs(ids...)
+}
+
 // AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
 func (tu *TeacherUpdate) AddClassPeriodSyncIDs(ids ...string) *TeacherUpdate {
 	tu.mutation.AddClassPeriodSyncIDs(ids...)
@@ -181,6 +197,27 @@ func (tu *TeacherUpdate) RemoveActivitySyncs(a ...*ActivitySync) *TeacherUpdate 
 		ids[i] = a[i].ID
 	}
 	return tu.RemoveActivitySyncIDs(ids...)
+}
+
+// ClearAttendanceSyncs clears all "attendanceSyncs" edges to the AttendanceSync entity.
+func (tu *TeacherUpdate) ClearAttendanceSyncs() *TeacherUpdate {
+	tu.mutation.ClearAttendanceSyncs()
+	return tu
+}
+
+// RemoveAttendanceSyncIDs removes the "attendanceSyncs" edge to AttendanceSync entities by IDs.
+func (tu *TeacherUpdate) RemoveAttendanceSyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveAttendanceSyncIDs(ids...)
+	return tu
+}
+
+// RemoveAttendanceSyncs removes "attendanceSyncs" edges to AttendanceSync entities.
+func (tu *TeacherUpdate) RemoveAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.RemoveAttendanceSyncIDs(ids...)
 }
 
 // ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
@@ -466,6 +503,60 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.AttendanceSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedAttendanceSyncsIDs(); len(nodes) > 0 && !tu.mutation.AttendanceSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if tu.mutation.ClassPeriodSyncsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -608,6 +699,21 @@ func (tuo *TeacherUpdateOne) AddActivitySyncs(a ...*ActivitySync) *TeacherUpdate
 	return tuo.AddActivitySyncIDs(ids...)
 }
 
+// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
+func (tuo *TeacherUpdateOne) AddAttendanceSyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddAttendanceSyncIDs(ids...)
+	return tuo
+}
+
+// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
+func (tuo *TeacherUpdateOne) AddAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.AddAttendanceSyncIDs(ids...)
+}
+
 // AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
 func (tuo *TeacherUpdateOne) AddClassPeriodSyncIDs(ids ...string) *TeacherUpdateOne {
 	tuo.mutation.AddClassPeriodSyncIDs(ids...)
@@ -689,6 +795,27 @@ func (tuo *TeacherUpdateOne) RemoveActivitySyncs(a ...*ActivitySync) *TeacherUpd
 		ids[i] = a[i].ID
 	}
 	return tuo.RemoveActivitySyncIDs(ids...)
+}
+
+// ClearAttendanceSyncs clears all "attendanceSyncs" edges to the AttendanceSync entity.
+func (tuo *TeacherUpdateOne) ClearAttendanceSyncs() *TeacherUpdateOne {
+	tuo.mutation.ClearAttendanceSyncs()
+	return tuo
+}
+
+// RemoveAttendanceSyncIDs removes the "attendanceSyncs" edge to AttendanceSync entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveAttendanceSyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveAttendanceSyncIDs(ids...)
+	return tuo
+}
+
+// RemoveAttendanceSyncs removes "attendanceSyncs" edges to AttendanceSync entities.
+func (tuo *TeacherUpdateOne) RemoveAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.RemoveAttendanceSyncIDs(ids...)
 }
 
 // ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
@@ -996,6 +1123,60 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: activitysync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.AttendanceSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedAttendanceSyncsIDs(); len(nodes) > 0 && !tuo.mutation.AttendanceSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceSyncsTable,
+			Columns: []string{teacher.AttendanceSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancesync.FieldID,
 				},
 			},
 		}

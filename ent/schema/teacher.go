@@ -28,6 +28,7 @@ func (Teacher) Edges() []ent.Edge {
 		edge.To("classes", Class.Type),
 		edge.To("studentSyncs", StudentSync.Type),
 		edge.To("activitySyncs", ActivitySync.Type),
+		edge.To("attendanceSyncs", AttendanceSync.Type),
 		edge.To("classPeriodSyncs", ClassPeriodSync.Type),
 	}
 }

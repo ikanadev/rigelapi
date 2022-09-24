@@ -11,8 +11,6 @@ const (
 	FieldDay = "day"
 	// EdgeAttendances holds the string denoting the attendances edge name in mutations.
 	EdgeAttendances = "attendances"
-	// EdgeAttendanceSyncs holds the string denoting the attendancesyncs edge name in mutations.
-	EdgeAttendanceSyncs = "attendanceSyncs"
 	// EdgeClassPeriod holds the string denoting the classperiod edge name in mutations.
 	EdgeClassPeriod = "classPeriod"
 	// Table holds the table name of the attendanceday in the database.
@@ -24,13 +22,6 @@ const (
 	AttendancesInverseTable = "attendances"
 	// AttendancesColumn is the table column denoting the attendances relation/edge.
 	AttendancesColumn = "attendance_day_attendances"
-	// AttendanceSyncsTable is the table that holds the attendanceSyncs relation/edge.
-	AttendanceSyncsTable = "attendance_syncs"
-	// AttendanceSyncsInverseTable is the table name for the AttendanceSync entity.
-	// It exists in this package in order to avoid circular dependency with the "attendancesync" package.
-	AttendanceSyncsInverseTable = "attendance_syncs"
-	// AttendanceSyncsColumn is the table column denoting the attendanceSyncs relation/edge.
-	AttendanceSyncsColumn = "attendance_day_attendance_syncs"
 	// ClassPeriodTable is the table that holds the classPeriod relation/edge.
 	ClassPeriodTable = "attendance_days"
 	// ClassPeriodInverseTable is the table name for the ClassPeriod entity.

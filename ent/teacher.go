@@ -36,11 +36,13 @@ type TeacherEdges struct {
 	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
 	// ActivitySyncs holds the value of the activitySyncs edge.
 	ActivitySyncs []*ActivitySync `json:"activitySyncs,omitempty"`
+	// AttendanceSyncs holds the value of the attendanceSyncs edge.
+	AttendanceSyncs []*AttendanceSync `json:"attendanceSyncs,omitempty"`
 	// ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
 	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -70,10 +72,19 @@ func (e TeacherEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
 	return nil, &NotLoadedError{edge: "activitySyncs"}
 }
 
+// AttendanceSyncsOrErr returns the AttendanceSyncs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
+	if e.loadedTypes[3] {
+		return e.AttendanceSyncs, nil
+	}
+	return nil, &NotLoadedError{edge: "attendanceSyncs"}
+}
+
 // ClassPeriodSyncsOrErr returns the ClassPeriodSyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.ClassPeriodSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
@@ -149,6 +160,11 @@ func (t *Teacher) QueryStudentSyncs() *StudentSyncQuery {
 // QueryActivitySyncs queries the "activitySyncs" edge of the Teacher entity.
 func (t *Teacher) QueryActivitySyncs() *ActivitySyncQuery {
 	return (&TeacherClient{config: t.config}).QueryActivitySyncs(t)
+}
+
+// QueryAttendanceSyncs queries the "attendanceSyncs" edge of the Teacher entity.
+func (t *Teacher) QueryAttendanceSyncs() *AttendanceSyncQuery {
+	return (&TeacherClient{config: t.config}).QueryAttendanceSyncs(t)
 }
 
 // QueryClassPeriodSyncs queries the "classPeriodSyncs" edge of the Teacher entity.
