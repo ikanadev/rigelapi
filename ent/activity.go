@@ -33,15 +33,13 @@ type Activity struct {
 type ActivityEdges struct {
 	// Scores holds the value of the scores edge.
 	Scores []*Score `json:"scores,omitempty"`
-	// ScoreSyncs holds the value of the scoreSyncs edge.
-	ScoreSyncs []*ScoreSync `json:"scoreSyncs,omitempty"`
 	// Area holds the value of the area edge.
 	Area *Area `json:"area,omitempty"`
 	// ClassPeriod holds the value of the classPeriod edge.
 	ClassPeriod *ClassPeriod `json:"classPeriod,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 }
 
 // ScoresOrErr returns the Scores value or an error if the edge
@@ -53,19 +51,10 @@ func (e ActivityEdges) ScoresOrErr() ([]*Score, error) {
 	return nil, &NotLoadedError{edge: "scores"}
 }
 
-// ScoreSyncsOrErr returns the ScoreSyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ActivityEdges) ScoreSyncsOrErr() ([]*ScoreSync, error) {
-	if e.loadedTypes[1] {
-		return e.ScoreSyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "scoreSyncs"}
-}
-
 // AreaOrErr returns the Area value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ActivityEdges) AreaOrErr() (*Area, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		if e.Area == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: area.Label}
@@ -78,7 +67,7 @@ func (e ActivityEdges) AreaOrErr() (*Area, error) {
 // ClassPeriodOrErr returns the ClassPeriod value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ActivityEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		if e.ClassPeriod == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: classperiod.Label}
@@ -156,11 +145,6 @@ func (a *Activity) assignValues(columns []string, values []interface{}) error {
 // QueryScores queries the "scores" edge of the Activity entity.
 func (a *Activity) QueryScores() *ScoreQuery {
 	return (&ActivityClient{config: a.config}).QueryScores(a)
-}
-
-// QueryScoreSyncs queries the "scoreSyncs" edge of the Activity entity.
-func (a *Activity) QueryScoreSyncs() *ScoreSyncQuery {
-	return (&ActivityClient{config: a.config}).QueryScoreSyncs(a)
 }
 
 // QueryArea queries the "area" edge of the Activity entity.

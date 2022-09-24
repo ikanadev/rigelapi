@@ -32,6 +32,8 @@ type Teacher struct {
 type TeacherEdges struct {
 	// Classes holds the value of the classes edge.
 	Classes []*Class `json:"classes,omitempty"`
+	// ScoreSyncs holds the value of the scoreSyncs edge.
+	ScoreSyncs []*ScoreSync `json:"scoreSyncs,omitempty"`
 	// StudentSyncs holds the value of the studentSyncs edge.
 	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
 	// ActivitySyncs holds the value of the activitySyncs edge.
@@ -42,7 +44,7 @@ type TeacherEdges struct {
 	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -54,10 +56,19 @@ func (e TeacherEdges) ClassesOrErr() ([]*Class, error) {
 	return nil, &NotLoadedError{edge: "classes"}
 }
 
+// ScoreSyncsOrErr returns the ScoreSyncs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) ScoreSyncsOrErr() ([]*ScoreSync, error) {
+	if e.loadedTypes[1] {
+		return e.ScoreSyncs, nil
+	}
+	return nil, &NotLoadedError{edge: "scoreSyncs"}
+}
+
 // StudentSyncsOrErr returns the StudentSyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.StudentSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "studentSyncs"}
@@ -66,7 +77,7 @@ func (e TeacherEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
 // ActivitySyncsOrErr returns the ActivitySyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.ActivitySyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "activitySyncs"}
@@ -75,7 +86,7 @@ func (e TeacherEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
 // AttendanceSyncsOrErr returns the AttendanceSyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.AttendanceSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "attendanceSyncs"}
@@ -84,7 +95,7 @@ func (e TeacherEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
 // ClassPeriodSyncsOrErr returns the ClassPeriodSyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.ClassPeriodSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
@@ -150,6 +161,11 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 // QueryClasses queries the "classes" edge of the Teacher entity.
 func (t *Teacher) QueryClasses() *ClassQuery {
 	return (&TeacherClient{config: t.config}).QueryClasses(t)
+}
+
+// QueryScoreSyncs queries the "scoreSyncs" edge of the Teacher entity.
+func (t *Teacher) QueryScoreSyncs() *ScoreSyncQuery {
+	return (&TeacherClient{config: t.config}).QueryScoreSyncs(t)
 }
 
 // QueryStudentSyncs queries the "studentSyncs" edge of the Teacher entity.

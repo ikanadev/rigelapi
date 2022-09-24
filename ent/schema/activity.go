@@ -24,7 +24,6 @@ func (Activity) Fields() []ent.Field {
 func (Activity) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("scores", Score.Type),
-		edge.To("scoreSyncs", ScoreSync.Type),
 		edge.From("area", Area.Type).Ref("activities").Unique(),
 		edge.From("classPeriod", ClassPeriod.Type).Ref("activities").Unique(),
 	}

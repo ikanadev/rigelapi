@@ -22,6 +22,6 @@ func (ScoreSync) Fields() []ent.Field {
 // Edges of the ScoreSync.
 func (ScoreSync) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("activity", Activity.Type).Ref("scoreSyncs").Unique(),
+		edge.From("teacher", Teacher.Type).Ref("scoreSyncs").Unique(),
 	}
 }

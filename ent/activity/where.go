@@ -286,34 +286,6 @@ func HasScoresWith(preds ...predicate.Score) predicate.Activity {
 	})
 }
 
-// HasScoreSyncs applies the HasEdge predicate on the "scoreSyncs" edge.
-func HasScoreSyncs() predicate.Activity {
-	return predicate.Activity(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ScoreSyncsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ScoreSyncsTable, ScoreSyncsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasScoreSyncsWith applies the HasEdge predicate on the "scoreSyncs" edge with a given conditions (other predicates).
-func HasScoreSyncsWith(preds ...predicate.ScoreSync) predicate.Activity {
-	return predicate.Activity(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ScoreSyncsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ScoreSyncsTable, ScoreSyncsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasArea applies the HasEdge predicate on the "area" edge.
 func HasArea() predicate.Activity {
 	return predicate.Activity(func(s *sql.Selector) {

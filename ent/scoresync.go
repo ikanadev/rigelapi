@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/scoresync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ScoreSync is the model entity for the ScoreSync schema.
@@ -20,30 +20,30 @@ type ScoreSync struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScoreSyncQuery when eager-loading is set.
-	Edges                ScoreSyncEdges `json:"edges"`
-	activity_score_syncs *string
+	Edges               ScoreSyncEdges `json:"edges"`
+	teacher_score_syncs *string
 }
 
 // ScoreSyncEdges holds the relations/edges for other nodes in the graph.
 type ScoreSyncEdges struct {
-	// Activity holds the value of the activity edge.
-	Activity *Activity `json:"activity,omitempty"`
+	// Teacher holds the value of the teacher edge.
+	Teacher *Teacher `json:"teacher,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ActivityOrErr returns the Activity value or an error if the edge
+// TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ScoreSyncEdges) ActivityOrErr() (*Activity, error) {
+func (e ScoreSyncEdges) TeacherOrErr() (*Teacher, error) {
 	if e.loadedTypes[0] {
-		if e.Activity == nil {
+		if e.Teacher == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: activity.Label}
+			return nil, &NotFoundError{label: teacher.Label}
 		}
-		return e.Activity, nil
+		return e.Teacher, nil
 	}
-	return nil, &NotLoadedError{edge: "activity"}
+	return nil, &NotLoadedError{edge: "teacher"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*ScoreSync) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case scoresync.FieldID, scoresync.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case scoresync.ForeignKeys[0]: // activity_score_syncs
+		case scoresync.ForeignKeys[0]: // teacher_score_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type ScoreSync", columns[i])
@@ -84,19 +84,19 @@ func (ss *ScoreSync) assignValues(columns []string, values []interface{}) error 
 			}
 		case scoresync.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field activity_score_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field teacher_score_syncs", values[i])
 			} else if value.Valid {
-				ss.activity_score_syncs = new(string)
-				*ss.activity_score_syncs = value.String
+				ss.teacher_score_syncs = new(string)
+				*ss.teacher_score_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryActivity queries the "activity" edge of the ScoreSync entity.
-func (ss *ScoreSync) QueryActivity() *ActivityQuery {
-	return (&ScoreSyncClient{config: ss.config}).QueryActivity(ss)
+// QueryTeacher queries the "teacher" edge of the ScoreSync entity.
+func (ss *ScoreSync) QueryTeacher() *TeacherQuery {
+	return (&ScoreSyncClient{config: ss.config}).QueryTeacher(ss)
 }
 
 // Update returns a builder for updating this ScoreSync.

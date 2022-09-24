@@ -16,7 +16,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 )
 
 // ActivityQuery is the builder for querying Activity entities.
@@ -29,7 +28,6 @@ type ActivityQuery struct {
 	fields          []string
 	predicates      []predicate.Activity
 	withScores      *ScoreQuery
-	withScoreSyncs  *ScoreSyncQuery
 	withArea        *AreaQuery
 	withClassPeriod *ClassPeriodQuery
 	withFKs         bool
@@ -84,28 +82,6 @@ func (aq *ActivityQuery) QueryScores() *ScoreQuery {
 			sqlgraph.From(activity.Table, activity.FieldID, selector),
 			sqlgraph.To(score.Table, score.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, activity.ScoresTable, activity.ScoresColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryScoreSyncs chains the current query on the "scoreSyncs" edge.
-func (aq *ActivityQuery) QueryScoreSyncs() *ScoreSyncQuery {
-	query := &ScoreSyncQuery{config: aq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(activity.Table, activity.FieldID, selector),
-			sqlgraph.To(scoresync.Table, scoresync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, activity.ScoreSyncsTable, activity.ScoreSyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -339,7 +315,6 @@ func (aq *ActivityQuery) Clone() *ActivityQuery {
 		order:           append([]OrderFunc{}, aq.order...),
 		predicates:      append([]predicate.Activity{}, aq.predicates...),
 		withScores:      aq.withScores.Clone(),
-		withScoreSyncs:  aq.withScoreSyncs.Clone(),
 		withArea:        aq.withArea.Clone(),
 		withClassPeriod: aq.withClassPeriod.Clone(),
 		// clone intermediate query.
@@ -357,17 +332,6 @@ func (aq *ActivityQuery) WithScores(opts ...func(*ScoreQuery)) *ActivityQuery {
 		opt(query)
 	}
 	aq.withScores = query
-	return aq
-}
-
-// WithScoreSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "scoreSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *ActivityQuery) WithScoreSyncs(opts ...func(*ScoreSyncQuery)) *ActivityQuery {
-	query := &ScoreSyncQuery{config: aq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withScoreSyncs = query
 	return aq
 }
 
@@ -462,9 +426,8 @@ func (aq *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 		nodes       = []*Activity{}
 		withFKs     = aq.withFKs
 		_spec       = aq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [3]bool{
 			aq.withScores != nil,
-			aq.withScoreSyncs != nil,
 			aq.withArea != nil,
 			aq.withClassPeriod != nil,
 		}
@@ -497,13 +460,6 @@ func (aq *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 		if err := aq.loadScores(ctx, query, nodes,
 			func(n *Activity) { n.Edges.Scores = []*Score{} },
 			func(n *Activity, e *Score) { n.Edges.Scores = append(n.Edges.Scores, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := aq.withScoreSyncs; query != nil {
-		if err := aq.loadScoreSyncs(ctx, query, nodes,
-			func(n *Activity) { n.Edges.ScoreSyncs = []*ScoreSync{} },
-			func(n *Activity, e *ScoreSync) { n.Edges.ScoreSyncs = append(n.Edges.ScoreSyncs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -548,37 +504,6 @@ func (aq *ActivityQuery) loadScores(ctx context.Context, query *ScoreQuery, node
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "activity_scores" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (aq *ActivityQuery) loadScoreSyncs(ctx context.Context, query *ScoreSyncQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *ScoreSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Activity)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ScoreSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(activity.ScoreSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.activity_score_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "activity_score_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "activity_score_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

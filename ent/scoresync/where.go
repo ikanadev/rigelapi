@@ -185,25 +185,25 @@ func LastSyncIDContainsFold(v string) predicate.ScoreSync {
 	})
 }
 
-// HasActivity applies the HasEdge predicate on the "activity" edge.
-func HasActivity() predicate.ScoreSync {
+// HasTeacher applies the HasEdge predicate on the "teacher" edge.
+func HasTeacher() predicate.ScoreSync {
 	return predicate.ScoreSync(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ActivityTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ActivityTable, ActivityColumn),
+			sqlgraph.To(TeacherTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasActivityWith applies the HasEdge predicate on the "activity" edge with a given conditions (other predicates).
-func HasActivityWith(preds ...predicate.Activity) predicate.ScoreSync {
+// HasTeacherWith applies the HasEdge predicate on the "teacher" edge with a given conditions (other predicates).
+func HasTeacherWith(preds ...predicate.Teacher) predicate.ScoreSync {
 	return predicate.ScoreSync(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ActivityInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ActivityTable, ActivityColumn),
+			sqlgraph.To(TeacherInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

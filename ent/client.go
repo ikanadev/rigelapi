@@ -378,22 +378,6 @@ func (c *ActivityClient) QueryScores(a *Activity) *ScoreQuery {
 	return query
 }
 
-// QueryScoreSyncs queries the scoreSyncs edge of a Activity.
-func (c *ActivityClient) QueryScoreSyncs(a *Activity) *ScoreSyncQuery {
-	query := &ScoreSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(activity.Table, activity.FieldID, id),
-			sqlgraph.To(scoresync.Table, scoresync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, activity.ScoreSyncsTable, activity.ScoreSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryArea queries the area edge of a Activity.
 func (c *ActivityClient) QueryArea(a *Activity) *AreaQuery {
 	query := &AreaQuery{config: c.config}
@@ -2500,15 +2484,15 @@ func (c *ScoreSyncClient) GetX(ctx context.Context, id string) *ScoreSync {
 	return obj
 }
 
-// QueryActivity queries the activity edge of a ScoreSync.
-func (c *ScoreSyncClient) QueryActivity(ss *ScoreSync) *ActivityQuery {
-	query := &ActivityQuery{config: c.config}
+// QueryTeacher queries the teacher edge of a ScoreSync.
+func (c *ScoreSyncClient) QueryTeacher(ss *ScoreSync) *TeacherQuery {
+	query := &TeacherQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := ss.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scoresync.Table, scoresync.FieldID, id),
-			sqlgraph.To(activity.Table, activity.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, scoresync.ActivityTable, scoresync.ActivityColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, scoresync.TeacherTable, scoresync.TeacherColumn),
 		)
 		fromV = sqlgraph.Neighbors(ss.driver.Dialect(), step)
 		return fromV, nil
@@ -2965,6 +2949,22 @@ func (c *TeacherClient) QueryClasses(t *Teacher) *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, id),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScoreSyncs queries the scoreSyncs edge of a Teacher.
+func (c *TeacherClient) QueryScoreSyncs(t *Teacher) *ScoreSyncQuery {
+	query := &ScoreSyncQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, id),
+			sqlgraph.To(scoresync.Table, scoresync.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ScoreSyncsTable, teacher.ScoreSyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

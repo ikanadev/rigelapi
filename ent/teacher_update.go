@@ -15,6 +15,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/scoresync"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
@@ -69,6 +70,21 @@ func (tu *TeacherUpdate) AddClasses(c ...*Class) *TeacherUpdate {
 		ids[i] = c[i].ID
 	}
 	return tu.AddClassIDs(ids...)
+}
+
+// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
+func (tu *TeacherUpdate) AddScoreSyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddScoreSyncIDs(ids...)
+	return tu
+}
+
+// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
+func (tu *TeacherUpdate) AddScoreSyncs(s ...*ScoreSync) *TeacherUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.AddScoreSyncIDs(ids...)
 }
 
 // AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
@@ -155,6 +171,27 @@ func (tu *TeacherUpdate) RemoveClasses(c ...*Class) *TeacherUpdate {
 		ids[i] = c[i].ID
 	}
 	return tu.RemoveClassIDs(ids...)
+}
+
+// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
+func (tu *TeacherUpdate) ClearScoreSyncs() *TeacherUpdate {
+	tu.mutation.ClearScoreSyncs()
+	return tu
+}
+
+// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
+func (tu *TeacherUpdate) RemoveScoreSyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveScoreSyncIDs(ids...)
+	return tu
+}
+
+// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
+func (tu *TeacherUpdate) RemoveScoreSyncs(s ...*ScoreSync) *TeacherUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.RemoveScoreSyncIDs(ids...)
 }
 
 // ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
@@ -387,6 +424,60 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: class.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.ScoreSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !tu.mutation.ScoreSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
 				},
 			},
 		}
@@ -669,6 +760,21 @@ func (tuo *TeacherUpdateOne) AddClasses(c ...*Class) *TeacherUpdateOne {
 	return tuo.AddClassIDs(ids...)
 }
 
+// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
+func (tuo *TeacherUpdateOne) AddScoreSyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddScoreSyncIDs(ids...)
+	return tuo
+}
+
+// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
+func (tuo *TeacherUpdateOne) AddScoreSyncs(s ...*ScoreSync) *TeacherUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.AddScoreSyncIDs(ids...)
+}
+
 // AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
 func (tuo *TeacherUpdateOne) AddStudentSyncIDs(ids ...string) *TeacherUpdateOne {
 	tuo.mutation.AddStudentSyncIDs(ids...)
@@ -753,6 +859,27 @@ func (tuo *TeacherUpdateOne) RemoveClasses(c ...*Class) *TeacherUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return tuo.RemoveClassIDs(ids...)
+}
+
+// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
+func (tuo *TeacherUpdateOne) ClearScoreSyncs() *TeacherUpdateOne {
+	tuo.mutation.ClearScoreSyncs()
+	return tuo
+}
+
+// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveScoreSyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveScoreSyncIDs(ids...)
+	return tuo
+}
+
+// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
+func (tuo *TeacherUpdateOne) RemoveScoreSyncs(s ...*ScoreSync) *TeacherUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.RemoveScoreSyncIDs(ids...)
 }
 
 // ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
@@ -1015,6 +1142,60 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: class.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ScoreSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !tuo.mutation.ScoreSyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ScoreSyncsTable,
+			Columns: []string{teacher.ScoreSyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: scoresync.FieldID,
 				},
 			},
 		}

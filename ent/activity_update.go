@@ -16,7 +16,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 )
 
 // ActivityUpdate is the builder for updating Activity entities.
@@ -57,21 +56,6 @@ func (au *ActivityUpdate) AddScores(s ...*Score) *ActivityUpdate {
 		ids[i] = s[i].ID
 	}
 	return au.AddScoreIDs(ids...)
-}
-
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (au *ActivityUpdate) AddScoreSyncIDs(ids ...string) *ActivityUpdate {
-	au.mutation.AddScoreSyncIDs(ids...)
-	return au
-}
-
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (au *ActivityUpdate) AddScoreSyncs(s ...*ScoreSync) *ActivityUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return au.AddScoreSyncIDs(ids...)
 }
 
 // SetAreaID sets the "area" edge to the Area entity by ID.
@@ -136,27 +120,6 @@ func (au *ActivityUpdate) RemoveScores(s ...*Score) *ActivityUpdate {
 		ids[i] = s[i].ID
 	}
 	return au.RemoveScoreIDs(ids...)
-}
-
-// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
-func (au *ActivityUpdate) ClearScoreSyncs() *ActivityUpdate {
-	au.mutation.ClearScoreSyncs()
-	return au
-}
-
-// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
-func (au *ActivityUpdate) RemoveScoreSyncIDs(ids ...string) *ActivityUpdate {
-	au.mutation.RemoveScoreSyncIDs(ids...)
-	return au
-}
-
-// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
-func (au *ActivityUpdate) RemoveScoreSyncs(s ...*ScoreSync) *ActivityUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return au.RemoveScoreSyncIDs(ids...)
 }
 
 // ClearArea clears the "area" edge to the Area entity.
@@ -311,60 +274,6 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if au.mutation.ScoreSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !au.mutation.ScoreSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if au.mutation.AreaCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -481,21 +390,6 @@ func (auo *ActivityUpdateOne) AddScores(s ...*Score) *ActivityUpdateOne {
 	return auo.AddScoreIDs(ids...)
 }
 
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (auo *ActivityUpdateOne) AddScoreSyncIDs(ids ...string) *ActivityUpdateOne {
-	auo.mutation.AddScoreSyncIDs(ids...)
-	return auo
-}
-
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (auo *ActivityUpdateOne) AddScoreSyncs(s ...*ScoreSync) *ActivityUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return auo.AddScoreSyncIDs(ids...)
-}
-
 // SetAreaID sets the "area" edge to the Area entity by ID.
 func (auo *ActivityUpdateOne) SetAreaID(id string) *ActivityUpdateOne {
 	auo.mutation.SetAreaID(id)
@@ -558,27 +452,6 @@ func (auo *ActivityUpdateOne) RemoveScores(s ...*Score) *ActivityUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return auo.RemoveScoreIDs(ids...)
-}
-
-// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
-func (auo *ActivityUpdateOne) ClearScoreSyncs() *ActivityUpdateOne {
-	auo.mutation.ClearScoreSyncs()
-	return auo
-}
-
-// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
-func (auo *ActivityUpdateOne) RemoveScoreSyncIDs(ids ...string) *ActivityUpdateOne {
-	auo.mutation.RemoveScoreSyncIDs(ids...)
-	return auo
-}
-
-// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
-func (auo *ActivityUpdateOne) RemoveScoreSyncs(s ...*ScoreSync) *ActivityUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return auo.RemoveScoreSyncIDs(ids...)
 }
 
 // ClearArea clears the "area" edge to the Area entity.
@@ -755,60 +628,6 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: score.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if auo.mutation.ScoreSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !auo.mutation.ScoreSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
 				},
 			},
 		}

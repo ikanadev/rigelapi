@@ -13,8 +13,6 @@ const (
 	FieldDate = "date"
 	// EdgeScores holds the string denoting the scores edge name in mutations.
 	EdgeScores = "scores"
-	// EdgeScoreSyncs holds the string denoting the scoresyncs edge name in mutations.
-	EdgeScoreSyncs = "scoreSyncs"
 	// EdgeArea holds the string denoting the area edge name in mutations.
 	EdgeArea = "area"
 	// EdgeClassPeriod holds the string denoting the classperiod edge name in mutations.
@@ -28,13 +26,6 @@ const (
 	ScoresInverseTable = "scores"
 	// ScoresColumn is the table column denoting the scores relation/edge.
 	ScoresColumn = "activity_scores"
-	// ScoreSyncsTable is the table that holds the scoreSyncs relation/edge.
-	ScoreSyncsTable = "score_syncs"
-	// ScoreSyncsInverseTable is the table name for the ScoreSync entity.
-	// It exists in this package in order to avoid circular dependency with the "scoresync" package.
-	ScoreSyncsInverseTable = "score_syncs"
-	// ScoreSyncsColumn is the table column denoting the scoreSyncs relation/edge.
-	ScoreSyncsColumn = "activity_score_syncs"
 	// AreaTable is the table that holds the area relation/edge.
 	AreaTable = "activities"
 	// AreaInverseTable is the table name for the Area entity.

@@ -396,7 +396,7 @@ var (
 	ScoreSyncsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "activity_score_syncs", Type: field.TypeString, Nullable: true},
+		{Name: "teacher_score_syncs", Type: field.TypeString, Nullable: true},
 	}
 	// ScoreSyncsTable holds the schema information for the "score_syncs" table.
 	ScoreSyncsTable = &schema.Table{
@@ -405,9 +405,9 @@ var (
 		PrimaryKey: []*schema.Column{ScoreSyncsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "score_syncs_activities_scoreSyncs",
+				Symbol:     "score_syncs_teachers_scoreSyncs",
 				Columns:    []*schema.Column{ScoreSyncsColumns[2]},
-				RefColumns: []*schema.Column{ActivitiesColumns[0]},
+				RefColumns: []*schema.Column{TeachersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -542,7 +542,7 @@ func init() {
 	SchoolsTable.ForeignKeys[0].RefTable = MunicipiosTable
 	ScoresTable.ForeignKeys[0].RefTable = ActivitiesTable
 	ScoresTable.ForeignKeys[1].RefTable = StudentsTable
-	ScoreSyncsTable.ForeignKeys[0].RefTable = ActivitiesTable
+	ScoreSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	StudentsTable.ForeignKeys[0].RefTable = ClassesTable
 	StudentSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 }

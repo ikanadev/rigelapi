@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/scoresync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ScoreSyncUpdate is the builder for updating ScoreSync entities.
@@ -34,23 +34,23 @@ func (ssu *ScoreSyncUpdate) SetLastSyncID(s string) *ScoreSyncUpdate {
 	return ssu
 }
 
-// SetActivityID sets the "activity" edge to the Activity entity by ID.
-func (ssu *ScoreSyncUpdate) SetActivityID(id string) *ScoreSyncUpdate {
-	ssu.mutation.SetActivityID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssu *ScoreSyncUpdate) SetTeacherID(id string) *ScoreSyncUpdate {
+	ssu.mutation.SetTeacherID(id)
 	return ssu
 }
 
-// SetNillableActivityID sets the "activity" edge to the Activity entity by ID if the given value is not nil.
-func (ssu *ScoreSyncUpdate) SetNillableActivityID(id *string) *ScoreSyncUpdate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssu *ScoreSyncUpdate) SetNillableTeacherID(id *string) *ScoreSyncUpdate {
 	if id != nil {
-		ssu = ssu.SetActivityID(*id)
+		ssu = ssu.SetTeacherID(*id)
 	}
 	return ssu
 }
 
-// SetActivity sets the "activity" edge to the Activity entity.
-func (ssu *ScoreSyncUpdate) SetActivity(a *Activity) *ScoreSyncUpdate {
-	return ssu.SetActivityID(a.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssu *ScoreSyncUpdate) SetTeacher(t *Teacher) *ScoreSyncUpdate {
+	return ssu.SetTeacherID(t.ID)
 }
 
 // Mutation returns the ScoreSyncMutation object of the builder.
@@ -58,9 +58,9 @@ func (ssu *ScoreSyncUpdate) Mutation() *ScoreSyncMutation {
 	return ssu.mutation
 }
 
-// ClearActivity clears the "activity" edge to the Activity entity.
-func (ssu *ScoreSyncUpdate) ClearActivity() *ScoreSyncUpdate {
-	ssu.mutation.ClearActivity()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (ssu *ScoreSyncUpdate) ClearTeacher() *ScoreSyncUpdate {
+	ssu.mutation.ClearTeacher()
 	return ssu
 }
 
@@ -143,33 +143,33 @@ func (ssu *ScoreSyncUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: scoresync.FieldLastSyncID,
 		})
 	}
-	if ssu.mutation.ActivityCleared() {
+	if ssu.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   scoresync.ActivityTable,
-			Columns: []string{scoresync.ActivityColumn},
+			Table:   scoresync.TeacherTable,
+			Columns: []string{scoresync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activity.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ssu.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := ssu.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   scoresync.ActivityTable,
-			Columns: []string{scoresync.ActivityColumn},
+			Table:   scoresync.TeacherTable,
+			Columns: []string{scoresync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activity.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
@@ -203,23 +203,23 @@ func (ssuo *ScoreSyncUpdateOne) SetLastSyncID(s string) *ScoreSyncUpdateOne {
 	return ssuo
 }
 
-// SetActivityID sets the "activity" edge to the Activity entity by ID.
-func (ssuo *ScoreSyncUpdateOne) SetActivityID(id string) *ScoreSyncUpdateOne {
-	ssuo.mutation.SetActivityID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssuo *ScoreSyncUpdateOne) SetTeacherID(id string) *ScoreSyncUpdateOne {
+	ssuo.mutation.SetTeacherID(id)
 	return ssuo
 }
 
-// SetNillableActivityID sets the "activity" edge to the Activity entity by ID if the given value is not nil.
-func (ssuo *ScoreSyncUpdateOne) SetNillableActivityID(id *string) *ScoreSyncUpdateOne {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssuo *ScoreSyncUpdateOne) SetNillableTeacherID(id *string) *ScoreSyncUpdateOne {
 	if id != nil {
-		ssuo = ssuo.SetActivityID(*id)
+		ssuo = ssuo.SetTeacherID(*id)
 	}
 	return ssuo
 }
 
-// SetActivity sets the "activity" edge to the Activity entity.
-func (ssuo *ScoreSyncUpdateOne) SetActivity(a *Activity) *ScoreSyncUpdateOne {
-	return ssuo.SetActivityID(a.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssuo *ScoreSyncUpdateOne) SetTeacher(t *Teacher) *ScoreSyncUpdateOne {
+	return ssuo.SetTeacherID(t.ID)
 }
 
 // Mutation returns the ScoreSyncMutation object of the builder.
@@ -227,9 +227,9 @@ func (ssuo *ScoreSyncUpdateOne) Mutation() *ScoreSyncMutation {
 	return ssuo.mutation
 }
 
-// ClearActivity clears the "activity" edge to the Activity entity.
-func (ssuo *ScoreSyncUpdateOne) ClearActivity() *ScoreSyncUpdateOne {
-	ssuo.mutation.ClearActivity()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (ssuo *ScoreSyncUpdateOne) ClearTeacher() *ScoreSyncUpdateOne {
+	ssuo.mutation.ClearTeacher()
 	return ssuo
 }
 
@@ -342,33 +342,33 @@ func (ssuo *ScoreSyncUpdateOne) sqlSave(ctx context.Context) (_node *ScoreSync, 
 			Column: scoresync.FieldLastSyncID,
 		})
 	}
-	if ssuo.mutation.ActivityCleared() {
+	if ssuo.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   scoresync.ActivityTable,
-			Columns: []string{scoresync.ActivityColumn},
+			Table:   scoresync.TeacherTable,
+			Columns: []string{scoresync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activity.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ssuo.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := ssuo.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   scoresync.ActivityTable,
-			Columns: []string{scoresync.ActivityColumn},
+			Table:   scoresync.TeacherTable,
+			Columns: []string{scoresync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activity.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}

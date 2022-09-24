@@ -9,17 +9,17 @@ const (
 	FieldID = "id"
 	// FieldLastSyncID holds the string denoting the last_sync_id field in the database.
 	FieldLastSyncID = "last_sync_id"
-	// EdgeActivity holds the string denoting the activity edge name in mutations.
-	EdgeActivity = "activity"
+	// EdgeTeacher holds the string denoting the teacher edge name in mutations.
+	EdgeTeacher = "teacher"
 	// Table holds the table name of the scoresync in the database.
 	Table = "score_syncs"
-	// ActivityTable is the table that holds the activity relation/edge.
-	ActivityTable = "score_syncs"
-	// ActivityInverseTable is the table name for the Activity entity.
-	// It exists in this package in order to avoid circular dependency with the "activity" package.
-	ActivityInverseTable = "activities"
-	// ActivityColumn is the table column denoting the activity relation/edge.
-	ActivityColumn = "activity_score_syncs"
+	// TeacherTable is the table that holds the teacher relation/edge.
+	TeacherTable = "score_syncs"
+	// TeacherInverseTable is the table name for the Teacher entity.
+	// It exists in this package in order to avoid circular dependency with the "teacher" package.
+	TeacherInverseTable = "teachers"
+	// TeacherColumn is the table column denoting the teacher relation/edge.
+	TeacherColumn = "teacher_score_syncs"
 )
 
 // Columns holds all SQL columns for scoresync fields.
@@ -31,7 +31,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "score_syncs"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"activity_score_syncs",
+	"teacher_score_syncs",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

@@ -14,7 +14,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 )
 
 // ActivityCreate is the builder for creating a Activity entity.
@@ -55,21 +54,6 @@ func (ac *ActivityCreate) AddScores(s ...*Score) *ActivityCreate {
 		ids[i] = s[i].ID
 	}
 	return ac.AddScoreIDs(ids...)
-}
-
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (ac *ActivityCreate) AddScoreSyncIDs(ids ...string) *ActivityCreate {
-	ac.mutation.AddScoreSyncIDs(ids...)
-	return ac
-}
-
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (ac *ActivityCreate) AddScoreSyncs(s ...*ScoreSync) *ActivityCreate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return ac.AddScoreSyncIDs(ids...)
 }
 
 // SetAreaID sets the "area" edge to the Area entity by ID.
@@ -255,25 +239,6 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: score.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := ac.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   activity.ScoreSyncsTable,
-			Columns: []string{activity.ScoreSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: scoresync.FieldID,
 				},
 			},
 		}

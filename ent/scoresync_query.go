@@ -10,22 +10,22 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/scoresync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ScoreSyncQuery is the builder for querying ScoreSync entities.
 type ScoreSyncQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
-	predicates   []predicate.ScoreSync
-	withActivity *ActivityQuery
-	withFKs      bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.ScoreSync
+	withTeacher *TeacherQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +62,9 @@ func (ssq *ScoreSyncQuery) Order(o ...OrderFunc) *ScoreSyncQuery {
 	return ssq
 }
 
-// QueryActivity chains the current query on the "activity" edge.
-func (ssq *ScoreSyncQuery) QueryActivity() *ActivityQuery {
-	query := &ActivityQuery{config: ssq.config}
+// QueryTeacher chains the current query on the "teacher" edge.
+func (ssq *ScoreSyncQuery) QueryTeacher() *TeacherQuery {
+	query := &TeacherQuery{config: ssq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := ssq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (ssq *ScoreSyncQuery) QueryActivity() *ActivityQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scoresync.Table, scoresync.FieldID, selector),
-			sqlgraph.To(activity.Table, activity.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, scoresync.ActivityTable, scoresync.ActivityColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, scoresync.TeacherTable, scoresync.TeacherColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ssq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +260,12 @@ func (ssq *ScoreSyncQuery) Clone() *ScoreSyncQuery {
 		return nil
 	}
 	return &ScoreSyncQuery{
-		config:       ssq.config,
-		limit:        ssq.limit,
-		offset:       ssq.offset,
-		order:        append([]OrderFunc{}, ssq.order...),
-		predicates:   append([]predicate.ScoreSync{}, ssq.predicates...),
-		withActivity: ssq.withActivity.Clone(),
+		config:      ssq.config,
+		limit:       ssq.limit,
+		offset:      ssq.offset,
+		order:       append([]OrderFunc{}, ssq.order...),
+		predicates:  append([]predicate.ScoreSync{}, ssq.predicates...),
+		withTeacher: ssq.withTeacher.Clone(),
 		// clone intermediate query.
 		sql:    ssq.sql.Clone(),
 		path:   ssq.path,
@@ -273,14 +273,14 @@ func (ssq *ScoreSyncQuery) Clone() *ScoreSyncQuery {
 	}
 }
 
-// WithActivity tells the query-builder to eager-load the nodes that are connected to
-// the "activity" edge. The optional arguments are used to configure the query builder of the edge.
-func (ssq *ScoreSyncQuery) WithActivity(opts ...func(*ActivityQuery)) *ScoreSyncQuery {
-	query := &ActivityQuery{config: ssq.config}
+// WithTeacher tells the query-builder to eager-load the nodes that are connected to
+// the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
+func (ssq *ScoreSyncQuery) WithTeacher(opts ...func(*TeacherQuery)) *ScoreSyncQuery {
+	query := &TeacherQuery{config: ssq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	ssq.withActivity = query
+	ssq.withTeacher = query
 	return ssq
 }
 
@@ -354,10 +354,10 @@ func (ssq *ScoreSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 		withFKs     = ssq.withFKs
 		_spec       = ssq.querySpec()
 		loadedTypes = [1]bool{
-			ssq.withActivity != nil,
+			ssq.withTeacher != nil,
 		}
 	)
-	if ssq.withActivity != nil {
+	if ssq.withTeacher != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -381,29 +381,29 @@ func (ssq *ScoreSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := ssq.withActivity; query != nil {
-		if err := ssq.loadActivity(ctx, query, nodes, nil,
-			func(n *ScoreSync, e *Activity) { n.Edges.Activity = e }); err != nil {
+	if query := ssq.withTeacher; query != nil {
+		if err := ssq.loadTeacher(ctx, query, nodes, nil,
+			func(n *ScoreSync, e *Teacher) { n.Edges.Teacher = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (ssq *ScoreSyncQuery) loadActivity(ctx context.Context, query *ActivityQuery, nodes []*ScoreSync, init func(*ScoreSync), assign func(*ScoreSync, *Activity)) error {
+func (ssq *ScoreSyncQuery) loadTeacher(ctx context.Context, query *TeacherQuery, nodes []*ScoreSync, init func(*ScoreSync), assign func(*ScoreSync, *Teacher)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*ScoreSync)
 	for i := range nodes {
-		if nodes[i].activity_score_syncs == nil {
+		if nodes[i].teacher_score_syncs == nil {
 			continue
 		}
-		fk := *nodes[i].activity_score_syncs
+		fk := *nodes[i].teacher_score_syncs
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(activity.IDIn(ids...))
+	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (ssq *ScoreSyncQuery) loadActivity(ctx context.Context, query *ActivityQuer
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "activity_score_syncs" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "teacher_score_syncs" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

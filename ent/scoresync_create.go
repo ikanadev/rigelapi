@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/scoresync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ScoreSyncCreate is the builder for creating a ScoreSync entity.
@@ -32,23 +32,23 @@ func (ssc *ScoreSyncCreate) SetID(s string) *ScoreSyncCreate {
 	return ssc
 }
 
-// SetActivityID sets the "activity" edge to the Activity entity by ID.
-func (ssc *ScoreSyncCreate) SetActivityID(id string) *ScoreSyncCreate {
-	ssc.mutation.SetActivityID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssc *ScoreSyncCreate) SetTeacherID(id string) *ScoreSyncCreate {
+	ssc.mutation.SetTeacherID(id)
 	return ssc
 }
 
-// SetNillableActivityID sets the "activity" edge to the Activity entity by ID if the given value is not nil.
-func (ssc *ScoreSyncCreate) SetNillableActivityID(id *string) *ScoreSyncCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssc *ScoreSyncCreate) SetNillableTeacherID(id *string) *ScoreSyncCreate {
 	if id != nil {
-		ssc = ssc.SetActivityID(*id)
+		ssc = ssc.SetTeacherID(*id)
 	}
 	return ssc
 }
 
-// SetActivity sets the "activity" edge to the Activity entity.
-func (ssc *ScoreSyncCreate) SetActivity(a *Activity) *ScoreSyncCreate {
-	return ssc.SetActivityID(a.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssc *ScoreSyncCreate) SetTeacher(t *Teacher) *ScoreSyncCreate {
+	return ssc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the ScoreSyncMutation object of the builder.
@@ -174,24 +174,24 @@ func (ssc *ScoreSyncCreate) createSpec() (*ScoreSync, *sqlgraph.CreateSpec) {
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := ssc.mutation.ActivityIDs(); len(nodes) > 0 {
+	if nodes := ssc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   scoresync.ActivityTable,
-			Columns: []string{scoresync.ActivityColumn},
+			Table:   scoresync.TeacherTable,
+			Columns: []string{scoresync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activity.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.activity_score_syncs = &nodes[0]
+		_node.teacher_score_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
