@@ -17,6 +17,8 @@ const (
 	FieldPassword = "password"
 	// EdgeClasses holds the string denoting the classes edge name in mutations.
 	EdgeClasses = "classes"
+	// EdgeStudentSyncs holds the string denoting the studentsyncs edge name in mutations.
+	EdgeStudentSyncs = "studentSyncs"
 	// Table holds the table name of the teacher in the database.
 	Table = "teachers"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -26,6 +28,13 @@ const (
 	ClassesInverseTable = "classes"
 	// ClassesColumn is the table column denoting the classes relation/edge.
 	ClassesColumn = "teacher_classes"
+	// StudentSyncsTable is the table that holds the studentSyncs relation/edge.
+	StudentSyncsTable = "student_syncs"
+	// StudentSyncsInverseTable is the table name for the StudentSync entity.
+	// It exists in this package in order to avoid circular dependency with the "studentsync" package.
+	StudentSyncsInverseTable = "student_syncs"
+	// StudentSyncsColumn is the table column denoting the studentSyncs relation/edge.
+	StudentSyncsColumn = "teacher_student_syncs"
 )
 
 // Columns holds all SQL columns for teacher fields.

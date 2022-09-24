@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // StudentSync is the model entity for the StudentSync schema.
@@ -20,30 +20,30 @@ type StudentSync struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StudentSyncQuery when eager-loading is set.
-	Edges               StudentSyncEdges `json:"edges"`
-	class_student_syncs *string
+	Edges                 StudentSyncEdges `json:"edges"`
+	teacher_student_syncs *string
 }
 
 // StudentSyncEdges holds the relations/edges for other nodes in the graph.
 type StudentSyncEdges struct {
-	// Class holds the value of the class edge.
-	Class *Class `json:"class,omitempty"`
+	// Teacher holds the value of the teacher edge.
+	Teacher *Teacher `json:"teacher,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ClassOrErr returns the Class value or an error if the edge
+// TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e StudentSyncEdges) ClassOrErr() (*Class, error) {
+func (e StudentSyncEdges) TeacherOrErr() (*Teacher, error) {
 	if e.loadedTypes[0] {
-		if e.Class == nil {
+		if e.Teacher == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: class.Label}
+			return nil, &NotFoundError{label: teacher.Label}
 		}
-		return e.Class, nil
+		return e.Teacher, nil
 	}
-	return nil, &NotLoadedError{edge: "class"}
+	return nil, &NotLoadedError{edge: "teacher"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*StudentSync) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case studentsync.FieldID, studentsync.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case studentsync.ForeignKeys[0]: // class_student_syncs
+		case studentsync.ForeignKeys[0]: // teacher_student_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type StudentSync", columns[i])
@@ -84,19 +84,19 @@ func (ss *StudentSync) assignValues(columns []string, values []interface{}) erro
 			}
 		case studentsync.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field class_student_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field teacher_student_syncs", values[i])
 			} else if value.Valid {
-				ss.class_student_syncs = new(string)
-				*ss.class_student_syncs = value.String
+				ss.teacher_student_syncs = new(string)
+				*ss.teacher_student_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryClass queries the "class" edge of the StudentSync entity.
-func (ss *StudentSync) QueryClass() *ClassQuery {
-	return (&StudentSyncClient{config: ss.config}).QueryClass(ss)
+// QueryTeacher queries the "teacher" edge of the StudentSync entity.
+func (ss *StudentSync) QueryTeacher() *TeacherQuery {
+	return (&StudentSyncClient{config: ss.config}).QueryTeacher(ss)
 }
 
 // Update returns a builder for updating this StudentSync.

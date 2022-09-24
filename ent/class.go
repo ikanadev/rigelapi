@@ -40,8 +40,6 @@ type ClassEdges struct {
 	ClassPeriods []*ClassPeriod `json:"classPeriods,omitempty"`
 	// ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
 	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
-	// StudentSyncs holds the value of the studentSyncs edge.
-	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
 	// School holds the value of the school edge.
 	School *School `json:"school,omitempty"`
 	// Teacher holds the value of the teacher edge.
@@ -54,7 +52,7 @@ type ClassEdges struct {
 	Year *Year `json:"year,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [8]bool
 }
 
 // StudentsOrErr returns the Students value or an error if the edge
@@ -84,19 +82,10 @@ func (e ClassEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
 	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
 }
 
-// StudentSyncsOrErr returns the StudentSyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ClassEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
-	if e.loadedTypes[3] {
-		return e.StudentSyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "studentSyncs"}
-}
-
 // SchoolOrErr returns the School value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassEdges) SchoolOrErr() (*School, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		if e.School == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: school.Label}
@@ -109,7 +98,7 @@ func (e ClassEdges) SchoolOrErr() (*School, error) {
 // TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassEdges) TeacherOrErr() (*Teacher, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[4] {
 		if e.Teacher == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: teacher.Label}
@@ -122,7 +111,7 @@ func (e ClassEdges) TeacherOrErr() (*Teacher, error) {
 // SubjectOrErr returns the Subject value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassEdges) SubjectOrErr() (*Subject, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[5] {
 		if e.Subject == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: subject.Label}
@@ -135,7 +124,7 @@ func (e ClassEdges) SubjectOrErr() (*Subject, error) {
 // GradeOrErr returns the Grade value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassEdges) GradeOrErr() (*Grade, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[6] {
 		if e.Grade == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: grade.Label}
@@ -148,7 +137,7 @@ func (e ClassEdges) GradeOrErr() (*Grade, error) {
 // YearOrErr returns the Year value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassEdges) YearOrErr() (*Year, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[7] {
 		if e.Year == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: year.Label}
@@ -255,11 +244,6 @@ func (c *Class) QueryClassPeriods() *ClassPeriodQuery {
 // QueryClassPeriodSyncs queries the "classPeriodSyncs" edge of the Class entity.
 func (c *Class) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
 	return (&ClassClient{config: c.config}).QueryClassPeriodSyncs(c)
-}
-
-// QueryStudentSyncs queries the "studentSyncs" edge of the Class entity.
-func (c *Class) QueryStudentSyncs() *StudentSyncQuery {
-	return (&ClassClient{config: c.config}).QueryStudentSyncs(c)
 }
 
 // QuerySchool queries the "school" edge of the Class entity.

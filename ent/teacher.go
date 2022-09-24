@@ -32,9 +32,11 @@ type Teacher struct {
 type TeacherEdges struct {
 	// Classes holds the value of the classes edge.
 	Classes []*Class `json:"classes,omitempty"`
+	// StudentSyncs holds the value of the studentSyncs edge.
+	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -44,6 +46,15 @@ func (e TeacherEdges) ClassesOrErr() ([]*Class, error) {
 		return e.Classes, nil
 	}
 	return nil, &NotLoadedError{edge: "classes"}
+}
+
+// StudentSyncsOrErr returns the StudentSyncs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
+	if e.loadedTypes[1] {
+		return e.StudentSyncs, nil
+	}
+	return nil, &NotLoadedError{edge: "studentSyncs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -106,6 +117,11 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 // QueryClasses queries the "classes" edge of the Teacher entity.
 func (t *Teacher) QueryClasses() *ClassQuery {
 	return (&TeacherClient{config: t.config}).QueryClasses(t)
+}
+
+// QueryStudentSyncs queries the "studentSyncs" edge of the Teacher entity.
+func (t *Teacher) QueryStudentSyncs() *StudentSyncQuery {
+	return (&TeacherClient{config: t.config}).QueryStudentSyncs(t)
 }
 
 // Update returns a builder for updating this Teacher.

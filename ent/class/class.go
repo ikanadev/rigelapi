@@ -15,8 +15,6 @@ const (
 	EdgeClassPeriods = "classPeriods"
 	// EdgeClassPeriodSyncs holds the string denoting the classperiodsyncs edge name in mutations.
 	EdgeClassPeriodSyncs = "classPeriodSyncs"
-	// EdgeStudentSyncs holds the string denoting the studentsyncs edge name in mutations.
-	EdgeStudentSyncs = "studentSyncs"
 	// EdgeSchool holds the string denoting the school edge name in mutations.
 	EdgeSchool = "school"
 	// EdgeTeacher holds the string denoting the teacher edge name in mutations.
@@ -50,13 +48,6 @@ const (
 	ClassPeriodSyncsInverseTable = "class_period_syncs"
 	// ClassPeriodSyncsColumn is the table column denoting the classPeriodSyncs relation/edge.
 	ClassPeriodSyncsColumn = "class_class_period_syncs"
-	// StudentSyncsTable is the table that holds the studentSyncs relation/edge.
-	StudentSyncsTable = "student_syncs"
-	// StudentSyncsInverseTable is the table name for the StudentSync entity.
-	// It exists in this package in order to avoid circular dependency with the "studentsync" package.
-	StudentSyncsInverseTable = "student_syncs"
-	// StudentSyncsColumn is the table column denoting the studentSyncs relation/edge.
-	StudentSyncsColumn = "class_student_syncs"
 	// SchoolTable is the table that holds the school relation/edge.
 	SchoolTable = "classes"
 	// SchoolInverseTable is the table name for the School entity.

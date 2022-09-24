@@ -22,6 +22,6 @@ func (StudentSync) Fields() []ent.Field {
 // Edges of the StudentSync.
 func (StudentSync) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("class", Class.Type).Ref("studentSyncs").Unique(),
+		edge.From("teacher", Teacher.Type).Ref("studentSyncs").Unique(),
 	}
 }

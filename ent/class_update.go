@@ -17,7 +17,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -85,21 +84,6 @@ func (cu *ClassUpdate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdate {
 		ids[i] = c[i].ID
 	}
 	return cu.AddClassPeriodSyncIDs(ids...)
-}
-
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
-func (cu *ClassUpdate) AddStudentSyncIDs(ids ...string) *ClassUpdate {
-	cu.mutation.AddStudentSyncIDs(ids...)
-	return cu
-}
-
-// AddStudentSyncs adds the "studentSyncs" edges to the StudentSync entity.
-func (cu *ClassUpdate) AddStudentSyncs(s ...*StudentSync) *ClassUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return cu.AddStudentSyncIDs(ids...)
 }
 
 // SetSchoolID sets the "school" edge to the School entity by ID.
@@ -263,27 +247,6 @@ func (cu *ClassUpdate) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdat
 		ids[i] = c[i].ID
 	}
 	return cu.RemoveClassPeriodSyncIDs(ids...)
-}
-
-// ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
-func (cu *ClassUpdate) ClearStudentSyncs() *ClassUpdate {
-	cu.mutation.ClearStudentSyncs()
-	return cu
-}
-
-// RemoveStudentSyncIDs removes the "studentSyncs" edge to StudentSync entities by IDs.
-func (cu *ClassUpdate) RemoveStudentSyncIDs(ids ...string) *ClassUpdate {
-	cu.mutation.RemoveStudentSyncIDs(ids...)
-	return cu
-}
-
-// RemoveStudentSyncs removes "studentSyncs" edges to StudentSync entities.
-func (cu *ClassUpdate) RemoveStudentSyncs(s ...*StudentSync) *ClassUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return cu.RemoveStudentSyncIDs(ids...)
 }
 
 // ClearSchool clears the "school" edge to the School entity.
@@ -557,60 +520,6 @@ func (cu *ClassUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if cu.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.RemovedStudentSyncsIDs(); len(nodes) > 0 && !cu.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.StudentSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if cu.mutation.SchoolCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -856,21 +765,6 @@ func (cuo *ClassUpdateOne) AddClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpda
 	return cuo.AddClassPeriodSyncIDs(ids...)
 }
 
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
-func (cuo *ClassUpdateOne) AddStudentSyncIDs(ids ...string) *ClassUpdateOne {
-	cuo.mutation.AddStudentSyncIDs(ids...)
-	return cuo
-}
-
-// AddStudentSyncs adds the "studentSyncs" edges to the StudentSync entity.
-func (cuo *ClassUpdateOne) AddStudentSyncs(s ...*StudentSync) *ClassUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return cuo.AddStudentSyncIDs(ids...)
-}
-
 // SetSchoolID sets the "school" edge to the School entity by ID.
 func (cuo *ClassUpdateOne) SetSchoolID(id string) *ClassUpdateOne {
 	cuo.mutation.SetSchoolID(id)
@@ -1032,27 +926,6 @@ func (cuo *ClassUpdateOne) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *ClassU
 		ids[i] = c[i].ID
 	}
 	return cuo.RemoveClassPeriodSyncIDs(ids...)
-}
-
-// ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
-func (cuo *ClassUpdateOne) ClearStudentSyncs() *ClassUpdateOne {
-	cuo.mutation.ClearStudentSyncs()
-	return cuo
-}
-
-// RemoveStudentSyncIDs removes the "studentSyncs" edge to StudentSync entities by IDs.
-func (cuo *ClassUpdateOne) RemoveStudentSyncIDs(ids ...string) *ClassUpdateOne {
-	cuo.mutation.RemoveStudentSyncIDs(ids...)
-	return cuo
-}
-
-// RemoveStudentSyncs removes "studentSyncs" edges to StudentSync entities.
-func (cuo *ClassUpdateOne) RemoveStudentSyncs(s ...*StudentSync) *ClassUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return cuo.RemoveStudentSyncIDs(ids...)
 }
 
 // ClearSchool clears the "school" edge to the School entity.
@@ -1348,60 +1221,6 @@ func (cuo *ClassUpdateOne) sqlSave(ctx context.Context) (_node *Class, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cuo.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.RemovedStudentSyncsIDs(); len(nodes) > 0 && !cuo.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.StudentSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.StudentSyncsTable,
-			Columns: []string{class.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
 				},
 			},
 		}

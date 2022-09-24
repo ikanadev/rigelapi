@@ -26,5 +26,6 @@ func (Teacher) Fields() []ent.Field {
 func (Teacher) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("classes", Class.Type),
+		edge.To("studentSyncs", StudentSync.Type),
 	}
 }

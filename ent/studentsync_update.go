@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // StudentSyncUpdate is the builder for updating StudentSync entities.
@@ -34,23 +34,23 @@ func (ssu *StudentSyncUpdate) SetLastSyncID(s string) *StudentSyncUpdate {
 	return ssu
 }
 
-// SetClassID sets the "class" edge to the Class entity by ID.
-func (ssu *StudentSyncUpdate) SetClassID(id string) *StudentSyncUpdate {
-	ssu.mutation.SetClassID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssu *StudentSyncUpdate) SetTeacherID(id string) *StudentSyncUpdate {
+	ssu.mutation.SetTeacherID(id)
 	return ssu
 }
 
-// SetNillableClassID sets the "class" edge to the Class entity by ID if the given value is not nil.
-func (ssu *StudentSyncUpdate) SetNillableClassID(id *string) *StudentSyncUpdate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssu *StudentSyncUpdate) SetNillableTeacherID(id *string) *StudentSyncUpdate {
 	if id != nil {
-		ssu = ssu.SetClassID(*id)
+		ssu = ssu.SetTeacherID(*id)
 	}
 	return ssu
 }
 
-// SetClass sets the "class" edge to the Class entity.
-func (ssu *StudentSyncUpdate) SetClass(c *Class) *StudentSyncUpdate {
-	return ssu.SetClassID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssu *StudentSyncUpdate) SetTeacher(t *Teacher) *StudentSyncUpdate {
+	return ssu.SetTeacherID(t.ID)
 }
 
 // Mutation returns the StudentSyncMutation object of the builder.
@@ -58,9 +58,9 @@ func (ssu *StudentSyncUpdate) Mutation() *StudentSyncMutation {
 	return ssu.mutation
 }
 
-// ClearClass clears the "class" edge to the Class entity.
-func (ssu *StudentSyncUpdate) ClearClass() *StudentSyncUpdate {
-	ssu.mutation.ClearClass()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (ssu *StudentSyncUpdate) ClearTeacher() *StudentSyncUpdate {
+	ssu.mutation.ClearTeacher()
 	return ssu
 }
 
@@ -143,33 +143,33 @@ func (ssu *StudentSyncUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: studentsync.FieldLastSyncID,
 		})
 	}
-	if ssu.mutation.ClassCleared() {
+	if ssu.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   studentsync.ClassTable,
-			Columns: []string{studentsync.ClassColumn},
+			Table:   studentsync.TeacherTable,
+			Columns: []string{studentsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ssu.mutation.ClassIDs(); len(nodes) > 0 {
+	if nodes := ssu.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   studentsync.ClassTable,
-			Columns: []string{studentsync.ClassColumn},
+			Table:   studentsync.TeacherTable,
+			Columns: []string{studentsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
@@ -203,23 +203,23 @@ func (ssuo *StudentSyncUpdateOne) SetLastSyncID(s string) *StudentSyncUpdateOne 
 	return ssuo
 }
 
-// SetClassID sets the "class" edge to the Class entity by ID.
-func (ssuo *StudentSyncUpdateOne) SetClassID(id string) *StudentSyncUpdateOne {
-	ssuo.mutation.SetClassID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssuo *StudentSyncUpdateOne) SetTeacherID(id string) *StudentSyncUpdateOne {
+	ssuo.mutation.SetTeacherID(id)
 	return ssuo
 }
 
-// SetNillableClassID sets the "class" edge to the Class entity by ID if the given value is not nil.
-func (ssuo *StudentSyncUpdateOne) SetNillableClassID(id *string) *StudentSyncUpdateOne {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssuo *StudentSyncUpdateOne) SetNillableTeacherID(id *string) *StudentSyncUpdateOne {
 	if id != nil {
-		ssuo = ssuo.SetClassID(*id)
+		ssuo = ssuo.SetTeacherID(*id)
 	}
 	return ssuo
 }
 
-// SetClass sets the "class" edge to the Class entity.
-func (ssuo *StudentSyncUpdateOne) SetClass(c *Class) *StudentSyncUpdateOne {
-	return ssuo.SetClassID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssuo *StudentSyncUpdateOne) SetTeacher(t *Teacher) *StudentSyncUpdateOne {
+	return ssuo.SetTeacherID(t.ID)
 }
 
 // Mutation returns the StudentSyncMutation object of the builder.
@@ -227,9 +227,9 @@ func (ssuo *StudentSyncUpdateOne) Mutation() *StudentSyncMutation {
 	return ssuo.mutation
 }
 
-// ClearClass clears the "class" edge to the Class entity.
-func (ssuo *StudentSyncUpdateOne) ClearClass() *StudentSyncUpdateOne {
-	ssuo.mutation.ClearClass()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (ssuo *StudentSyncUpdateOne) ClearTeacher() *StudentSyncUpdateOne {
+	ssuo.mutation.ClearTeacher()
 	return ssuo
 }
 
@@ -342,33 +342,33 @@ func (ssuo *StudentSyncUpdateOne) sqlSave(ctx context.Context) (_node *StudentSy
 			Column: studentsync.FieldLastSyncID,
 		})
 	}
-	if ssuo.mutation.ClassCleared() {
+	if ssuo.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   studentsync.ClassTable,
-			Columns: []string{studentsync.ClassColumn},
+			Table:   studentsync.TeacherTable,
+			Columns: []string{studentsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ssuo.mutation.ClassIDs(); len(nodes) > 0 {
+	if nodes := ssuo.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   studentsync.ClassTable,
-			Columns: []string{studentsync.ClassColumn},
+			Table:   studentsync.TeacherTable,
+			Columns: []string{studentsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}

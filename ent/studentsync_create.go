@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // StudentSyncCreate is the builder for creating a StudentSync entity.
@@ -32,23 +32,23 @@ func (ssc *StudentSyncCreate) SetID(s string) *StudentSyncCreate {
 	return ssc
 }
 
-// SetClassID sets the "class" edge to the Class entity by ID.
-func (ssc *StudentSyncCreate) SetClassID(id string) *StudentSyncCreate {
-	ssc.mutation.SetClassID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (ssc *StudentSyncCreate) SetTeacherID(id string) *StudentSyncCreate {
+	ssc.mutation.SetTeacherID(id)
 	return ssc
 }
 
-// SetNillableClassID sets the "class" edge to the Class entity by ID if the given value is not nil.
-func (ssc *StudentSyncCreate) SetNillableClassID(id *string) *StudentSyncCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (ssc *StudentSyncCreate) SetNillableTeacherID(id *string) *StudentSyncCreate {
 	if id != nil {
-		ssc = ssc.SetClassID(*id)
+		ssc = ssc.SetTeacherID(*id)
 	}
 	return ssc
 }
 
-// SetClass sets the "class" edge to the Class entity.
-func (ssc *StudentSyncCreate) SetClass(c *Class) *StudentSyncCreate {
-	return ssc.SetClassID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (ssc *StudentSyncCreate) SetTeacher(t *Teacher) *StudentSyncCreate {
+	return ssc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the StudentSyncMutation object of the builder.
@@ -174,24 +174,24 @@ func (ssc *StudentSyncCreate) createSpec() (*StudentSync, *sqlgraph.CreateSpec) 
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := ssc.mutation.ClassIDs(); len(nodes) > 0 {
+	if nodes := ssc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   studentsync.ClassTable,
-			Columns: []string{studentsync.ClassColumn},
+			Table:   studentsync.TeacherTable,
+			Columns: []string{studentsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.class_student_syncs = &nodes[0]
+		_node.teacher_student_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

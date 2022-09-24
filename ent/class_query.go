@@ -18,7 +18,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -36,7 +35,6 @@ type ClassQuery struct {
 	withStudents         *StudentQuery
 	withClassPeriods     *ClassPeriodQuery
 	withClassPeriodSyncs *ClassPeriodSyncQuery
-	withStudentSyncs     *StudentSyncQuery
 	withSchool           *SchoolQuery
 	withTeacher          *TeacherQuery
 	withSubject          *SubjectQuery
@@ -138,28 +136,6 @@ func (cq *ClassQuery) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
 			sqlgraph.From(class.Table, class.FieldID, selector),
 			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, class.ClassPeriodSyncsTable, class.ClassPeriodSyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryStudentSyncs chains the current query on the "studentSyncs" edge.
-func (cq *ClassQuery) QueryStudentSyncs() *StudentSyncQuery {
-	query := &StudentSyncQuery{config: cq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(class.Table, class.FieldID, selector),
-			sqlgraph.To(studentsync.Table, studentsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, class.StudentSyncsTable, class.StudentSyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -461,7 +437,6 @@ func (cq *ClassQuery) Clone() *ClassQuery {
 		withStudents:         cq.withStudents.Clone(),
 		withClassPeriods:     cq.withClassPeriods.Clone(),
 		withClassPeriodSyncs: cq.withClassPeriodSyncs.Clone(),
-		withStudentSyncs:     cq.withStudentSyncs.Clone(),
 		withSchool:           cq.withSchool.Clone(),
 		withTeacher:          cq.withTeacher.Clone(),
 		withSubject:          cq.withSubject.Clone(),
@@ -504,17 +479,6 @@ func (cq *ClassQuery) WithClassPeriodSyncs(opts ...func(*ClassPeriodSyncQuery)) 
 		opt(query)
 	}
 	cq.withClassPeriodSyncs = query
-	return cq
-}
-
-// WithStudentSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "studentSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *ClassQuery) WithStudentSyncs(opts ...func(*StudentSyncQuery)) *ClassQuery {
-	query := &StudentSyncQuery{config: cq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	cq.withStudentSyncs = query
 	return cq
 }
 
@@ -642,11 +606,10 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 		nodes       = []*Class{}
 		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [8]bool{
 			cq.withStudents != nil,
 			cq.withClassPeriods != nil,
 			cq.withClassPeriodSyncs != nil,
-			cq.withStudentSyncs != nil,
 			cq.withSchool != nil,
 			cq.withTeacher != nil,
 			cq.withSubject != nil,
@@ -696,13 +659,6 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 		if err := cq.loadClassPeriodSyncs(ctx, query, nodes,
 			func(n *Class) { n.Edges.ClassPeriodSyncs = []*ClassPeriodSync{} },
 			func(n *Class, e *ClassPeriodSync) { n.Edges.ClassPeriodSyncs = append(n.Edges.ClassPeriodSyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := cq.withStudentSyncs; query != nil {
-		if err := cq.loadStudentSyncs(ctx, query, nodes,
-			func(n *Class) { n.Edges.StudentSyncs = []*StudentSync{} },
-			func(n *Class, e *StudentSync) { n.Edges.StudentSyncs = append(n.Edges.StudentSyncs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -827,37 +783,6 @@ func (cq *ClassQuery) loadClassPeriodSyncs(ctx context.Context, query *ClassPeri
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "class_class_period_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (cq *ClassQuery) loadStudentSyncs(ctx context.Context, query *StudentSyncQuery, nodes []*Class, init func(*Class), assign func(*Class, *StudentSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Class)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.StudentSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(class.StudentSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.class_student_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "class_student_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_student_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

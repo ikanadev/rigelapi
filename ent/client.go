@@ -1264,22 +1264,6 @@ func (c *ClassClient) QueryClassPeriodSyncs(cl *Class) *ClassPeriodSyncQuery {
 	return query
 }
 
-// QueryStudentSyncs queries the studentSyncs edge of a Class.
-func (c *ClassClient) QueryStudentSyncs(cl *Class) *StudentSyncQuery {
-	query := &StudentSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := cl.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(class.Table, class.FieldID, id),
-			sqlgraph.To(studentsync.Table, studentsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, class.StudentSyncsTable, class.StudentSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(cl.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QuerySchool queries the school edge of a Class.
 func (c *ClassClient) QuerySchool(cl *Class) *SchoolQuery {
 	query := &SchoolQuery{config: c.config}
@@ -2808,15 +2792,15 @@ func (c *StudentSyncClient) GetX(ctx context.Context, id string) *StudentSync {
 	return obj
 }
 
-// QueryClass queries the class edge of a StudentSync.
-func (c *StudentSyncClient) QueryClass(ss *StudentSync) *ClassQuery {
-	query := &ClassQuery{config: c.config}
+// QueryTeacher queries the teacher edge of a StudentSync.
+func (c *StudentSyncClient) QueryTeacher(ss *StudentSync) *TeacherQuery {
+	query := &TeacherQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := ss.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(studentsync.Table, studentsync.FieldID, id),
-			sqlgraph.To(class.Table, class.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, studentsync.ClassTable, studentsync.ClassColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, studentsync.TeacherTable, studentsync.TeacherColumn),
 		)
 		fromV = sqlgraph.Neighbors(ss.driver.Dialect(), step)
 		return fromV, nil
@@ -3029,6 +3013,22 @@ func (c *TeacherClient) QueryClasses(t *Teacher) *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, id),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStudentSyncs queries the studentSyncs edge of a Teacher.
+func (c *TeacherClient) QueryStudentSyncs(t *Teacher) *StudentSyncQuery {
+	query := &StudentSyncQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, id),
+			sqlgraph.To(studentsync.Table, studentsync.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.StudentSyncsTable, teacher.StudentSyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

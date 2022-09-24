@@ -25,7 +25,6 @@ func (Class) Edges() []ent.Edge {
 		edge.To("students", Student.Type),
 		edge.To("classPeriods", ClassPeriod.Type),
 		edge.To("classPeriodSyncs", ClassPeriodSync.Type),
-		edge.To("studentSyncs", StudentSync.Type),
 		edge.From("school", School.Type).Ref("classes").Unique(),
 		edge.From("teacher", Teacher.Type).Ref("classes").Unique(),
 		edge.From("subject", Subject.Type).Ref("classes").Unique(),

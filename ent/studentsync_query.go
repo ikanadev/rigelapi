@@ -10,22 +10,22 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // StudentSyncQuery is the builder for querying StudentSync entities.
 type StudentSyncQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.StudentSync
-	withClass  *ClassQuery
-	withFKs    bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.StudentSync
+	withTeacher *TeacherQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +62,9 @@ func (ssq *StudentSyncQuery) Order(o ...OrderFunc) *StudentSyncQuery {
 	return ssq
 }
 
-// QueryClass chains the current query on the "class" edge.
-func (ssq *StudentSyncQuery) QueryClass() *ClassQuery {
-	query := &ClassQuery{config: ssq.config}
+// QueryTeacher chains the current query on the "teacher" edge.
+func (ssq *StudentSyncQuery) QueryTeacher() *TeacherQuery {
+	query := &TeacherQuery{config: ssq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := ssq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (ssq *StudentSyncQuery) QueryClass() *ClassQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(studentsync.Table, studentsync.FieldID, selector),
-			sqlgraph.To(class.Table, class.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, studentsync.ClassTable, studentsync.ClassColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, studentsync.TeacherTable, studentsync.TeacherColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ssq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +260,12 @@ func (ssq *StudentSyncQuery) Clone() *StudentSyncQuery {
 		return nil
 	}
 	return &StudentSyncQuery{
-		config:     ssq.config,
-		limit:      ssq.limit,
-		offset:     ssq.offset,
-		order:      append([]OrderFunc{}, ssq.order...),
-		predicates: append([]predicate.StudentSync{}, ssq.predicates...),
-		withClass:  ssq.withClass.Clone(),
+		config:      ssq.config,
+		limit:       ssq.limit,
+		offset:      ssq.offset,
+		order:       append([]OrderFunc{}, ssq.order...),
+		predicates:  append([]predicate.StudentSync{}, ssq.predicates...),
+		withTeacher: ssq.withTeacher.Clone(),
 		// clone intermediate query.
 		sql:    ssq.sql.Clone(),
 		path:   ssq.path,
@@ -273,14 +273,14 @@ func (ssq *StudentSyncQuery) Clone() *StudentSyncQuery {
 	}
 }
 
-// WithClass tells the query-builder to eager-load the nodes that are connected to
-// the "class" edge. The optional arguments are used to configure the query builder of the edge.
-func (ssq *StudentSyncQuery) WithClass(opts ...func(*ClassQuery)) *StudentSyncQuery {
-	query := &ClassQuery{config: ssq.config}
+// WithTeacher tells the query-builder to eager-load the nodes that are connected to
+// the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
+func (ssq *StudentSyncQuery) WithTeacher(opts ...func(*TeacherQuery)) *StudentSyncQuery {
+	query := &TeacherQuery{config: ssq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	ssq.withClass = query
+	ssq.withTeacher = query
 	return ssq
 }
 
@@ -354,10 +354,10 @@ func (ssq *StudentSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		withFKs     = ssq.withFKs
 		_spec       = ssq.querySpec()
 		loadedTypes = [1]bool{
-			ssq.withClass != nil,
+			ssq.withTeacher != nil,
 		}
 	)
-	if ssq.withClass != nil {
+	if ssq.withTeacher != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -381,29 +381,29 @@ func (ssq *StudentSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := ssq.withClass; query != nil {
-		if err := ssq.loadClass(ctx, query, nodes, nil,
-			func(n *StudentSync, e *Class) { n.Edges.Class = e }); err != nil {
+	if query := ssq.withTeacher; query != nil {
+		if err := ssq.loadTeacher(ctx, query, nodes, nil,
+			func(n *StudentSync, e *Teacher) { n.Edges.Teacher = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (ssq *StudentSyncQuery) loadClass(ctx context.Context, query *ClassQuery, nodes []*StudentSync, init func(*StudentSync), assign func(*StudentSync, *Class)) error {
+func (ssq *StudentSyncQuery) loadTeacher(ctx context.Context, query *TeacherQuery, nodes []*StudentSync, init func(*StudentSync), assign func(*StudentSync, *Teacher)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*StudentSync)
 	for i := range nodes {
-		if nodes[i].class_student_syncs == nil {
+		if nodes[i].teacher_student_syncs == nil {
 			continue
 		}
-		fk := *nodes[i].class_student_syncs
+		fk := *nodes[i].teacher_student_syncs
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(class.IDIn(ids...))
+	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (ssq *StudentSyncQuery) loadClass(ctx context.Context, query *ClassQuery, n
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_student_syncs" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "teacher_student_syncs" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
