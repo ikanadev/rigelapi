@@ -739,16 +739,16 @@ func (m *ActivityMutation) ResetEdge(name string) error {
 // ActivitySyncMutation represents an operation that mutates the ActivitySync nodes in the graph.
 type ActivitySyncMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *string
-	last_sync_id       *string
-	clearedFields      map[string]struct{}
-	classPeriod        *string
-	clearedclassPeriod bool
-	done               bool
-	oldValue           func(context.Context) (*ActivitySync, error)
-	predicates         []predicate.ActivitySync
+	op             Op
+	typ            string
+	id             *string
+	last_sync_id   *string
+	clearedFields  map[string]struct{}
+	teacher        *string
+	clearedteacher bool
+	done           bool
+	oldValue       func(context.Context) (*ActivitySync, error)
+	predicates     []predicate.ActivitySync
 }
 
 var _ ent.Mutation = (*ActivitySyncMutation)(nil)
@@ -891,43 +891,43 @@ func (m *ActivitySyncMutation) ResetLastSyncID() {
 	m.last_sync_id = nil
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by id.
-func (m *ActivitySyncMutation) SetClassPeriodID(id string) {
-	m.classPeriod = &id
+// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
+func (m *ActivitySyncMutation) SetTeacherID(id string) {
+	m.teacher = &id
 }
 
-// ClearClassPeriod clears the "classPeriod" edge to the ClassPeriod entity.
-func (m *ActivitySyncMutation) ClearClassPeriod() {
-	m.clearedclassPeriod = true
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (m *ActivitySyncMutation) ClearTeacher() {
+	m.clearedteacher = true
 }
 
-// ClassPeriodCleared reports if the "classPeriod" edge to the ClassPeriod entity was cleared.
-func (m *ActivitySyncMutation) ClassPeriodCleared() bool {
-	return m.clearedclassPeriod
+// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
+func (m *ActivitySyncMutation) TeacherCleared() bool {
+	return m.clearedteacher
 }
 
-// ClassPeriodID returns the "classPeriod" edge ID in the mutation.
-func (m *ActivitySyncMutation) ClassPeriodID() (id string, exists bool) {
-	if m.classPeriod != nil {
-		return *m.classPeriod, true
+// TeacherID returns the "teacher" edge ID in the mutation.
+func (m *ActivitySyncMutation) TeacherID() (id string, exists bool) {
+	if m.teacher != nil {
+		return *m.teacher, true
 	}
 	return
 }
 
-// ClassPeriodIDs returns the "classPeriod" edge IDs in the mutation.
+// TeacherIDs returns the "teacher" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ClassPeriodID instead. It exists only for internal usage by the builders.
-func (m *ActivitySyncMutation) ClassPeriodIDs() (ids []string) {
-	if id := m.classPeriod; id != nil {
+// TeacherID instead. It exists only for internal usage by the builders.
+func (m *ActivitySyncMutation) TeacherIDs() (ids []string) {
+	if id := m.teacher; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetClassPeriod resets all changes to the "classPeriod" edge.
-func (m *ActivitySyncMutation) ResetClassPeriod() {
-	m.classPeriod = nil
-	m.clearedclassPeriod = false
+// ResetTeacher resets all changes to the "teacher" edge.
+func (m *ActivitySyncMutation) ResetTeacher() {
+	m.teacher = nil
+	m.clearedteacher = false
 }
 
 // Where appends a list predicates to the ActivitySyncMutation builder.
@@ -1049,8 +1049,8 @@ func (m *ActivitySyncMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ActivitySyncMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.classPeriod != nil {
-		edges = append(edges, activitysync.EdgeClassPeriod)
+	if m.teacher != nil {
+		edges = append(edges, activitysync.EdgeTeacher)
 	}
 	return edges
 }
@@ -1059,8 +1059,8 @@ func (m *ActivitySyncMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ActivitySyncMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case activitysync.EdgeClassPeriod:
-		if id := m.classPeriod; id != nil {
+	case activitysync.EdgeTeacher:
+		if id := m.teacher; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -1084,8 +1084,8 @@ func (m *ActivitySyncMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ActivitySyncMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedclassPeriod {
-		edges = append(edges, activitysync.EdgeClassPeriod)
+	if m.clearedteacher {
+		edges = append(edges, activitysync.EdgeTeacher)
 	}
 	return edges
 }
@@ -1094,8 +1094,8 @@ func (m *ActivitySyncMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ActivitySyncMutation) EdgeCleared(name string) bool {
 	switch name {
-	case activitysync.EdgeClassPeriod:
-		return m.clearedclassPeriod
+	case activitysync.EdgeTeacher:
+		return m.clearedteacher
 	}
 	return false
 }
@@ -1104,8 +1104,8 @@ func (m *ActivitySyncMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ActivitySyncMutation) ClearEdge(name string) error {
 	switch name {
-	case activitysync.EdgeClassPeriod:
-		m.ClearClassPeriod()
+	case activitysync.EdgeTeacher:
+		m.ClearTeacher()
 		return nil
 	}
 	return fmt.Errorf("unknown ActivitySync unique edge %s", name)
@@ -1115,8 +1115,8 @@ func (m *ActivitySyncMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ActivitySyncMutation) ResetEdge(name string) error {
 	switch name {
-	case activitysync.EdgeClassPeriod:
-		m.ResetClassPeriod()
+	case activitysync.EdgeTeacher:
+		m.ResetTeacher()
 		return nil
 	}
 	return fmt.Errorf("unknown ActivitySync edge %s", name)
@@ -4257,9 +4257,6 @@ type ClassPeriodMutation struct {
 	activities                map[string]struct{}
 	removedactivities         map[string]struct{}
 	clearedactivities         bool
-	activitySyncs             map[string]struct{}
-	removedactivitySyncs      map[string]struct{}
-	clearedactivitySyncs      bool
 	class                     *string
 	clearedclass              bool
 	period                    *string
@@ -4643,60 +4640,6 @@ func (m *ClassPeriodMutation) ResetActivities() {
 	m.removedactivities = nil
 }
 
-// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by ids.
-func (m *ClassPeriodMutation) AddActivitySyncIDs(ids ...string) {
-	if m.activitySyncs == nil {
-		m.activitySyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.activitySyncs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearActivitySyncs clears the "activitySyncs" edge to the ActivitySync entity.
-func (m *ClassPeriodMutation) ClearActivitySyncs() {
-	m.clearedactivitySyncs = true
-}
-
-// ActivitySyncsCleared reports if the "activitySyncs" edge to the ActivitySync entity was cleared.
-func (m *ClassPeriodMutation) ActivitySyncsCleared() bool {
-	return m.clearedactivitySyncs
-}
-
-// RemoveActivitySyncIDs removes the "activitySyncs" edge to the ActivitySync entity by IDs.
-func (m *ClassPeriodMutation) RemoveActivitySyncIDs(ids ...string) {
-	if m.removedactivitySyncs == nil {
-		m.removedactivitySyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.activitySyncs, ids[i])
-		m.removedactivitySyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedActivitySyncs returns the removed IDs of the "activitySyncs" edge to the ActivitySync entity.
-func (m *ClassPeriodMutation) RemovedActivitySyncsIDs() (ids []string) {
-	for id := range m.removedactivitySyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ActivitySyncsIDs returns the "activitySyncs" edge IDs in the mutation.
-func (m *ClassPeriodMutation) ActivitySyncsIDs() (ids []string) {
-	for id := range m.activitySyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetActivitySyncs resets all changes to the "activitySyncs" edge.
-func (m *ClassPeriodMutation) ResetActivitySyncs() {
-	m.activitySyncs = nil
-	m.clearedactivitySyncs = false
-	m.removedactivitySyncs = nil
-}
-
 // SetClassID sets the "class" edge to the Class entity by id.
 func (m *ClassPeriodMutation) SetClassID(id string) {
 	m.class = &id
@@ -4927,7 +4870,7 @@ func (m *ClassPeriodMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ClassPeriodMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.attendanceDays != nil {
 		edges = append(edges, classperiod.EdgeAttendanceDays)
 	}
@@ -4936,9 +4879,6 @@ func (m *ClassPeriodMutation) AddedEdges() []string {
 	}
 	if m.activities != nil {
 		edges = append(edges, classperiod.EdgeActivities)
-	}
-	if m.activitySyncs != nil {
-		edges = append(edges, classperiod.EdgeActivitySyncs)
 	}
 	if m.class != nil {
 		edges = append(edges, classperiod.EdgeClass)
@@ -4971,12 +4911,6 @@ func (m *ClassPeriodMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case classperiod.EdgeActivitySyncs:
-		ids := make([]ent.Value, 0, len(m.activitySyncs))
-		for id := range m.activitySyncs {
-			ids = append(ids, id)
-		}
-		return ids
 	case classperiod.EdgeClass:
 		if id := m.class; id != nil {
 			return []ent.Value{*id}
@@ -4991,7 +4925,7 @@ func (m *ClassPeriodMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ClassPeriodMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.removedattendanceDays != nil {
 		edges = append(edges, classperiod.EdgeAttendanceDays)
 	}
@@ -5000,9 +4934,6 @@ func (m *ClassPeriodMutation) RemovedEdges() []string {
 	}
 	if m.removedactivities != nil {
 		edges = append(edges, classperiod.EdgeActivities)
-	}
-	if m.removedactivitySyncs != nil {
-		edges = append(edges, classperiod.EdgeActivitySyncs)
 	}
 	return edges
 }
@@ -5029,19 +4960,13 @@ func (m *ClassPeriodMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case classperiod.EdgeActivitySyncs:
-		ids := make([]ent.Value, 0, len(m.removedactivitySyncs))
-		for id := range m.removedactivitySyncs {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ClassPeriodMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 5)
 	if m.clearedattendanceDays {
 		edges = append(edges, classperiod.EdgeAttendanceDays)
 	}
@@ -5050,9 +4975,6 @@ func (m *ClassPeriodMutation) ClearedEdges() []string {
 	}
 	if m.clearedactivities {
 		edges = append(edges, classperiod.EdgeActivities)
-	}
-	if m.clearedactivitySyncs {
-		edges = append(edges, classperiod.EdgeActivitySyncs)
 	}
 	if m.clearedclass {
 		edges = append(edges, classperiod.EdgeClass)
@@ -5073,8 +4995,6 @@ func (m *ClassPeriodMutation) EdgeCleared(name string) bool {
 		return m.clearedattendanceDaySyncs
 	case classperiod.EdgeActivities:
 		return m.clearedactivities
-	case classperiod.EdgeActivitySyncs:
-		return m.clearedactivitySyncs
 	case classperiod.EdgeClass:
 		return m.clearedclass
 	case classperiod.EdgePeriod:
@@ -5109,9 +5029,6 @@ func (m *ClassPeriodMutation) ResetEdge(name string) error {
 		return nil
 	case classperiod.EdgeActivities:
 		m.ResetActivities()
-		return nil
-	case classperiod.EdgeActivitySyncs:
-		m.ResetActivitySyncs()
 		return nil
 	case classperiod.EdgeClass:
 		m.ResetClass()
@@ -10653,6 +10570,9 @@ type TeacherMutation struct {
 	studentSyncs            map[string]struct{}
 	removedstudentSyncs     map[string]struct{}
 	clearedstudentSyncs     bool
+	activitySyncs           map[string]struct{}
+	removedactivitySyncs    map[string]struct{}
+	clearedactivitySyncs    bool
 	classPeriodSyncs        map[string]struct{}
 	removedclassPeriodSyncs map[string]struct{}
 	clearedclassPeriodSyncs bool
@@ -11017,6 +10937,60 @@ func (m *TeacherMutation) ResetStudentSyncs() {
 	m.removedstudentSyncs = nil
 }
 
+// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by ids.
+func (m *TeacherMutation) AddActivitySyncIDs(ids ...string) {
+	if m.activitySyncs == nil {
+		m.activitySyncs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.activitySyncs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearActivitySyncs clears the "activitySyncs" edge to the ActivitySync entity.
+func (m *TeacherMutation) ClearActivitySyncs() {
+	m.clearedactivitySyncs = true
+}
+
+// ActivitySyncsCleared reports if the "activitySyncs" edge to the ActivitySync entity was cleared.
+func (m *TeacherMutation) ActivitySyncsCleared() bool {
+	return m.clearedactivitySyncs
+}
+
+// RemoveActivitySyncIDs removes the "activitySyncs" edge to the ActivitySync entity by IDs.
+func (m *TeacherMutation) RemoveActivitySyncIDs(ids ...string) {
+	if m.removedactivitySyncs == nil {
+		m.removedactivitySyncs = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.activitySyncs, ids[i])
+		m.removedactivitySyncs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedActivitySyncs returns the removed IDs of the "activitySyncs" edge to the ActivitySync entity.
+func (m *TeacherMutation) RemovedActivitySyncsIDs() (ids []string) {
+	for id := range m.removedactivitySyncs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ActivitySyncsIDs returns the "activitySyncs" edge IDs in the mutation.
+func (m *TeacherMutation) ActivitySyncsIDs() (ids []string) {
+	for id := range m.activitySyncs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetActivitySyncs resets all changes to the "activitySyncs" edge.
+func (m *TeacherMutation) ResetActivitySyncs() {
+	m.activitySyncs = nil
+	m.clearedactivitySyncs = false
+	m.removedactivitySyncs = nil
+}
+
 // AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by ids.
 func (m *TeacherMutation) AddClassPeriodSyncIDs(ids ...string) {
 	if m.classPeriodSyncs == nil {
@@ -11240,12 +11214,15 @@ func (m *TeacherMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeacherMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.classes != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.studentSyncs != nil {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.activitySyncs != nil {
+		edges = append(edges, teacher.EdgeActivitySyncs)
 	}
 	if m.classPeriodSyncs != nil {
 		edges = append(edges, teacher.EdgeClassPeriodSyncs)
@@ -11269,6 +11246,12 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeActivitySyncs:
+		ids := make([]ent.Value, 0, len(m.activitySyncs))
+		for id := range m.activitySyncs {
+			ids = append(ids, id)
+		}
+		return ids
 	case teacher.EdgeClassPeriodSyncs:
 		ids := make([]ent.Value, 0, len(m.classPeriodSyncs))
 		for id := range m.classPeriodSyncs {
@@ -11281,12 +11264,15 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeacherMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedclasses != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.removedstudentSyncs != nil {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.removedactivitySyncs != nil {
+		edges = append(edges, teacher.EdgeActivitySyncs)
 	}
 	if m.removedclassPeriodSyncs != nil {
 		edges = append(edges, teacher.EdgeClassPeriodSyncs)
@@ -11310,6 +11296,12 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeActivitySyncs:
+		ids := make([]ent.Value, 0, len(m.removedactivitySyncs))
+		for id := range m.removedactivitySyncs {
+			ids = append(ids, id)
+		}
+		return ids
 	case teacher.EdgeClassPeriodSyncs:
 		ids := make([]ent.Value, 0, len(m.removedclassPeriodSyncs))
 		for id := range m.removedclassPeriodSyncs {
@@ -11322,12 +11314,15 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeacherMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedclasses {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.clearedstudentSyncs {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.clearedactivitySyncs {
+		edges = append(edges, teacher.EdgeActivitySyncs)
 	}
 	if m.clearedclassPeriodSyncs {
 		edges = append(edges, teacher.EdgeClassPeriodSyncs)
@@ -11343,6 +11338,8 @@ func (m *TeacherMutation) EdgeCleared(name string) bool {
 		return m.clearedclasses
 	case teacher.EdgeStudentSyncs:
 		return m.clearedstudentSyncs
+	case teacher.EdgeActivitySyncs:
+		return m.clearedactivitySyncs
 	case teacher.EdgeClassPeriodSyncs:
 		return m.clearedclassPeriodSyncs
 	}
@@ -11366,6 +11363,9 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 		return nil
 	case teacher.EdgeStudentSyncs:
 		m.ResetStudentSyncs()
+		return nil
+	case teacher.EdgeActivitySyncs:
+		m.ResetActivitySyncs()
 		return nil
 	case teacher.EdgeClassPeriodSyncs:
 		m.ResetClassPeriodSyncs()

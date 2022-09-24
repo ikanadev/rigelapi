@@ -559,6 +559,34 @@ func HasStudentSyncsWith(preds ...predicate.StudentSync) predicate.Teacher {
 	})
 }
 
+// HasActivitySyncs applies the HasEdge predicate on the "activitySyncs" edge.
+func HasActivitySyncs() predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActivitySyncsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActivitySyncsTable, ActivitySyncsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActivitySyncsWith applies the HasEdge predicate on the "activitySyncs" edge with a given conditions (other predicates).
+func HasActivitySyncsWith(preds ...predicate.ActivitySync) predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActivitySyncsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActivitySyncsTable, ActivitySyncsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasClassPeriodSyncs applies the HasEdge predicate on the "classPeriodSyncs" edge.
 func HasClassPeriodSyncs() predicate.Teacher {
 	return predicate.Teacher(func(s *sql.Selector) {

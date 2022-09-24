@@ -8,7 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ActivitySync is the model entity for the ActivitySync schema.
@@ -20,30 +20,30 @@ type ActivitySync struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ActivitySyncQuery when eager-loading is set.
-	Edges                       ActivitySyncEdges `json:"edges"`
-	class_period_activity_syncs *string
+	Edges                  ActivitySyncEdges `json:"edges"`
+	teacher_activity_syncs *string
 }
 
 // ActivitySyncEdges holds the relations/edges for other nodes in the graph.
 type ActivitySyncEdges struct {
-	// ClassPeriod holds the value of the classPeriod edge.
-	ClassPeriod *ClassPeriod `json:"classPeriod,omitempty"`
+	// Teacher holds the value of the teacher edge.
+	Teacher *Teacher `json:"teacher,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ClassPeriodOrErr returns the ClassPeriod value or an error if the edge
+// TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ActivitySyncEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
+func (e ActivitySyncEdges) TeacherOrErr() (*Teacher, error) {
 	if e.loadedTypes[0] {
-		if e.ClassPeriod == nil {
+		if e.Teacher == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: classperiod.Label}
+			return nil, &NotFoundError{label: teacher.Label}
 		}
-		return e.ClassPeriod, nil
+		return e.Teacher, nil
 	}
-	return nil, &NotLoadedError{edge: "classPeriod"}
+	return nil, &NotLoadedError{edge: "teacher"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*ActivitySync) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case activitysync.FieldID, activitysync.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case activitysync.ForeignKeys[0]: // class_period_activity_syncs
+		case activitysync.ForeignKeys[0]: // teacher_activity_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type ActivitySync", columns[i])
@@ -84,19 +84,19 @@ func (as *ActivitySync) assignValues(columns []string, values []interface{}) err
 			}
 		case activitysync.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field class_period_activity_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field teacher_activity_syncs", values[i])
 			} else if value.Valid {
-				as.class_period_activity_syncs = new(string)
-				*as.class_period_activity_syncs = value.String
+				as.teacher_activity_syncs = new(string)
+				*as.teacher_activity_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryClassPeriod queries the "classPeriod" edge of the ActivitySync entity.
-func (as *ActivitySync) QueryClassPeriod() *ClassPeriodQuery {
-	return (&ActivitySyncClient{config: as.config}).QueryClassPeriod(as)
+// QueryTeacher queries the "teacher" edge of the ActivitySync entity.
+func (as *ActivitySync) QueryTeacher() *TeacherQuery {
+	return (&ActivitySyncClient{config: as.config}).QueryTeacher(as)
 }
 
 // Update returns a builder for updating this ActivitySync.

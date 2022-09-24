@@ -19,8 +19,6 @@ const (
 	EdgeAttendanceDaySyncs = "attendanceDaySyncs"
 	// EdgeActivities holds the string denoting the activities edge name in mutations.
 	EdgeActivities = "activities"
-	// EdgeActivitySyncs holds the string denoting the activitysyncs edge name in mutations.
-	EdgeActivitySyncs = "activitySyncs"
 	// EdgeClass holds the string denoting the class edge name in mutations.
 	EdgeClass = "class"
 	// EdgePeriod holds the string denoting the period edge name in mutations.
@@ -48,13 +46,6 @@ const (
 	ActivitiesInverseTable = "activities"
 	// ActivitiesColumn is the table column denoting the activities relation/edge.
 	ActivitiesColumn = "class_period_activities"
-	// ActivitySyncsTable is the table that holds the activitySyncs relation/edge.
-	ActivitySyncsTable = "activity_syncs"
-	// ActivitySyncsInverseTable is the table name for the ActivitySync entity.
-	// It exists in this package in order to avoid circular dependency with the "activitysync" package.
-	ActivitySyncsInverseTable = "activity_syncs"
-	// ActivitySyncsColumn is the table column denoting the activitySyncs relation/edge.
-	ActivitySyncsColumn = "class_period_activity_syncs"
 	// ClassTable is the table that holds the class relation/edge.
 	ClassTable = "class_periods"
 	// ClassInverseTable is the table name for the Class entity.

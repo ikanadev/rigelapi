@@ -11,21 +11,21 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ActivitySyncQuery is the builder for querying ActivitySync entities.
 type ActivitySyncQuery struct {
 	config
-	limit           *int
-	offset          *int
-	unique          *bool
-	order           []OrderFunc
-	fields          []string
-	predicates      []predicate.ActivitySync
-	withClassPeriod *ClassPeriodQuery
-	withFKs         bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.ActivitySync
+	withTeacher *TeacherQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +62,9 @@ func (asq *ActivitySyncQuery) Order(o ...OrderFunc) *ActivitySyncQuery {
 	return asq
 }
 
-// QueryClassPeriod chains the current query on the "classPeriod" edge.
-func (asq *ActivitySyncQuery) QueryClassPeriod() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: asq.config}
+// QueryTeacher chains the current query on the "teacher" edge.
+func (asq *ActivitySyncQuery) QueryTeacher() *TeacherQuery {
+	query := &TeacherQuery{config: asq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := asq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (asq *ActivitySyncQuery) QueryClassPeriod() *ClassPeriodQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(activitysync.Table, activitysync.FieldID, selector),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, activitysync.ClassPeriodTable, activitysync.ClassPeriodColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, activitysync.TeacherTable, activitysync.TeacherColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(asq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +260,12 @@ func (asq *ActivitySyncQuery) Clone() *ActivitySyncQuery {
 		return nil
 	}
 	return &ActivitySyncQuery{
-		config:          asq.config,
-		limit:           asq.limit,
-		offset:          asq.offset,
-		order:           append([]OrderFunc{}, asq.order...),
-		predicates:      append([]predicate.ActivitySync{}, asq.predicates...),
-		withClassPeriod: asq.withClassPeriod.Clone(),
+		config:      asq.config,
+		limit:       asq.limit,
+		offset:      asq.offset,
+		order:       append([]OrderFunc{}, asq.order...),
+		predicates:  append([]predicate.ActivitySync{}, asq.predicates...),
+		withTeacher: asq.withTeacher.Clone(),
 		// clone intermediate query.
 		sql:    asq.sql.Clone(),
 		path:   asq.path,
@@ -273,14 +273,14 @@ func (asq *ActivitySyncQuery) Clone() *ActivitySyncQuery {
 	}
 }
 
-// WithClassPeriod tells the query-builder to eager-load the nodes that are connected to
-// the "classPeriod" edge. The optional arguments are used to configure the query builder of the edge.
-func (asq *ActivitySyncQuery) WithClassPeriod(opts ...func(*ClassPeriodQuery)) *ActivitySyncQuery {
-	query := &ClassPeriodQuery{config: asq.config}
+// WithTeacher tells the query-builder to eager-load the nodes that are connected to
+// the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
+func (asq *ActivitySyncQuery) WithTeacher(opts ...func(*TeacherQuery)) *ActivitySyncQuery {
+	query := &TeacherQuery{config: asq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	asq.withClassPeriod = query
+	asq.withTeacher = query
 	return asq
 }
 
@@ -354,10 +354,10 @@ func (asq *ActivitySyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 		withFKs     = asq.withFKs
 		_spec       = asq.querySpec()
 		loadedTypes = [1]bool{
-			asq.withClassPeriod != nil,
+			asq.withTeacher != nil,
 		}
 	)
-	if asq.withClassPeriod != nil {
+	if asq.withTeacher != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -381,29 +381,29 @@ func (asq *ActivitySyncQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := asq.withClassPeriod; query != nil {
-		if err := asq.loadClassPeriod(ctx, query, nodes, nil,
-			func(n *ActivitySync, e *ClassPeriod) { n.Edges.ClassPeriod = e }); err != nil {
+	if query := asq.withTeacher; query != nil {
+		if err := asq.loadTeacher(ctx, query, nodes, nil,
+			func(n *ActivitySync, e *Teacher) { n.Edges.Teacher = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (asq *ActivitySyncQuery) loadClassPeriod(ctx context.Context, query *ClassPeriodQuery, nodes []*ActivitySync, init func(*ActivitySync), assign func(*ActivitySync, *ClassPeriod)) error {
+func (asq *ActivitySyncQuery) loadTeacher(ctx context.Context, query *TeacherQuery, nodes []*ActivitySync, init func(*ActivitySync), assign func(*ActivitySync, *Teacher)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*ActivitySync)
 	for i := range nodes {
-		if nodes[i].class_period_activity_syncs == nil {
+		if nodes[i].teacher_activity_syncs == nil {
 			continue
 		}
-		fk := *nodes[i].class_period_activity_syncs
+		fk := *nodes[i].teacher_activity_syncs
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(classperiod.IDIn(ids...))
+	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (asq *ActivitySyncQuery) loadClassPeriod(ctx context.Context, query *ClassP
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_activity_syncs" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "teacher_activity_syncs" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

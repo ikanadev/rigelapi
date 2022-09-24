@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ActivitySyncCreate is the builder for creating a ActivitySync entity.
@@ -32,23 +32,23 @@ func (asc *ActivitySyncCreate) SetID(s string) *ActivitySyncCreate {
 	return asc
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (asc *ActivitySyncCreate) SetClassPeriodID(id string) *ActivitySyncCreate {
-	asc.mutation.SetClassPeriodID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (asc *ActivitySyncCreate) SetTeacherID(id string) *ActivitySyncCreate {
+	asc.mutation.SetTeacherID(id)
 	return asc
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (asc *ActivitySyncCreate) SetNillableClassPeriodID(id *string) *ActivitySyncCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (asc *ActivitySyncCreate) SetNillableTeacherID(id *string) *ActivitySyncCreate {
 	if id != nil {
-		asc = asc.SetClassPeriodID(*id)
+		asc = asc.SetTeacherID(*id)
 	}
 	return asc
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (asc *ActivitySyncCreate) SetClassPeriod(c *ClassPeriod) *ActivitySyncCreate {
-	return asc.SetClassPeriodID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (asc *ActivitySyncCreate) SetTeacher(t *Teacher) *ActivitySyncCreate {
+	return asc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the ActivitySyncMutation object of the builder.
@@ -174,24 +174,24 @@ func (asc *ActivitySyncCreate) createSpec() (*ActivitySync, *sqlgraph.CreateSpec
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := asc.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := asc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   activitysync.ClassPeriodTable,
-			Columns: []string{activitysync.ClassPeriodColumn},
+			Table:   activitysync.TeacherTable,
+			Columns: []string{activitysync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.class_period_activity_syncs = &nodes[0]
+		_node.teacher_activity_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

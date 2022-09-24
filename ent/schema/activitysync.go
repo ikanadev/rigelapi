@@ -22,6 +22,6 @@ func (ActivitySync) Fields() []ent.Field {
 // Edges of the ActivitySync.
 func (ActivitySync) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("classPeriod", ClassPeriod.Type).Ref("activitySyncs").Unique(),
+		edge.From("teacher", Teacher.Type).Ref("activitySyncs").Unique(),
 	}
 }

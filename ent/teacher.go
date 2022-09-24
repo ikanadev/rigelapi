@@ -34,11 +34,13 @@ type TeacherEdges struct {
 	Classes []*Class `json:"classes,omitempty"`
 	// StudentSyncs holds the value of the studentSyncs edge.
 	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
+	// ActivitySyncs holds the value of the activitySyncs edge.
+	ActivitySyncs []*ActivitySync `json:"activitySyncs,omitempty"`
 	// ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
 	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -59,10 +61,19 @@ func (e TeacherEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
 	return nil, &NotLoadedError{edge: "studentSyncs"}
 }
 
+// ActivitySyncsOrErr returns the ActivitySyncs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
+	if e.loadedTypes[2] {
+		return e.ActivitySyncs, nil
+	}
+	return nil, &NotLoadedError{edge: "activitySyncs"}
+}
+
 // ClassPeriodSyncsOrErr returns the ClassPeriodSyncs value or an error if the edge
 // was not loaded in eager-loading.
 func (e TeacherEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.ClassPeriodSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
@@ -133,6 +144,11 @@ func (t *Teacher) QueryClasses() *ClassQuery {
 // QueryStudentSyncs queries the "studentSyncs" edge of the Teacher entity.
 func (t *Teacher) QueryStudentSyncs() *StudentSyncQuery {
 	return (&TeacherClient{config: t.config}).QueryStudentSyncs(t)
+}
+
+// QueryActivitySyncs queries the "activitySyncs" edge of the Teacher entity.
+func (t *Teacher) QueryActivitySyncs() *ActivitySyncQuery {
+	return (&TeacherClient{config: t.config}).QueryActivitySyncs(t)
 }
 
 // QueryClassPeriodSyncs queries the "classPeriodSyncs" edge of the Teacher entity.

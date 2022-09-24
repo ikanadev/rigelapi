@@ -39,15 +39,13 @@ type ClassPeriodEdges struct {
 	AttendanceDaySyncs []*AttendanceDaySyncs `json:"attendanceDaySyncs,omitempty"`
 	// Activities holds the value of the activities edge.
 	Activities []*Activity `json:"activities,omitempty"`
-	// ActivitySyncs holds the value of the activitySyncs edge.
-	ActivitySyncs []*ActivitySync `json:"activitySyncs,omitempty"`
 	// Class holds the value of the class edge.
 	Class *Class `json:"class,omitempty"`
 	// Period holds the value of the period edge.
 	Period *Period `json:"period,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [5]bool
 }
 
 // AttendanceDaysOrErr returns the AttendanceDays value or an error if the edge
@@ -77,19 +75,10 @@ func (e ClassPeriodEdges) ActivitiesOrErr() ([]*Activity, error) {
 	return nil, &NotLoadedError{edge: "activities"}
 }
 
-// ActivitySyncsOrErr returns the ActivitySyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ClassPeriodEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
-	if e.loadedTypes[3] {
-		return e.ActivitySyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "activitySyncs"}
-}
-
 // ClassOrErr returns the Class value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassPeriodEdges) ClassOrErr() (*Class, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		if e.Class == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: class.Label}
@@ -102,7 +91,7 @@ func (e ClassPeriodEdges) ClassOrErr() (*Class, error) {
 // PeriodOrErr returns the Period value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassPeriodEdges) PeriodOrErr() (*Period, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[4] {
 		if e.Period == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: period.Label}
@@ -198,11 +187,6 @@ func (cp *ClassPeriod) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
 // QueryActivities queries the "activities" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryActivities() *ActivityQuery {
 	return (&ClassPeriodClient{config: cp.config}).QueryActivities(cp)
-}
-
-// QueryActivitySyncs queries the "activitySyncs" edge of the ClassPeriod entity.
-func (cp *ClassPeriod) QueryActivitySyncs() *ActivitySyncQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryActivitySyncs(cp)
 }
 
 // QueryClass queries the "class" edge of the ClassPeriod entity.

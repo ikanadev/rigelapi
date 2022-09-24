@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/class"
@@ -33,7 +32,6 @@ type ClassPeriodQuery struct {
 	withAttendanceDays     *AttendanceDayQuery
 	withAttendanceDaySyncs *AttendanceDaySyncsQuery
 	withActivities         *ActivityQuery
-	withActivitySyncs      *ActivitySyncQuery
 	withClass              *ClassQuery
 	withPeriod             *PeriodQuery
 	withFKs                bool
@@ -132,28 +130,6 @@ func (cpq *ClassPeriodQuery) QueryActivities() *ActivityQuery {
 			sqlgraph.From(classperiod.Table, classperiod.FieldID, selector),
 			sqlgraph.To(activity.Table, activity.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.ActivitiesTable, classperiod.ActivitiesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(cpq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryActivitySyncs chains the current query on the "activitySyncs" edge.
-func (cpq *ClassPeriodQuery) QueryActivitySyncs() *ActivitySyncQuery {
-	query := &ActivitySyncQuery{config: cpq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cpq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cpq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(classperiod.Table, classperiod.FieldID, selector),
-			sqlgraph.To(activitysync.Table, activitysync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.ActivitySyncsTable, classperiod.ActivitySyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cpq.driver.Dialect(), step)
 		return fromU, nil
@@ -389,7 +365,6 @@ func (cpq *ClassPeriodQuery) Clone() *ClassPeriodQuery {
 		withAttendanceDays:     cpq.withAttendanceDays.Clone(),
 		withAttendanceDaySyncs: cpq.withAttendanceDaySyncs.Clone(),
 		withActivities:         cpq.withActivities.Clone(),
-		withActivitySyncs:      cpq.withActivitySyncs.Clone(),
 		withClass:              cpq.withClass.Clone(),
 		withPeriod:             cpq.withPeriod.Clone(),
 		// clone intermediate query.
@@ -429,17 +404,6 @@ func (cpq *ClassPeriodQuery) WithActivities(opts ...func(*ActivityQuery)) *Class
 		opt(query)
 	}
 	cpq.withActivities = query
-	return cpq
-}
-
-// WithActivitySyncs tells the query-builder to eager-load the nodes that are connected to
-// the "activitySyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (cpq *ClassPeriodQuery) WithActivitySyncs(opts ...func(*ActivitySyncQuery)) *ClassPeriodQuery {
-	query := &ActivitySyncQuery{config: cpq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	cpq.withActivitySyncs = query
 	return cpq
 }
 
@@ -534,11 +498,10 @@ func (cpq *ClassPeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*ClassPeriod{}
 		withFKs     = cpq.withFKs
 		_spec       = cpq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [5]bool{
 			cpq.withAttendanceDays != nil,
 			cpq.withAttendanceDaySyncs != nil,
 			cpq.withActivities != nil,
-			cpq.withActivitySyncs != nil,
 			cpq.withClass != nil,
 			cpq.withPeriod != nil,
 		}
@@ -587,13 +550,6 @@ func (cpq *ClassPeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		if err := cpq.loadActivities(ctx, query, nodes,
 			func(n *ClassPeriod) { n.Edges.Activities = []*Activity{} },
 			func(n *ClassPeriod, e *Activity) { n.Edges.Activities = append(n.Edges.Activities, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := cpq.withActivitySyncs; query != nil {
-		if err := cpq.loadActivitySyncs(ctx, query, nodes,
-			func(n *ClassPeriod) { n.Edges.ActivitySyncs = []*ActivitySync{} },
-			func(n *ClassPeriod, e *ActivitySync) { n.Edges.ActivitySyncs = append(n.Edges.ActivitySyncs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -700,37 +656,6 @@ func (cpq *ClassPeriodQuery) loadActivities(ctx context.Context, query *Activity
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "class_period_activities" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (cpq *ClassPeriodQuery) loadActivitySyncs(ctx context.Context, query *ActivitySyncQuery, nodes []*ClassPeriod, init func(*ClassPeriod), assign func(*ClassPeriod, *ActivitySync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*ClassPeriod)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ActivitySync(func(s *sql.Selector) {
-		s.Where(sql.InValues(classperiod.ActivitySyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.class_period_activity_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "class_period_activity_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_activity_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
