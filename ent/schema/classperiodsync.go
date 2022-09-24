@@ -22,6 +22,6 @@ func (ClassPeriodSync) Fields() []ent.Field {
 // Edges of the ClassPeriodSync.
 func (ClassPeriodSync) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("class", Class.Type).Ref("classPeriodSyncs").Unique(),
+		edge.From("teacher", Teacher.Type).Ref("classPeriodSyncs").Unique(),
 	}
 }

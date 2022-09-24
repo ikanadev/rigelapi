@@ -9,17 +9,17 @@ const (
 	FieldID = "id"
 	// FieldLastSyncID holds the string denoting the last_sync_id field in the database.
 	FieldLastSyncID = "last_sync_id"
-	// EdgeClass holds the string denoting the class edge name in mutations.
-	EdgeClass = "class"
+	// EdgeTeacher holds the string denoting the teacher edge name in mutations.
+	EdgeTeacher = "teacher"
 	// Table holds the table name of the classperiodsync in the database.
 	Table = "class_period_syncs"
-	// ClassTable is the table that holds the class relation/edge.
-	ClassTable = "class_period_syncs"
-	// ClassInverseTable is the table name for the Class entity.
-	// It exists in this package in order to avoid circular dependency with the "class" package.
-	ClassInverseTable = "classes"
-	// ClassColumn is the table column denoting the class relation/edge.
-	ClassColumn = "class_class_period_syncs"
+	// TeacherTable is the table that holds the teacher relation/edge.
+	TeacherTable = "class_period_syncs"
+	// TeacherInverseTable is the table name for the Teacher entity.
+	// It exists in this package in order to avoid circular dependency with the "teacher" package.
+	TeacherInverseTable = "teachers"
+	// TeacherColumn is the table column denoting the teacher relation/edge.
+	TeacherColumn = "teacher_class_period_syncs"
 )
 
 // Columns holds all SQL columns for classperiodsync fields.
@@ -31,7 +31,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "class_period_syncs"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"class_class_period_syncs",
+	"teacher_class_period_syncs",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

@@ -3453,33 +3453,30 @@ func (m *AttendanceSyncMutation) ResetEdge(name string) error {
 // ClassMutation represents an operation that mutates the Class nodes in the graph.
 type ClassMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *string
-	parallel                *string
-	clearedFields           map[string]struct{}
-	students                map[string]struct{}
-	removedstudents         map[string]struct{}
-	clearedstudents         bool
-	classPeriods            map[string]struct{}
-	removedclassPeriods     map[string]struct{}
-	clearedclassPeriods     bool
-	classPeriodSyncs        map[string]struct{}
-	removedclassPeriodSyncs map[string]struct{}
-	clearedclassPeriodSyncs bool
-	school                  *string
-	clearedschool           bool
-	teacher                 *string
-	clearedteacher          bool
-	subject                 *string
-	clearedsubject          bool
-	grade                   *string
-	clearedgrade            bool
-	year                    *string
-	clearedyear             bool
-	done                    bool
-	oldValue                func(context.Context) (*Class, error)
-	predicates              []predicate.Class
+	op                  Op
+	typ                 string
+	id                  *string
+	parallel            *string
+	clearedFields       map[string]struct{}
+	students            map[string]struct{}
+	removedstudents     map[string]struct{}
+	clearedstudents     bool
+	classPeriods        map[string]struct{}
+	removedclassPeriods map[string]struct{}
+	clearedclassPeriods bool
+	school              *string
+	clearedschool       bool
+	teacher             *string
+	clearedteacher      bool
+	subject             *string
+	clearedsubject      bool
+	grade               *string
+	clearedgrade        bool
+	year                *string
+	clearedyear         bool
+	done                bool
+	oldValue            func(context.Context) (*Class, error)
+	predicates          []predicate.Class
 }
 
 var _ ent.Mutation = (*ClassMutation)(nil)
@@ -3728,60 +3725,6 @@ func (m *ClassMutation) ResetClassPeriods() {
 	m.classPeriods = nil
 	m.clearedclassPeriods = false
 	m.removedclassPeriods = nil
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by ids.
-func (m *ClassMutation) AddClassPeriodSyncIDs(ids ...string) {
-	if m.classPeriodSyncs == nil {
-		m.classPeriodSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.classPeriodSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearClassPeriodSyncs clears the "classPeriodSyncs" edge to the ClassPeriodSync entity.
-func (m *ClassMutation) ClearClassPeriodSyncs() {
-	m.clearedclassPeriodSyncs = true
-}
-
-// ClassPeriodSyncsCleared reports if the "classPeriodSyncs" edge to the ClassPeriodSync entity was cleared.
-func (m *ClassMutation) ClassPeriodSyncsCleared() bool {
-	return m.clearedclassPeriodSyncs
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (m *ClassMutation) RemoveClassPeriodSyncIDs(ids ...string) {
-	if m.removedclassPeriodSyncs == nil {
-		m.removedclassPeriodSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.classPeriodSyncs, ids[i])
-		m.removedclassPeriodSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedClassPeriodSyncs returns the removed IDs of the "classPeriodSyncs" edge to the ClassPeriodSync entity.
-func (m *ClassMutation) RemovedClassPeriodSyncsIDs() (ids []string) {
-	for id := range m.removedclassPeriodSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ClassPeriodSyncsIDs returns the "classPeriodSyncs" edge IDs in the mutation.
-func (m *ClassMutation) ClassPeriodSyncsIDs() (ids []string) {
-	for id := range m.classPeriodSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetClassPeriodSyncs resets all changes to the "classPeriodSyncs" edge.
-func (m *ClassMutation) ResetClassPeriodSyncs() {
-	m.classPeriodSyncs = nil
-	m.clearedclassPeriodSyncs = false
-	m.removedclassPeriodSyncs = nil
 }
 
 // SetSchoolID sets the "school" edge to the School entity by id.
@@ -4097,15 +4040,12 @@ func (m *ClassMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ClassMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 7)
 	if m.students != nil {
 		edges = append(edges, class.EdgeStudents)
 	}
 	if m.classPeriods != nil {
 		edges = append(edges, class.EdgeClassPeriods)
-	}
-	if m.classPeriodSyncs != nil {
-		edges = append(edges, class.EdgeClassPeriodSyncs)
 	}
 	if m.school != nil {
 		edges = append(edges, class.EdgeSchool)
@@ -4141,12 +4081,6 @@ func (m *ClassMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case class.EdgeClassPeriodSyncs:
-		ids := make([]ent.Value, 0, len(m.classPeriodSyncs))
-		for id := range m.classPeriodSyncs {
-			ids = append(ids, id)
-		}
-		return ids
 	case class.EdgeSchool:
 		if id := m.school; id != nil {
 			return []ent.Value{*id}
@@ -4173,15 +4107,12 @@ func (m *ClassMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ClassMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 7)
 	if m.removedstudents != nil {
 		edges = append(edges, class.EdgeStudents)
 	}
 	if m.removedclassPeriods != nil {
 		edges = append(edges, class.EdgeClassPeriods)
-	}
-	if m.removedclassPeriodSyncs != nil {
-		edges = append(edges, class.EdgeClassPeriodSyncs)
 	}
 	return edges
 }
@@ -4202,27 +4133,18 @@ func (m *ClassMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case class.EdgeClassPeriodSyncs:
-		ids := make([]ent.Value, 0, len(m.removedclassPeriodSyncs))
-		for id := range m.removedclassPeriodSyncs {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ClassMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 7)
 	if m.clearedstudents {
 		edges = append(edges, class.EdgeStudents)
 	}
 	if m.clearedclassPeriods {
 		edges = append(edges, class.EdgeClassPeriods)
-	}
-	if m.clearedclassPeriodSyncs {
-		edges = append(edges, class.EdgeClassPeriodSyncs)
 	}
 	if m.clearedschool {
 		edges = append(edges, class.EdgeSchool)
@@ -4250,8 +4172,6 @@ func (m *ClassMutation) EdgeCleared(name string) bool {
 		return m.clearedstudents
 	case class.EdgeClassPeriods:
 		return m.clearedclassPeriods
-	case class.EdgeClassPeriodSyncs:
-		return m.clearedclassPeriodSyncs
 	case class.EdgeSchool:
 		return m.clearedschool
 	case class.EdgeTeacher:
@@ -4298,9 +4218,6 @@ func (m *ClassMutation) ResetEdge(name string) error {
 		return nil
 	case class.EdgeClassPeriods:
 		m.ResetClassPeriods()
-		return nil
-	case class.EdgeClassPeriodSyncs:
-		m.ResetClassPeriodSyncs()
 		return nil
 	case class.EdgeSchool:
 		m.ResetSchool()
@@ -5209,16 +5126,16 @@ func (m *ClassPeriodMutation) ResetEdge(name string) error {
 // ClassPeriodSyncMutation represents an operation that mutates the ClassPeriodSync nodes in the graph.
 type ClassPeriodSyncMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *string
-	last_sync_id  *string
-	clearedFields map[string]struct{}
-	class         *string
-	clearedclass  bool
-	done          bool
-	oldValue      func(context.Context) (*ClassPeriodSync, error)
-	predicates    []predicate.ClassPeriodSync
+	op             Op
+	typ            string
+	id             *string
+	last_sync_id   *string
+	clearedFields  map[string]struct{}
+	teacher        *string
+	clearedteacher bool
+	done           bool
+	oldValue       func(context.Context) (*ClassPeriodSync, error)
+	predicates     []predicate.ClassPeriodSync
 }
 
 var _ ent.Mutation = (*ClassPeriodSyncMutation)(nil)
@@ -5361,43 +5278,43 @@ func (m *ClassPeriodSyncMutation) ResetLastSyncID() {
 	m.last_sync_id = nil
 }
 
-// SetClassID sets the "class" edge to the Class entity by id.
-func (m *ClassPeriodSyncMutation) SetClassID(id string) {
-	m.class = &id
+// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
+func (m *ClassPeriodSyncMutation) SetTeacherID(id string) {
+	m.teacher = &id
 }
 
-// ClearClass clears the "class" edge to the Class entity.
-func (m *ClassPeriodSyncMutation) ClearClass() {
-	m.clearedclass = true
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (m *ClassPeriodSyncMutation) ClearTeacher() {
+	m.clearedteacher = true
 }
 
-// ClassCleared reports if the "class" edge to the Class entity was cleared.
-func (m *ClassPeriodSyncMutation) ClassCleared() bool {
-	return m.clearedclass
+// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
+func (m *ClassPeriodSyncMutation) TeacherCleared() bool {
+	return m.clearedteacher
 }
 
-// ClassID returns the "class" edge ID in the mutation.
-func (m *ClassPeriodSyncMutation) ClassID() (id string, exists bool) {
-	if m.class != nil {
-		return *m.class, true
+// TeacherID returns the "teacher" edge ID in the mutation.
+func (m *ClassPeriodSyncMutation) TeacherID() (id string, exists bool) {
+	if m.teacher != nil {
+		return *m.teacher, true
 	}
 	return
 }
 
-// ClassIDs returns the "class" edge IDs in the mutation.
+// TeacherIDs returns the "teacher" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ClassID instead. It exists only for internal usage by the builders.
-func (m *ClassPeriodSyncMutation) ClassIDs() (ids []string) {
-	if id := m.class; id != nil {
+// TeacherID instead. It exists only for internal usage by the builders.
+func (m *ClassPeriodSyncMutation) TeacherIDs() (ids []string) {
+	if id := m.teacher; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetClass resets all changes to the "class" edge.
-func (m *ClassPeriodSyncMutation) ResetClass() {
-	m.class = nil
-	m.clearedclass = false
+// ResetTeacher resets all changes to the "teacher" edge.
+func (m *ClassPeriodSyncMutation) ResetTeacher() {
+	m.teacher = nil
+	m.clearedteacher = false
 }
 
 // Where appends a list predicates to the ClassPeriodSyncMutation builder.
@@ -5519,8 +5436,8 @@ func (m *ClassPeriodSyncMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ClassPeriodSyncMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.class != nil {
-		edges = append(edges, classperiodsync.EdgeClass)
+	if m.teacher != nil {
+		edges = append(edges, classperiodsync.EdgeTeacher)
 	}
 	return edges
 }
@@ -5529,8 +5446,8 @@ func (m *ClassPeriodSyncMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ClassPeriodSyncMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case classperiodsync.EdgeClass:
-		if id := m.class; id != nil {
+	case classperiodsync.EdgeTeacher:
+		if id := m.teacher; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -5554,8 +5471,8 @@ func (m *ClassPeriodSyncMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ClassPeriodSyncMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedclass {
-		edges = append(edges, classperiodsync.EdgeClass)
+	if m.clearedteacher {
+		edges = append(edges, classperiodsync.EdgeTeacher)
 	}
 	return edges
 }
@@ -5564,8 +5481,8 @@ func (m *ClassPeriodSyncMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ClassPeriodSyncMutation) EdgeCleared(name string) bool {
 	switch name {
-	case classperiodsync.EdgeClass:
-		return m.clearedclass
+	case classperiodsync.EdgeTeacher:
+		return m.clearedteacher
 	}
 	return false
 }
@@ -5574,8 +5491,8 @@ func (m *ClassPeriodSyncMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ClassPeriodSyncMutation) ClearEdge(name string) error {
 	switch name {
-	case classperiodsync.EdgeClass:
-		m.ClearClass()
+	case classperiodsync.EdgeTeacher:
+		m.ClearTeacher()
 		return nil
 	}
 	return fmt.Errorf("unknown ClassPeriodSync unique edge %s", name)
@@ -5585,8 +5502,8 @@ func (m *ClassPeriodSyncMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ClassPeriodSyncMutation) ResetEdge(name string) error {
 	switch name {
-	case classperiodsync.EdgeClass:
-		m.ResetClass()
+	case classperiodsync.EdgeTeacher:
+		m.ResetTeacher()
 		return nil
 	}
 	return fmt.Errorf("unknown ClassPeriodSync edge %s", name)
@@ -10722,23 +10639,26 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 // TeacherMutation represents an operation that mutates the Teacher nodes in the graph.
 type TeacherMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *string
-	name                *string
-	last_name           *string
-	email               *string
-	password            *string
-	clearedFields       map[string]struct{}
-	classes             map[string]struct{}
-	removedclasses      map[string]struct{}
-	clearedclasses      bool
-	studentSyncs        map[string]struct{}
-	removedstudentSyncs map[string]struct{}
-	clearedstudentSyncs bool
-	done                bool
-	oldValue            func(context.Context) (*Teacher, error)
-	predicates          []predicate.Teacher
+	op                      Op
+	typ                     string
+	id                      *string
+	name                    *string
+	last_name               *string
+	email                   *string
+	password                *string
+	clearedFields           map[string]struct{}
+	classes                 map[string]struct{}
+	removedclasses          map[string]struct{}
+	clearedclasses          bool
+	studentSyncs            map[string]struct{}
+	removedstudentSyncs     map[string]struct{}
+	clearedstudentSyncs     bool
+	classPeriodSyncs        map[string]struct{}
+	removedclassPeriodSyncs map[string]struct{}
+	clearedclassPeriodSyncs bool
+	done                    bool
+	oldValue                func(context.Context) (*Teacher, error)
+	predicates              []predicate.Teacher
 }
 
 var _ ent.Mutation = (*TeacherMutation)(nil)
@@ -11097,6 +11017,60 @@ func (m *TeacherMutation) ResetStudentSyncs() {
 	m.removedstudentSyncs = nil
 }
 
+// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by ids.
+func (m *TeacherMutation) AddClassPeriodSyncIDs(ids ...string) {
+	if m.classPeriodSyncs == nil {
+		m.classPeriodSyncs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.classPeriodSyncs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearClassPeriodSyncs clears the "classPeriodSyncs" edge to the ClassPeriodSync entity.
+func (m *TeacherMutation) ClearClassPeriodSyncs() {
+	m.clearedclassPeriodSyncs = true
+}
+
+// ClassPeriodSyncsCleared reports if the "classPeriodSyncs" edge to the ClassPeriodSync entity was cleared.
+func (m *TeacherMutation) ClassPeriodSyncsCleared() bool {
+	return m.clearedclassPeriodSyncs
+}
+
+// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
+func (m *TeacherMutation) RemoveClassPeriodSyncIDs(ids ...string) {
+	if m.removedclassPeriodSyncs == nil {
+		m.removedclassPeriodSyncs = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.classPeriodSyncs, ids[i])
+		m.removedclassPeriodSyncs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedClassPeriodSyncs returns the removed IDs of the "classPeriodSyncs" edge to the ClassPeriodSync entity.
+func (m *TeacherMutation) RemovedClassPeriodSyncsIDs() (ids []string) {
+	for id := range m.removedclassPeriodSyncs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ClassPeriodSyncsIDs returns the "classPeriodSyncs" edge IDs in the mutation.
+func (m *TeacherMutation) ClassPeriodSyncsIDs() (ids []string) {
+	for id := range m.classPeriodSyncs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetClassPeriodSyncs resets all changes to the "classPeriodSyncs" edge.
+func (m *TeacherMutation) ResetClassPeriodSyncs() {
+	m.classPeriodSyncs = nil
+	m.clearedclassPeriodSyncs = false
+	m.removedclassPeriodSyncs = nil
+}
+
 // Where appends a list predicates to the TeacherMutation builder.
 func (m *TeacherMutation) Where(ps ...predicate.Teacher) {
 	m.predicates = append(m.predicates, ps...)
@@ -11266,12 +11240,15 @@ func (m *TeacherMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeacherMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.classes != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.studentSyncs != nil {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.classPeriodSyncs != nil {
+		edges = append(edges, teacher.EdgeClassPeriodSyncs)
 	}
 	return edges
 }
@@ -11292,18 +11269,27 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeClassPeriodSyncs:
+		ids := make([]ent.Value, 0, len(m.classPeriodSyncs))
+		for id := range m.classPeriodSyncs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeacherMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedclasses != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.removedstudentSyncs != nil {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.removedclassPeriodSyncs != nil {
+		edges = append(edges, teacher.EdgeClassPeriodSyncs)
 	}
 	return edges
 }
@@ -11324,18 +11310,27 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeClassPeriodSyncs:
+		ids := make([]ent.Value, 0, len(m.removedclassPeriodSyncs))
+		for id := range m.removedclassPeriodSyncs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeacherMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedclasses {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.clearedstudentSyncs {
 		edges = append(edges, teacher.EdgeStudentSyncs)
+	}
+	if m.clearedclassPeriodSyncs {
+		edges = append(edges, teacher.EdgeClassPeriodSyncs)
 	}
 	return edges
 }
@@ -11348,6 +11343,8 @@ func (m *TeacherMutation) EdgeCleared(name string) bool {
 		return m.clearedclasses
 	case teacher.EdgeStudentSyncs:
 		return m.clearedstudentSyncs
+	case teacher.EdgeClassPeriodSyncs:
+		return m.clearedclassPeriodSyncs
 	}
 	return false
 }
@@ -11369,6 +11366,9 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 		return nil
 	case teacher.EdgeStudentSyncs:
 		m.ResetStudentSyncs()
+		return nil
+	case teacher.EdgeClassPeriodSyncs:
+		m.ResetClassPeriodSyncs()
 		return nil
 	}
 	return fmt.Errorf("unknown Teacher edge %s", name)

@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ClassPeriodSyncCreate is the builder for creating a ClassPeriodSync entity.
@@ -32,23 +32,23 @@ func (cpsc *ClassPeriodSyncCreate) SetID(s string) *ClassPeriodSyncCreate {
 	return cpsc
 }
 
-// SetClassID sets the "class" edge to the Class entity by ID.
-func (cpsc *ClassPeriodSyncCreate) SetClassID(id string) *ClassPeriodSyncCreate {
-	cpsc.mutation.SetClassID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (cpsc *ClassPeriodSyncCreate) SetTeacherID(id string) *ClassPeriodSyncCreate {
+	cpsc.mutation.SetTeacherID(id)
 	return cpsc
 }
 
-// SetNillableClassID sets the "class" edge to the Class entity by ID if the given value is not nil.
-func (cpsc *ClassPeriodSyncCreate) SetNillableClassID(id *string) *ClassPeriodSyncCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (cpsc *ClassPeriodSyncCreate) SetNillableTeacherID(id *string) *ClassPeriodSyncCreate {
 	if id != nil {
-		cpsc = cpsc.SetClassID(*id)
+		cpsc = cpsc.SetTeacherID(*id)
 	}
 	return cpsc
 }
 
-// SetClass sets the "class" edge to the Class entity.
-func (cpsc *ClassPeriodSyncCreate) SetClass(c *Class) *ClassPeriodSyncCreate {
-	return cpsc.SetClassID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (cpsc *ClassPeriodSyncCreate) SetTeacher(t *Teacher) *ClassPeriodSyncCreate {
+	return cpsc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the ClassPeriodSyncMutation object of the builder.
@@ -174,24 +174,24 @@ func (cpsc *ClassPeriodSyncCreate) createSpec() (*ClassPeriodSync, *sqlgraph.Cre
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := cpsc.mutation.ClassIDs(); len(nodes) > 0 {
+	if nodes := cpsc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   classperiodsync.ClassTable,
-			Columns: []string{classperiodsync.ClassColumn},
+			Table:   classperiodsync.TeacherTable,
+			Columns: []string{classperiodsync.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: class.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.class_class_period_syncs = &nodes[0]
+		_node.teacher_class_period_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

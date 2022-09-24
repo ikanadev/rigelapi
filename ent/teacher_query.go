@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
@@ -20,14 +21,15 @@ import (
 // TeacherQuery is the builder for querying Teacher entities.
 type TeacherQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
-	predicates       []predicate.Teacher
-	withClasses      *ClassQuery
-	withStudentSyncs *StudentSyncQuery
+	limit                *int
+	offset               *int
+	unique               *bool
+	order                []OrderFunc
+	fields               []string
+	predicates           []predicate.Teacher
+	withClasses          *ClassQuery
+	withStudentSyncs     *StudentSyncQuery
+	withClassPeriodSyncs *ClassPeriodSyncQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (tq *TeacherQuery) QueryStudentSyncs() *StudentSyncQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
 			sqlgraph.To(studentsync.Table, studentsync.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.StudentSyncsTable, teacher.StudentSyncsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryClassPeriodSyncs chains the current query on the "classPeriodSyncs" edge.
+func (tq *TeacherQuery) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
+	query := &ClassPeriodSyncQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
+			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassPeriodSyncsTable, teacher.ClassPeriodSyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -284,13 +308,14 @@ func (tq *TeacherQuery) Clone() *TeacherQuery {
 		return nil
 	}
 	return &TeacherQuery{
-		config:           tq.config,
-		limit:            tq.limit,
-		offset:           tq.offset,
-		order:            append([]OrderFunc{}, tq.order...),
-		predicates:       append([]predicate.Teacher{}, tq.predicates...),
-		withClasses:      tq.withClasses.Clone(),
-		withStudentSyncs: tq.withStudentSyncs.Clone(),
+		config:               tq.config,
+		limit:                tq.limit,
+		offset:               tq.offset,
+		order:                append([]OrderFunc{}, tq.order...),
+		predicates:           append([]predicate.Teacher{}, tq.predicates...),
+		withClasses:          tq.withClasses.Clone(),
+		withStudentSyncs:     tq.withStudentSyncs.Clone(),
+		withClassPeriodSyncs: tq.withClassPeriodSyncs.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -317,6 +342,17 @@ func (tq *TeacherQuery) WithStudentSyncs(opts ...func(*StudentSyncQuery)) *Teach
 		opt(query)
 	}
 	tq.withStudentSyncs = query
+	return tq
+}
+
+// WithClassPeriodSyncs tells the query-builder to eager-load the nodes that are connected to
+// the "classPeriodSyncs" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TeacherQuery) WithClassPeriodSyncs(opts ...func(*ClassPeriodSyncQuery)) *TeacherQuery {
+	query := &ClassPeriodSyncQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withClassPeriodSyncs = query
 	return tq
 }
 
@@ -388,9 +424,10 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 	var (
 		nodes       = []*Teacher{}
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withClasses != nil,
 			tq.withStudentSyncs != nil,
+			tq.withClassPeriodSyncs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -422,6 +459,13 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 		if err := tq.loadStudentSyncs(ctx, query, nodes,
 			func(n *Teacher) { n.Edges.StudentSyncs = []*StudentSync{} },
 			func(n *Teacher, e *StudentSync) { n.Edges.StudentSyncs = append(n.Edges.StudentSyncs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withClassPeriodSyncs; query != nil {
+		if err := tq.loadClassPeriodSyncs(ctx, query, nodes,
+			func(n *Teacher) { n.Edges.ClassPeriodSyncs = []*ClassPeriodSync{} },
+			func(n *Teacher, e *ClassPeriodSync) { n.Edges.ClassPeriodSyncs = append(n.Edges.ClassPeriodSyncs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -485,6 +529,37 @@ func (tq *TeacherQuery) loadStudentSyncs(ctx context.Context, query *StudentSync
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "teacher_student_syncs" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TeacherQuery) loadClassPeriodSyncs(ctx context.Context, query *ClassPeriodSyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *ClassPeriodSync)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Teacher)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ClassPeriodSync(func(s *sql.Selector) {
+		s.Where(sql.InValues(teacher.ClassPeriodSyncsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.teacher_class_period_syncs
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "teacher_class_period_syncs" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "teacher_class_period_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

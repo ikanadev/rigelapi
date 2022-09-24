@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/student"
@@ -67,21 +66,6 @@ func (cc *ClassCreate) AddClassPeriods(c ...*ClassPeriod) *ClassCreate {
 		ids[i] = c[i].ID
 	}
 	return cc.AddClassPeriodIDs(ids...)
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (cc *ClassCreate) AddClassPeriodSyncIDs(ids ...string) *ClassCreate {
-	cc.mutation.AddClassPeriodSyncIDs(ids...)
-	return cc
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (cc *ClassCreate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *ClassCreate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cc.AddClassPeriodSyncIDs(ids...)
 }
 
 // SetSchoolID sets the "school" edge to the School entity by ID.
@@ -332,25 +316,6 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiod.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := cc.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
 				},
 			},
 		}

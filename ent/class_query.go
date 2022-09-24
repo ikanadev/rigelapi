@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/school"
@@ -26,21 +25,20 @@ import (
 // ClassQuery is the builder for querying Class entities.
 type ClassQuery struct {
 	config
-	limit                *int
-	offset               *int
-	unique               *bool
-	order                []OrderFunc
-	fields               []string
-	predicates           []predicate.Class
-	withStudents         *StudentQuery
-	withClassPeriods     *ClassPeriodQuery
-	withClassPeriodSyncs *ClassPeriodSyncQuery
-	withSchool           *SchoolQuery
-	withTeacher          *TeacherQuery
-	withSubject          *SubjectQuery
-	withGrade            *GradeQuery
-	withYear             *YearQuery
-	withFKs              bool
+	limit            *int
+	offset           *int
+	unique           *bool
+	order            []OrderFunc
+	fields           []string
+	predicates       []predicate.Class
+	withStudents     *StudentQuery
+	withClassPeriods *ClassPeriodQuery
+	withSchool       *SchoolQuery
+	withTeacher      *TeacherQuery
+	withSubject      *SubjectQuery
+	withGrade        *GradeQuery
+	withYear         *YearQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -114,28 +112,6 @@ func (cq *ClassQuery) QueryClassPeriods() *ClassPeriodQuery {
 			sqlgraph.From(class.Table, class.FieldID, selector),
 			sqlgraph.To(classperiod.Table, classperiod.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, class.ClassPeriodsTable, class.ClassPeriodsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryClassPeriodSyncs chains the current query on the "classPeriodSyncs" edge.
-func (cq *ClassQuery) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
-	query := &ClassPeriodSyncQuery{config: cq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(class.Table, class.FieldID, selector),
-			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, class.ClassPeriodSyncsTable, class.ClassPeriodSyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -429,19 +405,18 @@ func (cq *ClassQuery) Clone() *ClassQuery {
 		return nil
 	}
 	return &ClassQuery{
-		config:               cq.config,
-		limit:                cq.limit,
-		offset:               cq.offset,
-		order:                append([]OrderFunc{}, cq.order...),
-		predicates:           append([]predicate.Class{}, cq.predicates...),
-		withStudents:         cq.withStudents.Clone(),
-		withClassPeriods:     cq.withClassPeriods.Clone(),
-		withClassPeriodSyncs: cq.withClassPeriodSyncs.Clone(),
-		withSchool:           cq.withSchool.Clone(),
-		withTeacher:          cq.withTeacher.Clone(),
-		withSubject:          cq.withSubject.Clone(),
-		withGrade:            cq.withGrade.Clone(),
-		withYear:             cq.withYear.Clone(),
+		config:           cq.config,
+		limit:            cq.limit,
+		offset:           cq.offset,
+		order:            append([]OrderFunc{}, cq.order...),
+		predicates:       append([]predicate.Class{}, cq.predicates...),
+		withStudents:     cq.withStudents.Clone(),
+		withClassPeriods: cq.withClassPeriods.Clone(),
+		withSchool:       cq.withSchool.Clone(),
+		withTeacher:      cq.withTeacher.Clone(),
+		withSubject:      cq.withSubject.Clone(),
+		withGrade:        cq.withGrade.Clone(),
+		withYear:         cq.withYear.Clone(),
 		// clone intermediate query.
 		sql:    cq.sql.Clone(),
 		path:   cq.path,
@@ -468,17 +443,6 @@ func (cq *ClassQuery) WithClassPeriods(opts ...func(*ClassPeriodQuery)) *ClassQu
 		opt(query)
 	}
 	cq.withClassPeriods = query
-	return cq
-}
-
-// WithClassPeriodSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "classPeriodSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *ClassQuery) WithClassPeriodSyncs(opts ...func(*ClassPeriodSyncQuery)) *ClassQuery {
-	query := &ClassPeriodSyncQuery{config: cq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	cq.withClassPeriodSyncs = query
 	return cq
 }
 
@@ -606,10 +570,9 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 		nodes       = []*Class{}
 		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [7]bool{
 			cq.withStudents != nil,
 			cq.withClassPeriods != nil,
-			cq.withClassPeriodSyncs != nil,
 			cq.withSchool != nil,
 			cq.withTeacher != nil,
 			cq.withSubject != nil,
@@ -652,13 +615,6 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 		if err := cq.loadClassPeriods(ctx, query, nodes,
 			func(n *Class) { n.Edges.ClassPeriods = []*ClassPeriod{} },
 			func(n *Class, e *ClassPeriod) { n.Edges.ClassPeriods = append(n.Edges.ClassPeriods, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := cq.withClassPeriodSyncs; query != nil {
-		if err := cq.loadClassPeriodSyncs(ctx, query, nodes,
-			func(n *Class) { n.Edges.ClassPeriodSyncs = []*ClassPeriodSync{} },
-			func(n *Class, e *ClassPeriodSync) { n.Edges.ClassPeriodSyncs = append(n.Edges.ClassPeriodSyncs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -752,37 +708,6 @@ func (cq *ClassQuery) loadClassPeriods(ctx context.Context, query *ClassPeriodQu
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "class_class_periods" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (cq *ClassQuery) loadClassPeriodSyncs(ctx context.Context, query *ClassPeriodSyncQuery, nodes []*Class, init func(*Class), assign func(*Class, *ClassPeriodSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Class)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ClassPeriodSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(class.ClassPeriodSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.class_class_period_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "class_class_period_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_class_period_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

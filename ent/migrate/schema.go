@@ -245,7 +245,7 @@ var (
 	ClassPeriodSyncsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "class_class_period_syncs", Type: field.TypeString, Nullable: true},
+		{Name: "teacher_class_period_syncs", Type: field.TypeString, Nullable: true},
 	}
 	// ClassPeriodSyncsTable holds the schema information for the "class_period_syncs" table.
 	ClassPeriodSyncsTable = &schema.Table{
@@ -254,9 +254,9 @@ var (
 		PrimaryKey: []*schema.Column{ClassPeriodSyncsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "class_period_syncs_classes_classPeriodSyncs",
+				Symbol:     "class_period_syncs_teachers_classPeriodSyncs",
 				Columns:    []*schema.Column{ClassPeriodSyncsColumns[2]},
-				RefColumns: []*schema.Column{ClassesColumns[0]},
+				RefColumns: []*schema.Column{TeachersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -535,7 +535,7 @@ func init() {
 	ClassesTable.ForeignKeys[4].RefTable = YearsTable
 	ClassPeriodsTable.ForeignKeys[0].RefTable = ClassesTable
 	ClassPeriodsTable.ForeignKeys[1].RefTable = PeriodsTable
-	ClassPeriodSyncsTable.ForeignKeys[0].RefTable = ClassesTable
+	ClassPeriodSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	MunicipiosTable.ForeignKeys[0].RefTable = ProvinciaTable
 	PeriodsTable.ForeignKeys[0].RefTable = YearsTable
 	ProvinciaTable.ForeignKeys[0].RefTable = DptosTable

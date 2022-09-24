@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/school"
@@ -69,21 +68,6 @@ func (cu *ClassUpdate) AddClassPeriods(c ...*ClassPeriod) *ClassUpdate {
 		ids[i] = c[i].ID
 	}
 	return cu.AddClassPeriodIDs(ids...)
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (cu *ClassUpdate) AddClassPeriodSyncIDs(ids ...string) *ClassUpdate {
-	cu.mutation.AddClassPeriodSyncIDs(ids...)
-	return cu
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (cu *ClassUpdate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cu.AddClassPeriodSyncIDs(ids...)
 }
 
 // SetSchoolID sets the "school" edge to the School entity by ID.
@@ -226,27 +210,6 @@ func (cu *ClassUpdate) RemoveClassPeriods(c ...*ClassPeriod) *ClassUpdate {
 		ids[i] = c[i].ID
 	}
 	return cu.RemoveClassPeriodIDs(ids...)
-}
-
-// ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (cu *ClassUpdate) ClearClassPeriodSyncs() *ClassUpdate {
-	cu.mutation.ClearClassPeriodSyncs()
-	return cu
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to ClassPeriodSync entities by IDs.
-func (cu *ClassUpdate) RemoveClassPeriodSyncIDs(ids ...string) *ClassUpdate {
-	cu.mutation.RemoveClassPeriodSyncIDs(ids...)
-	return cu
-}
-
-// RemoveClassPeriodSyncs removes "classPeriodSyncs" edges to ClassPeriodSync entities.
-func (cu *ClassUpdate) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cu.RemoveClassPeriodSyncIDs(ids...)
 }
 
 // ClearSchool clears the "school" edge to the School entity.
@@ -458,60 +421,6 @@ func (cu *ClassUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiod.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cu.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.RemovedClassPeriodSyncsIDs(); len(nodes) > 0 && !cu.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
 				},
 			},
 		}
@@ -750,21 +659,6 @@ func (cuo *ClassUpdateOne) AddClassPeriods(c ...*ClassPeriod) *ClassUpdateOne {
 	return cuo.AddClassPeriodIDs(ids...)
 }
 
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (cuo *ClassUpdateOne) AddClassPeriodSyncIDs(ids ...string) *ClassUpdateOne {
-	cuo.mutation.AddClassPeriodSyncIDs(ids...)
-	return cuo
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (cuo *ClassUpdateOne) AddClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdateOne {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cuo.AddClassPeriodSyncIDs(ids...)
-}
-
 // SetSchoolID sets the "school" edge to the School entity by ID.
 func (cuo *ClassUpdateOne) SetSchoolID(id string) *ClassUpdateOne {
 	cuo.mutation.SetSchoolID(id)
@@ -905,27 +799,6 @@ func (cuo *ClassUpdateOne) RemoveClassPeriods(c ...*ClassPeriod) *ClassUpdateOne
 		ids[i] = c[i].ID
 	}
 	return cuo.RemoveClassPeriodIDs(ids...)
-}
-
-// ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (cuo *ClassUpdateOne) ClearClassPeriodSyncs() *ClassUpdateOne {
-	cuo.mutation.ClearClassPeriodSyncs()
-	return cuo
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to ClassPeriodSync entities by IDs.
-func (cuo *ClassUpdateOne) RemoveClassPeriodSyncIDs(ids ...string) *ClassUpdateOne {
-	cuo.mutation.RemoveClassPeriodSyncIDs(ids...)
-	return cuo
-}
-
-// RemoveClassPeriodSyncs removes "classPeriodSyncs" edges to ClassPeriodSync entities.
-func (cuo *ClassUpdateOne) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *ClassUpdateOne {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cuo.RemoveClassPeriodSyncIDs(ids...)
 }
 
 // ClearSchool clears the "school" edge to the School entity.
@@ -1167,60 +1040,6 @@ func (cuo *ClassUpdateOne) sqlSave(ctx context.Context) (_node *Class, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiod.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cuo.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.RemovedClassPeriodSyncsIDs(); len(nodes) > 0 && !cuo.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   class.ClassPeriodSyncsTable,
-			Columns: []string{class.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
 				},
 			},
 		}

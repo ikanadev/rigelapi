@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ClassPeriodSync is the model entity for the ClassPeriodSync schema.
@@ -20,30 +20,30 @@ type ClassPeriodSync struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ClassPeriodSyncQuery when eager-loading is set.
-	Edges                    ClassPeriodSyncEdges `json:"edges"`
-	class_class_period_syncs *string
+	Edges                      ClassPeriodSyncEdges `json:"edges"`
+	teacher_class_period_syncs *string
 }
 
 // ClassPeriodSyncEdges holds the relations/edges for other nodes in the graph.
 type ClassPeriodSyncEdges struct {
-	// Class holds the value of the class edge.
-	Class *Class `json:"class,omitempty"`
+	// Teacher holds the value of the teacher edge.
+	Teacher *Teacher `json:"teacher,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ClassOrErr returns the Class value or an error if the edge
+// TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ClassPeriodSyncEdges) ClassOrErr() (*Class, error) {
+func (e ClassPeriodSyncEdges) TeacherOrErr() (*Teacher, error) {
 	if e.loadedTypes[0] {
-		if e.Class == nil {
+		if e.Teacher == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: class.Label}
+			return nil, &NotFoundError{label: teacher.Label}
 		}
-		return e.Class, nil
+		return e.Teacher, nil
 	}
-	return nil, &NotLoadedError{edge: "class"}
+	return nil, &NotLoadedError{edge: "teacher"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*ClassPeriodSync) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case classperiodsync.FieldID, classperiodsync.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case classperiodsync.ForeignKeys[0]: // class_class_period_syncs
+		case classperiodsync.ForeignKeys[0]: // teacher_class_period_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type ClassPeriodSync", columns[i])
@@ -84,19 +84,19 @@ func (cps *ClassPeriodSync) assignValues(columns []string, values []interface{})
 			}
 		case classperiodsync.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field class_class_period_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field teacher_class_period_syncs", values[i])
 			} else if value.Valid {
-				cps.class_class_period_syncs = new(string)
-				*cps.class_class_period_syncs = value.String
+				cps.teacher_class_period_syncs = new(string)
+				*cps.teacher_class_period_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryClass queries the "class" edge of the ClassPeriodSync entity.
-func (cps *ClassPeriodSync) QueryClass() *ClassQuery {
-	return (&ClassPeriodSyncClient{config: cps.config}).QueryClass(cps)
+// QueryTeacher queries the "teacher" edge of the ClassPeriodSync entity.
+func (cps *ClassPeriodSync) QueryTeacher() *TeacherQuery {
+	return (&ClassPeriodSyncClient{config: cps.config}).QueryTeacher(cps)
 }
 
 // Update returns a builder for updating this ClassPeriodSync.

@@ -10,22 +10,22 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // ClassPeriodSyncQuery is the builder for querying ClassPeriodSync entities.
 type ClassPeriodSyncQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.ClassPeriodSync
-	withClass  *ClassQuery
-	withFKs    bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.ClassPeriodSync
+	withTeacher *TeacherQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +62,9 @@ func (cpsq *ClassPeriodSyncQuery) Order(o ...OrderFunc) *ClassPeriodSyncQuery {
 	return cpsq
 }
 
-// QueryClass chains the current query on the "class" edge.
-func (cpsq *ClassPeriodSyncQuery) QueryClass() *ClassQuery {
-	query := &ClassQuery{config: cpsq.config}
+// QueryTeacher chains the current query on the "teacher" edge.
+func (cpsq *ClassPeriodSyncQuery) QueryTeacher() *TeacherQuery {
+	query := &TeacherQuery{config: cpsq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cpsq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (cpsq *ClassPeriodSyncQuery) QueryClass() *ClassQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(classperiodsync.Table, classperiodsync.FieldID, selector),
-			sqlgraph.To(class.Table, class.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, classperiodsync.ClassTable, classperiodsync.ClassColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, classperiodsync.TeacherTable, classperiodsync.TeacherColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cpsq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +260,12 @@ func (cpsq *ClassPeriodSyncQuery) Clone() *ClassPeriodSyncQuery {
 		return nil
 	}
 	return &ClassPeriodSyncQuery{
-		config:     cpsq.config,
-		limit:      cpsq.limit,
-		offset:     cpsq.offset,
-		order:      append([]OrderFunc{}, cpsq.order...),
-		predicates: append([]predicate.ClassPeriodSync{}, cpsq.predicates...),
-		withClass:  cpsq.withClass.Clone(),
+		config:      cpsq.config,
+		limit:       cpsq.limit,
+		offset:      cpsq.offset,
+		order:       append([]OrderFunc{}, cpsq.order...),
+		predicates:  append([]predicate.ClassPeriodSync{}, cpsq.predicates...),
+		withTeacher: cpsq.withTeacher.Clone(),
 		// clone intermediate query.
 		sql:    cpsq.sql.Clone(),
 		path:   cpsq.path,
@@ -273,14 +273,14 @@ func (cpsq *ClassPeriodSyncQuery) Clone() *ClassPeriodSyncQuery {
 	}
 }
 
-// WithClass tells the query-builder to eager-load the nodes that are connected to
-// the "class" edge. The optional arguments are used to configure the query builder of the edge.
-func (cpsq *ClassPeriodSyncQuery) WithClass(opts ...func(*ClassQuery)) *ClassPeriodSyncQuery {
-	query := &ClassQuery{config: cpsq.config}
+// WithTeacher tells the query-builder to eager-load the nodes that are connected to
+// the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
+func (cpsq *ClassPeriodSyncQuery) WithTeacher(opts ...func(*TeacherQuery)) *ClassPeriodSyncQuery {
+	query := &TeacherQuery{config: cpsq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	cpsq.withClass = query
+	cpsq.withTeacher = query
 	return cpsq
 }
 
@@ -354,10 +354,10 @@ func (cpsq *ClassPeriodSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook
 		withFKs     = cpsq.withFKs
 		_spec       = cpsq.querySpec()
 		loadedTypes = [1]bool{
-			cpsq.withClass != nil,
+			cpsq.withTeacher != nil,
 		}
 	)
-	if cpsq.withClass != nil {
+	if cpsq.withTeacher != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -381,29 +381,29 @@ func (cpsq *ClassPeriodSyncQuery) sqlAll(ctx context.Context, hooks ...queryHook
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cpsq.withClass; query != nil {
-		if err := cpsq.loadClass(ctx, query, nodes, nil,
-			func(n *ClassPeriodSync, e *Class) { n.Edges.Class = e }); err != nil {
+	if query := cpsq.withTeacher; query != nil {
+		if err := cpsq.loadTeacher(ctx, query, nodes, nil,
+			func(n *ClassPeriodSync, e *Teacher) { n.Edges.Teacher = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (cpsq *ClassPeriodSyncQuery) loadClass(ctx context.Context, query *ClassQuery, nodes []*ClassPeriodSync, init func(*ClassPeriodSync), assign func(*ClassPeriodSync, *Class)) error {
+func (cpsq *ClassPeriodSyncQuery) loadTeacher(ctx context.Context, query *TeacherQuery, nodes []*ClassPeriodSync, init func(*ClassPeriodSync), assign func(*ClassPeriodSync, *Teacher)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*ClassPeriodSync)
 	for i := range nodes {
-		if nodes[i].class_class_period_syncs == nil {
+		if nodes[i].teacher_class_period_syncs == nil {
 			continue
 		}
-		fk := *nodes[i].class_class_period_syncs
+		fk := *nodes[i].teacher_class_period_syncs
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(class.IDIn(ids...))
+	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (cpsq *ClassPeriodSyncQuery) loadClass(ctx context.Context, query *ClassQue
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_class_period_syncs" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "teacher_class_period_syncs" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
