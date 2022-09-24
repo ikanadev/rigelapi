@@ -58,8 +58,12 @@ func (server Server) Run() {
 	server.app.Get("/static", handlers.StaticDataHandler(server.db))
 
 	protected := server.app.Group("/auth", authMiddleware(server.config))
-  protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
+
+	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
+
+	protected.Post("/students", handlers.SaveStudent(server.db))
+	protected.Get("/student/sync/:classid", handlers.StudentSyncStatus(server.db))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
