@@ -35,8 +35,6 @@ type ClassPeriod struct {
 type ClassPeriodEdges struct {
 	// AttendanceDays holds the value of the attendanceDays edge.
 	AttendanceDays []*AttendanceDay `json:"attendanceDays,omitempty"`
-	// AttendanceDaySyncs holds the value of the attendanceDaySyncs edge.
-	AttendanceDaySyncs []*AttendanceDaySyncs `json:"attendanceDaySyncs,omitempty"`
 	// Activities holds the value of the activities edge.
 	Activities []*Activity `json:"activities,omitempty"`
 	// Class holds the value of the class edge.
@@ -45,7 +43,7 @@ type ClassPeriodEdges struct {
 	Period *Period `json:"period,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [4]bool
 }
 
 // AttendanceDaysOrErr returns the AttendanceDays value or an error if the edge
@@ -57,19 +55,10 @@ func (e ClassPeriodEdges) AttendanceDaysOrErr() ([]*AttendanceDay, error) {
 	return nil, &NotLoadedError{edge: "attendanceDays"}
 }
 
-// AttendanceDaySyncsOrErr returns the AttendanceDaySyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ClassPeriodEdges) AttendanceDaySyncsOrErr() ([]*AttendanceDaySyncs, error) {
-	if e.loadedTypes[1] {
-		return e.AttendanceDaySyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "attendanceDaySyncs"}
-}
-
 // ActivitiesOrErr returns the Activities value or an error if the edge
 // was not loaded in eager-loading.
 func (e ClassPeriodEdges) ActivitiesOrErr() ([]*Activity, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.Activities, nil
 	}
 	return nil, &NotLoadedError{edge: "activities"}
@@ -78,7 +67,7 @@ func (e ClassPeriodEdges) ActivitiesOrErr() ([]*Activity, error) {
 // ClassOrErr returns the Class value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassPeriodEdges) ClassOrErr() (*Class, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		if e.Class == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: class.Label}
@@ -91,7 +80,7 @@ func (e ClassPeriodEdges) ClassOrErr() (*Class, error) {
 // PeriodOrErr returns the Period value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ClassPeriodEdges) PeriodOrErr() (*Period, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		if e.Period == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: period.Label}
@@ -177,11 +166,6 @@ func (cp *ClassPeriod) assignValues(columns []string, values []interface{}) erro
 // QueryAttendanceDays queries the "attendanceDays" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryAttendanceDays() *AttendanceDayQuery {
 	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceDays(cp)
-}
-
-// QueryAttendanceDaySyncs queries the "attendanceDaySyncs" edge of the ClassPeriod entity.
-func (cp *ClassPeriod) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceDaySyncs(cp)
 }
 
 // QueryActivities queries the "activities" edge of the ClassPeriod entity.

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
@@ -143,6 +144,21 @@ func (tc *TeacherCreate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherCrea
 		ids[i] = c[i].ID
 	}
 	return tc.AddClassPeriodSyncIDs(ids...)
+}
+
+// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
+func (tc *TeacherCreate) AddAttendanceDaySyncIDs(ids ...string) *TeacherCreate {
+	tc.mutation.AddAttendanceDaySyncIDs(ids...)
+	return tc
+}
+
+// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (tc *TeacherCreate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherCreate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tc.AddAttendanceDaySyncIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -407,6 +423,25 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiodsync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
 				},
 			},
 		}

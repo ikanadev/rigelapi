@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/period"
@@ -64,21 +63,6 @@ func (cpu *ClassPeriodUpdate) AddAttendanceDays(a ...*AttendanceDay) *ClassPerio
 		ids[i] = a[i].ID
 	}
 	return cpu.AddAttendanceDayIDs(ids...)
-}
-
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (cpu *ClassPeriodUpdate) AddAttendanceDaySyncIDs(ids ...string) *ClassPeriodUpdate {
-	cpu.mutation.AddAttendanceDaySyncIDs(ids...)
-	return cpu
-}
-
-// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (cpu *ClassPeriodUpdate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *ClassPeriodUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return cpu.AddAttendanceDaySyncIDs(ids...)
 }
 
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
@@ -158,27 +142,6 @@ func (cpu *ClassPeriodUpdate) RemoveAttendanceDays(a ...*AttendanceDay) *ClassPe
 		ids[i] = a[i].ID
 	}
 	return cpu.RemoveAttendanceDayIDs(ids...)
-}
-
-// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (cpu *ClassPeriodUpdate) ClearAttendanceDaySyncs() *ClassPeriodUpdate {
-	cpu.mutation.ClearAttendanceDaySyncs()
-	return cpu
-}
-
-// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
-func (cpu *ClassPeriodUpdate) RemoveAttendanceDaySyncIDs(ids ...string) *ClassPeriodUpdate {
-	cpu.mutation.RemoveAttendanceDaySyncIDs(ids...)
-	return cpu
-}
-
-// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
-func (cpu *ClassPeriodUpdate) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *ClassPeriodUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return cpu.RemoveAttendanceDaySyncIDs(ids...)
 }
 
 // ClearActivities clears all "activities" edges to the Activity entity.
@@ -353,60 +316,6 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: attendanceday.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cpu.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cpu.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !cpu.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cpu.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
 				},
 			},
 		}
@@ -591,21 +500,6 @@ func (cpuo *ClassPeriodUpdateOne) AddAttendanceDays(a ...*AttendanceDay) *ClassP
 	return cpuo.AddAttendanceDayIDs(ids...)
 }
 
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (cpuo *ClassPeriodUpdateOne) AddAttendanceDaySyncIDs(ids ...string) *ClassPeriodUpdateOne {
-	cpuo.mutation.AddAttendanceDaySyncIDs(ids...)
-	return cpuo
-}
-
-// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (cpuo *ClassPeriodUpdateOne) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *ClassPeriodUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return cpuo.AddAttendanceDaySyncIDs(ids...)
-}
-
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
 func (cpuo *ClassPeriodUpdateOne) AddActivityIDs(ids ...string) *ClassPeriodUpdateOne {
 	cpuo.mutation.AddActivityIDs(ids...)
@@ -683,27 +577,6 @@ func (cpuo *ClassPeriodUpdateOne) RemoveAttendanceDays(a ...*AttendanceDay) *Cla
 		ids[i] = a[i].ID
 	}
 	return cpuo.RemoveAttendanceDayIDs(ids...)
-}
-
-// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (cpuo *ClassPeriodUpdateOne) ClearAttendanceDaySyncs() *ClassPeriodUpdateOne {
-	cpuo.mutation.ClearAttendanceDaySyncs()
-	return cpuo
-}
-
-// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
-func (cpuo *ClassPeriodUpdateOne) RemoveAttendanceDaySyncIDs(ids ...string) *ClassPeriodUpdateOne {
-	cpuo.mutation.RemoveAttendanceDaySyncIDs(ids...)
-	return cpuo
-}
-
-// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
-func (cpuo *ClassPeriodUpdateOne) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *ClassPeriodUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return cpuo.RemoveAttendanceDaySyncIDs(ids...)
 }
 
 // ClearActivities clears all "activities" edges to the Activity entity.
@@ -908,60 +781,6 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: attendanceday.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cpuo.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cpuo.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !cpuo.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cpuo.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   classperiod.AttendanceDaySyncsTable,
-			Columns: []string{classperiod.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
 				},
 			},
 		}

@@ -22,6 +22,6 @@ func (AttendanceDaySyncs) Fields() []ent.Field {
 // Edges of the AttendanceDaySyncs.
 func (AttendanceDaySyncs) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("classPeriod", ClassPeriod.Type).Ref("attendanceDaySyncs").Unique(),
+		edge.From("teacher", Teacher.Type).Ref("attendanceDaySyncs").Unique(),
 	}
 }

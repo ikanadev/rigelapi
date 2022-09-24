@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiodsync"
@@ -147,6 +148,21 @@ func (tu *TeacherUpdate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherUpda
 	return tu.AddClassPeriodSyncIDs(ids...)
 }
 
+// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
+func (tu *TeacherUpdate) AddAttendanceDaySyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddAttendanceDaySyncIDs(ids...)
+	return tu
+}
+
+// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (tu *TeacherUpdate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.AddAttendanceDaySyncIDs(ids...)
+}
+
 // Mutation returns the TeacherMutation object of the builder.
 func (tu *TeacherUpdate) Mutation() *TeacherMutation {
 	return tu.mutation
@@ -276,6 +292,27 @@ func (tu *TeacherUpdate) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherU
 		ids[i] = c[i].ID
 	}
 	return tu.RemoveClassPeriodSyncIDs(ids...)
+}
+
+// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (tu *TeacherUpdate) ClearAttendanceDaySyncs() *TeacherUpdate {
+	tu.mutation.ClearAttendanceDaySyncs()
+	return tu
+}
+
+// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
+func (tu *TeacherUpdate) RemoveAttendanceDaySyncIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveAttendanceDaySyncIDs(ids...)
+	return tu
+}
+
+// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
+func (tu *TeacherUpdate) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.RemoveAttendanceDaySyncIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -702,6 +739,60 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.AttendanceDaySyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !tu.mutation.AttendanceDaySyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{teacher.Label}
@@ -835,6 +926,21 @@ func (tuo *TeacherUpdateOne) AddClassPeriodSyncs(c ...*ClassPeriodSync) *Teacher
 	return tuo.AddClassPeriodSyncIDs(ids...)
 }
 
+// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
+func (tuo *TeacherUpdateOne) AddAttendanceDaySyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddAttendanceDaySyncIDs(ids...)
+	return tuo
+}
+
+// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (tuo *TeacherUpdateOne) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.AddAttendanceDaySyncIDs(ids...)
+}
+
 // Mutation returns the TeacherMutation object of the builder.
 func (tuo *TeacherUpdateOne) Mutation() *TeacherMutation {
 	return tuo.mutation
@@ -964,6 +1070,27 @@ func (tuo *TeacherUpdateOne) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *Teac
 		ids[i] = c[i].ID
 	}
 	return tuo.RemoveClassPeriodSyncIDs(ids...)
+}
+
+// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
+func (tuo *TeacherUpdateOne) ClearAttendanceDaySyncs() *TeacherUpdateOne {
+	tuo.mutation.ClearAttendanceDaySyncs()
+	return tuo
+}
+
+// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveAttendanceDaySyncIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveAttendanceDaySyncIDs(ids...)
+	return tuo
+}
+
+// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
+func (tuo *TeacherUpdateOne) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.RemoveAttendanceDaySyncIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1412,6 +1539,60 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: classperiodsync.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.AttendanceDaySyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !tuo.mutation.AttendanceDaySyncsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.AttendanceDaySyncsTable,
+			Columns: []string{teacher.AttendanceDaySyncsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: attendancedaysyncs.FieldID,
 				},
 			},
 		}

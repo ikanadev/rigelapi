@@ -128,7 +128,7 @@ var (
 	AttendanceDaySyncsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "class_period_attendance_day_syncs", Type: field.TypeString, Nullable: true},
+		{Name: "teacher_attendance_day_syncs", Type: field.TypeString, Nullable: true},
 	}
 	// AttendanceDaySyncsTable holds the schema information for the "attendance_day_syncs" table.
 	AttendanceDaySyncsTable = &schema.Table{
@@ -137,9 +137,9 @@ var (
 		PrimaryKey: []*schema.Column{AttendanceDaySyncsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "attendance_day_syncs_class_periods_attendanceDaySyncs",
+				Symbol:     "attendance_day_syncs_teachers_attendanceDaySyncs",
 				Columns:    []*schema.Column{AttendanceDaySyncsColumns[2]},
-				RefColumns: []*schema.Column{ClassPeriodsColumns[0]},
+				RefColumns: []*schema.Column{TeachersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -526,7 +526,7 @@ func init() {
 	AttendancesTable.ForeignKeys[0].RefTable = AttendanceDaysTable
 	AttendancesTable.ForeignKeys[1].RefTable = StudentsTable
 	AttendanceDaysTable.ForeignKeys[0].RefTable = ClassPeriodsTable
-	AttendanceDaySyncsTable.ForeignKeys[0].RefTable = ClassPeriodsTable
+	AttendanceDaySyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	AttendanceSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	ClassesTable.ForeignKeys[0].RefTable = GradesTable
 	ClassesTable.ForeignKeys[1].RefTable = SchoolsTable

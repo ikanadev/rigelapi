@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/period"
@@ -23,18 +22,17 @@ import (
 // ClassPeriodQuery is the builder for querying ClassPeriod entities.
 type ClassPeriodQuery struct {
 	config
-	limit                  *int
-	offset                 *int
-	unique                 *bool
-	order                  []OrderFunc
-	fields                 []string
-	predicates             []predicate.ClassPeriod
-	withAttendanceDays     *AttendanceDayQuery
-	withAttendanceDaySyncs *AttendanceDaySyncsQuery
-	withActivities         *ActivityQuery
-	withClass              *ClassQuery
-	withPeriod             *PeriodQuery
-	withFKs                bool
+	limit              *int
+	offset             *int
+	unique             *bool
+	order              []OrderFunc
+	fields             []string
+	predicates         []predicate.ClassPeriod
+	withAttendanceDays *AttendanceDayQuery
+	withActivities     *ActivityQuery
+	withClass          *ClassQuery
+	withPeriod         *PeriodQuery
+	withFKs            bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -86,28 +84,6 @@ func (cpq *ClassPeriodQuery) QueryAttendanceDays() *AttendanceDayQuery {
 			sqlgraph.From(classperiod.Table, classperiod.FieldID, selector),
 			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaysTable, classperiod.AttendanceDaysColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(cpq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAttendanceDaySyncs chains the current query on the "attendanceDaySyncs" edge.
-func (cpq *ClassPeriodQuery) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
-	query := &AttendanceDaySyncsQuery{config: cpq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cpq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cpq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(classperiod.Table, classperiod.FieldID, selector),
-			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaySyncsTable, classperiod.AttendanceDaySyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cpq.driver.Dialect(), step)
 		return fromU, nil
@@ -357,16 +333,15 @@ func (cpq *ClassPeriodQuery) Clone() *ClassPeriodQuery {
 		return nil
 	}
 	return &ClassPeriodQuery{
-		config:                 cpq.config,
-		limit:                  cpq.limit,
-		offset:                 cpq.offset,
-		order:                  append([]OrderFunc{}, cpq.order...),
-		predicates:             append([]predicate.ClassPeriod{}, cpq.predicates...),
-		withAttendanceDays:     cpq.withAttendanceDays.Clone(),
-		withAttendanceDaySyncs: cpq.withAttendanceDaySyncs.Clone(),
-		withActivities:         cpq.withActivities.Clone(),
-		withClass:              cpq.withClass.Clone(),
-		withPeriod:             cpq.withPeriod.Clone(),
+		config:             cpq.config,
+		limit:              cpq.limit,
+		offset:             cpq.offset,
+		order:              append([]OrderFunc{}, cpq.order...),
+		predicates:         append([]predicate.ClassPeriod{}, cpq.predicates...),
+		withAttendanceDays: cpq.withAttendanceDays.Clone(),
+		withActivities:     cpq.withActivities.Clone(),
+		withClass:          cpq.withClass.Clone(),
+		withPeriod:         cpq.withPeriod.Clone(),
 		// clone intermediate query.
 		sql:    cpq.sql.Clone(),
 		path:   cpq.path,
@@ -382,17 +357,6 @@ func (cpq *ClassPeriodQuery) WithAttendanceDays(opts ...func(*AttendanceDayQuery
 		opt(query)
 	}
 	cpq.withAttendanceDays = query
-	return cpq
-}
-
-// WithAttendanceDaySyncs tells the query-builder to eager-load the nodes that are connected to
-// the "attendanceDaySyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (cpq *ClassPeriodQuery) WithAttendanceDaySyncs(opts ...func(*AttendanceDaySyncsQuery)) *ClassPeriodQuery {
-	query := &AttendanceDaySyncsQuery{config: cpq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	cpq.withAttendanceDaySyncs = query
 	return cpq
 }
 
@@ -498,9 +462,8 @@ func (cpq *ClassPeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*ClassPeriod{}
 		withFKs     = cpq.withFKs
 		_spec       = cpq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
 			cpq.withAttendanceDays != nil,
-			cpq.withAttendanceDaySyncs != nil,
 			cpq.withActivities != nil,
 			cpq.withClass != nil,
 			cpq.withPeriod != nil,
@@ -534,15 +497,6 @@ func (cpq *ClassPeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		if err := cpq.loadAttendanceDays(ctx, query, nodes,
 			func(n *ClassPeriod) { n.Edges.AttendanceDays = []*AttendanceDay{} },
 			func(n *ClassPeriod, e *AttendanceDay) { n.Edges.AttendanceDays = append(n.Edges.AttendanceDays, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := cpq.withAttendanceDaySyncs; query != nil {
-		if err := cpq.loadAttendanceDaySyncs(ctx, query, nodes,
-			func(n *ClassPeriod) { n.Edges.AttendanceDaySyncs = []*AttendanceDaySyncs{} },
-			func(n *ClassPeriod, e *AttendanceDaySyncs) {
-				n.Edges.AttendanceDaySyncs = append(n.Edges.AttendanceDaySyncs, e)
-			}); err != nil {
 			return nil, err
 		}
 	}
@@ -594,37 +548,6 @@ func (cpq *ClassPeriodQuery) loadAttendanceDays(ctx context.Context, query *Atte
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "class_period_attendance_days" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (cpq *ClassPeriodQuery) loadAttendanceDaySyncs(ctx context.Context, query *AttendanceDaySyncsQuery, nodes []*ClassPeriod, init func(*ClassPeriod), assign func(*ClassPeriod, *AttendanceDaySyncs)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*ClassPeriod)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.AttendanceDaySyncs(func(s *sql.Selector) {
-		s.Where(sql.InValues(classperiod.AttendanceDaySyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.class_period_attendance_day_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "class_period_attendance_day_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_attendance_day_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

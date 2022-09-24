@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // AttendanceDaySyncsUpdate is the builder for updating AttendanceDaySyncs entities.
@@ -34,23 +34,23 @@ func (adsu *AttendanceDaySyncsUpdate) SetLastSyncID(s string) *AttendanceDaySync
 	return adsu
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (adsu *AttendanceDaySyncsUpdate) SetClassPeriodID(id string) *AttendanceDaySyncsUpdate {
-	adsu.mutation.SetClassPeriodID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (adsu *AttendanceDaySyncsUpdate) SetTeacherID(id string) *AttendanceDaySyncsUpdate {
+	adsu.mutation.SetTeacherID(id)
 	return adsu
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (adsu *AttendanceDaySyncsUpdate) SetNillableClassPeriodID(id *string) *AttendanceDaySyncsUpdate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (adsu *AttendanceDaySyncsUpdate) SetNillableTeacherID(id *string) *AttendanceDaySyncsUpdate {
 	if id != nil {
-		adsu = adsu.SetClassPeriodID(*id)
+		adsu = adsu.SetTeacherID(*id)
 	}
 	return adsu
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (adsu *AttendanceDaySyncsUpdate) SetClassPeriod(c *ClassPeriod) *AttendanceDaySyncsUpdate {
-	return adsu.SetClassPeriodID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (adsu *AttendanceDaySyncsUpdate) SetTeacher(t *Teacher) *AttendanceDaySyncsUpdate {
+	return adsu.SetTeacherID(t.ID)
 }
 
 // Mutation returns the AttendanceDaySyncsMutation object of the builder.
@@ -58,9 +58,9 @@ func (adsu *AttendanceDaySyncsUpdate) Mutation() *AttendanceDaySyncsMutation {
 	return adsu.mutation
 }
 
-// ClearClassPeriod clears the "classPeriod" edge to the ClassPeriod entity.
-func (adsu *AttendanceDaySyncsUpdate) ClearClassPeriod() *AttendanceDaySyncsUpdate {
-	adsu.mutation.ClearClassPeriod()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (adsu *AttendanceDaySyncsUpdate) ClearTeacher() *AttendanceDaySyncsUpdate {
+	adsu.mutation.ClearTeacher()
 	return adsu
 }
 
@@ -143,33 +143,33 @@ func (adsu *AttendanceDaySyncsUpdate) sqlSave(ctx context.Context) (n int, err e
 			Column: attendancedaysyncs.FieldLastSyncID,
 		})
 	}
-	if adsu.mutation.ClassPeriodCleared() {
+	if adsu.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancedaysyncs.ClassPeriodTable,
-			Columns: []string{attendancedaysyncs.ClassPeriodColumn},
+			Table:   attendancedaysyncs.TeacherTable,
+			Columns: []string{attendancedaysyncs.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := adsu.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := adsu.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancedaysyncs.ClassPeriodTable,
-			Columns: []string{attendancedaysyncs.ClassPeriodColumn},
+			Table:   attendancedaysyncs.TeacherTable,
+			Columns: []string{attendancedaysyncs.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
@@ -203,23 +203,23 @@ func (adsuo *AttendanceDaySyncsUpdateOne) SetLastSyncID(s string) *AttendanceDay
 	return adsuo
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (adsuo *AttendanceDaySyncsUpdateOne) SetClassPeriodID(id string) *AttendanceDaySyncsUpdateOne {
-	adsuo.mutation.SetClassPeriodID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (adsuo *AttendanceDaySyncsUpdateOne) SetTeacherID(id string) *AttendanceDaySyncsUpdateOne {
+	adsuo.mutation.SetTeacherID(id)
 	return adsuo
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (adsuo *AttendanceDaySyncsUpdateOne) SetNillableClassPeriodID(id *string) *AttendanceDaySyncsUpdateOne {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (adsuo *AttendanceDaySyncsUpdateOne) SetNillableTeacherID(id *string) *AttendanceDaySyncsUpdateOne {
 	if id != nil {
-		adsuo = adsuo.SetClassPeriodID(*id)
+		adsuo = adsuo.SetTeacherID(*id)
 	}
 	return adsuo
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (adsuo *AttendanceDaySyncsUpdateOne) SetClassPeriod(c *ClassPeriod) *AttendanceDaySyncsUpdateOne {
-	return adsuo.SetClassPeriodID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (adsuo *AttendanceDaySyncsUpdateOne) SetTeacher(t *Teacher) *AttendanceDaySyncsUpdateOne {
+	return adsuo.SetTeacherID(t.ID)
 }
 
 // Mutation returns the AttendanceDaySyncsMutation object of the builder.
@@ -227,9 +227,9 @@ func (adsuo *AttendanceDaySyncsUpdateOne) Mutation() *AttendanceDaySyncsMutation
 	return adsuo.mutation
 }
 
-// ClearClassPeriod clears the "classPeriod" edge to the ClassPeriod entity.
-func (adsuo *AttendanceDaySyncsUpdateOne) ClearClassPeriod() *AttendanceDaySyncsUpdateOne {
-	adsuo.mutation.ClearClassPeriod()
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (adsuo *AttendanceDaySyncsUpdateOne) ClearTeacher() *AttendanceDaySyncsUpdateOne {
+	adsuo.mutation.ClearTeacher()
 	return adsuo
 }
 
@@ -342,33 +342,33 @@ func (adsuo *AttendanceDaySyncsUpdateOne) sqlSave(ctx context.Context) (_node *A
 			Column: attendancedaysyncs.FieldLastSyncID,
 		})
 	}
-	if adsuo.mutation.ClassPeriodCleared() {
+	if adsuo.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancedaysyncs.ClassPeriodTable,
-			Columns: []string{attendancedaysyncs.ClassPeriodColumn},
+			Table:   attendancedaysyncs.TeacherTable,
+			Columns: []string{attendancedaysyncs.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := adsuo.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := adsuo.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancedaysyncs.ClassPeriodTable,
-			Columns: []string{attendancedaysyncs.ClassPeriodColumn},
+			Table:   attendancedaysyncs.TeacherTable,
+			Columns: []string{attendancedaysyncs.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}

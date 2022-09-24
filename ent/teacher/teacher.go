@@ -27,6 +27,8 @@ const (
 	EdgeAttendanceSyncs = "attendanceSyncs"
 	// EdgeClassPeriodSyncs holds the string denoting the classperiodsyncs edge name in mutations.
 	EdgeClassPeriodSyncs = "classPeriodSyncs"
+	// EdgeAttendanceDaySyncs holds the string denoting the attendancedaysyncs edge name in mutations.
+	EdgeAttendanceDaySyncs = "attendanceDaySyncs"
 	// Table holds the table name of the teacher in the database.
 	Table = "teachers"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -71,6 +73,13 @@ const (
 	ClassPeriodSyncsInverseTable = "class_period_syncs"
 	// ClassPeriodSyncsColumn is the table column denoting the classPeriodSyncs relation/edge.
 	ClassPeriodSyncsColumn = "teacher_class_period_syncs"
+	// AttendanceDaySyncsTable is the table that holds the attendanceDaySyncs relation/edge.
+	AttendanceDaySyncsTable = "attendance_day_syncs"
+	// AttendanceDaySyncsInverseTable is the table name for the AttendanceDaySyncs entity.
+	// It exists in this package in order to avoid circular dependency with the "attendancedaysyncs" package.
+	AttendanceDaySyncsInverseTable = "attendance_day_syncs"
+	// AttendanceDaySyncsColumn is the table column denoting the attendanceDaySyncs relation/edge.
+	AttendanceDaySyncsColumn = "teacher_attendance_day_syncs"
 )
 
 // Columns holds all SQL columns for teacher fields.

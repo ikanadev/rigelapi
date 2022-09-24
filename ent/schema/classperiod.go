@@ -25,7 +25,6 @@ func (ClassPeriod) Fields() []ent.Field {
 func (ClassPeriod) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("attendanceDays", AttendanceDay.Type),
-		edge.To("attendanceDaySyncs", AttendanceDaySyncs.Type),
 		edge.To("activities", Activity.Type),
 		edge.From("class", Class.Type).Ref("classPeriods").Unique(),
 		edge.From("period", Period.Type).Ref("classPeriods").Unique(),

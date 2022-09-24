@@ -9,17 +9,17 @@ const (
 	FieldID = "id"
 	// FieldLastSyncID holds the string denoting the last_sync_id field in the database.
 	FieldLastSyncID = "last_sync_id"
-	// EdgeClassPeriod holds the string denoting the classperiod edge name in mutations.
-	EdgeClassPeriod = "classPeriod"
+	// EdgeTeacher holds the string denoting the teacher edge name in mutations.
+	EdgeTeacher = "teacher"
 	// Table holds the table name of the attendancedaysyncs in the database.
 	Table = "attendance_day_syncs"
-	// ClassPeriodTable is the table that holds the classPeriod relation/edge.
-	ClassPeriodTable = "attendance_day_syncs"
-	// ClassPeriodInverseTable is the table name for the ClassPeriod entity.
-	// It exists in this package in order to avoid circular dependency with the "classperiod" package.
-	ClassPeriodInverseTable = "class_periods"
-	// ClassPeriodColumn is the table column denoting the classPeriod relation/edge.
-	ClassPeriodColumn = "class_period_attendance_day_syncs"
+	// TeacherTable is the table that holds the teacher relation/edge.
+	TeacherTable = "attendance_day_syncs"
+	// TeacherInverseTable is the table name for the Teacher entity.
+	// It exists in this package in order to avoid circular dependency with the "teacher" package.
+	TeacherInverseTable = "teachers"
+	// TeacherColumn is the table column denoting the teacher relation/edge.
+	TeacherColumn = "teacher_attendance_day_syncs"
 )
 
 // Columns holds all SQL columns for attendancedaysyncs fields.
@@ -31,7 +31,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "attendance_day_syncs"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"class_period_attendance_day_syncs",
+	"teacher_attendance_day_syncs",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

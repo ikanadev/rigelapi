@@ -8,7 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // AttendanceDaySyncs is the model entity for the AttendanceDaySyncs schema.
@@ -20,30 +20,30 @@ type AttendanceDaySyncs struct {
 	LastSyncID string `json:"last_sync_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AttendanceDaySyncsQuery when eager-loading is set.
-	Edges                             AttendanceDaySyncsEdges `json:"edges"`
-	class_period_attendance_day_syncs *string
+	Edges                        AttendanceDaySyncsEdges `json:"edges"`
+	teacher_attendance_day_syncs *string
 }
 
 // AttendanceDaySyncsEdges holds the relations/edges for other nodes in the graph.
 type AttendanceDaySyncsEdges struct {
-	// ClassPeriod holds the value of the classPeriod edge.
-	ClassPeriod *ClassPeriod `json:"classPeriod,omitempty"`
+	// Teacher holds the value of the teacher edge.
+	Teacher *Teacher `json:"teacher,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ClassPeriodOrErr returns the ClassPeriod value or an error if the edge
+// TeacherOrErr returns the Teacher value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e AttendanceDaySyncsEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
+func (e AttendanceDaySyncsEdges) TeacherOrErr() (*Teacher, error) {
 	if e.loadedTypes[0] {
-		if e.ClassPeriod == nil {
+		if e.Teacher == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: classperiod.Label}
+			return nil, &NotFoundError{label: teacher.Label}
 		}
-		return e.ClassPeriod, nil
+		return e.Teacher, nil
 	}
-	return nil, &NotLoadedError{edge: "classPeriod"}
+	return nil, &NotLoadedError{edge: "teacher"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -53,7 +53,7 @@ func (*AttendanceDaySyncs) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case attendancedaysyncs.FieldID, attendancedaysyncs.FieldLastSyncID:
 			values[i] = new(sql.NullString)
-		case attendancedaysyncs.ForeignKeys[0]: // class_period_attendance_day_syncs
+		case attendancedaysyncs.ForeignKeys[0]: // teacher_attendance_day_syncs
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type AttendanceDaySyncs", columns[i])
@@ -84,19 +84,19 @@ func (ads *AttendanceDaySyncs) assignValues(columns []string, values []interface
 			}
 		case attendancedaysyncs.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field class_period_attendance_day_syncs", values[i])
+				return fmt.Errorf("unexpected type %T for field teacher_attendance_day_syncs", values[i])
 			} else if value.Valid {
-				ads.class_period_attendance_day_syncs = new(string)
-				*ads.class_period_attendance_day_syncs = value.String
+				ads.teacher_attendance_day_syncs = new(string)
+				*ads.teacher_attendance_day_syncs = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryClassPeriod queries the "classPeriod" edge of the AttendanceDaySyncs entity.
-func (ads *AttendanceDaySyncs) QueryClassPeriod() *ClassPeriodQuery {
-	return (&AttendanceDaySyncsClient{config: ads.config}).QueryClassPeriod(ads)
+// QueryTeacher queries the "teacher" edge of the AttendanceDaySyncs entity.
+func (ads *AttendanceDaySyncs) QueryTeacher() *TeacherQuery {
+	return (&AttendanceDaySyncsClient{config: ads.config}).QueryTeacher(ads)
 }
 
 // Update returns a builder for updating this AttendanceDaySyncs.

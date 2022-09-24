@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // AttendanceDaySyncsCreate is the builder for creating a AttendanceDaySyncs entity.
@@ -32,23 +32,23 @@ func (adsc *AttendanceDaySyncsCreate) SetID(s string) *AttendanceDaySyncsCreate 
 	return adsc
 }
 
-// SetClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID.
-func (adsc *AttendanceDaySyncsCreate) SetClassPeriodID(id string) *AttendanceDaySyncsCreate {
-	adsc.mutation.SetClassPeriodID(id)
+// SetTeacherID sets the "teacher" edge to the Teacher entity by ID.
+func (adsc *AttendanceDaySyncsCreate) SetTeacherID(id string) *AttendanceDaySyncsCreate {
+	adsc.mutation.SetTeacherID(id)
 	return adsc
 }
 
-// SetNillableClassPeriodID sets the "classPeriod" edge to the ClassPeriod entity by ID if the given value is not nil.
-func (adsc *AttendanceDaySyncsCreate) SetNillableClassPeriodID(id *string) *AttendanceDaySyncsCreate {
+// SetNillableTeacherID sets the "teacher" edge to the Teacher entity by ID if the given value is not nil.
+func (adsc *AttendanceDaySyncsCreate) SetNillableTeacherID(id *string) *AttendanceDaySyncsCreate {
 	if id != nil {
-		adsc = adsc.SetClassPeriodID(*id)
+		adsc = adsc.SetTeacherID(*id)
 	}
 	return adsc
 }
 
-// SetClassPeriod sets the "classPeriod" edge to the ClassPeriod entity.
-func (adsc *AttendanceDaySyncsCreate) SetClassPeriod(c *ClassPeriod) *AttendanceDaySyncsCreate {
-	return adsc.SetClassPeriodID(c.ID)
+// SetTeacher sets the "teacher" edge to the Teacher entity.
+func (adsc *AttendanceDaySyncsCreate) SetTeacher(t *Teacher) *AttendanceDaySyncsCreate {
+	return adsc.SetTeacherID(t.ID)
 }
 
 // Mutation returns the AttendanceDaySyncsMutation object of the builder.
@@ -174,24 +174,24 @@ func (adsc *AttendanceDaySyncsCreate) createSpec() (*AttendanceDaySyncs, *sqlgra
 		})
 		_node.LastSyncID = value
 	}
-	if nodes := adsc.mutation.ClassPeriodIDs(); len(nodes) > 0 {
+	if nodes := adsc.mutation.TeacherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   attendancedaysyncs.ClassPeriodTable,
-			Columns: []string{attendancedaysyncs.ClassPeriodColumn},
+			Table:   attendancedaysyncs.TeacherTable,
+			Columns: []string{attendancedaysyncs.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: classperiod.FieldID,
+					Column: teacher.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.class_period_attendance_day_syncs = &nodes[0]
+		_node.teacher_attendance_day_syncs = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

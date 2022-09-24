@@ -972,15 +972,15 @@ func (c *AttendanceDaySyncsClient) GetX(ctx context.Context, id string) *Attenda
 	return obj
 }
 
-// QueryClassPeriod queries the classPeriod edge of a AttendanceDaySyncs.
-func (c *AttendanceDaySyncsClient) QueryClassPeriod(ads *AttendanceDaySyncs) *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: c.config}
+// QueryTeacher queries the teacher edge of a AttendanceDaySyncs.
+func (c *AttendanceDaySyncsClient) QueryTeacher(ads *AttendanceDaySyncs) *TeacherQuery {
+	query := &TeacherQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := ads.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attendancedaysyncs.Table, attendancedaysyncs.FieldID, id),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.ClassPeriodTable, attendancedaysyncs.ClassPeriodColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.TeacherTable, attendancedaysyncs.TeacherColumn),
 		)
 		fromV = sqlgraph.Neighbors(ads.driver.Dialect(), step)
 		return fromV, nil
@@ -1395,22 +1395,6 @@ func (c *ClassPeriodClient) QueryAttendanceDays(cp *ClassPeriod) *AttendanceDayQ
 			sqlgraph.From(classperiod.Table, classperiod.FieldID, id),
 			sqlgraph.To(attendanceday.Table, attendanceday.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaysTable, classperiod.AttendanceDaysColumn),
-		)
-		fromV = sqlgraph.Neighbors(cp.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAttendanceDaySyncs queries the attendanceDaySyncs edge of a ClassPeriod.
-func (c *ClassPeriodClient) QueryAttendanceDaySyncs(cp *ClassPeriod) *AttendanceDaySyncsQuery {
-	query := &AttendanceDaySyncsQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := cp.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(classperiod.Table, classperiod.FieldID, id),
-			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, classperiod.AttendanceDaySyncsTable, classperiod.AttendanceDaySyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(cp.driver.Dialect(), step)
 		return fromV, nil
@@ -3029,6 +3013,22 @@ func (c *TeacherClient) QueryClassPeriodSyncs(t *Teacher) *ClassPeriodSyncQuery 
 			sqlgraph.From(teacher.Table, teacher.FieldID, id),
 			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassPeriodSyncsTable, teacher.ClassPeriodSyncsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAttendanceDaySyncs queries the attendanceDaySyncs edge of a Teacher.
+func (c *TeacherClient) QueryAttendanceDaySyncs(t *Teacher) *AttendanceDaySyncsQuery {
+	query := &AttendanceDaySyncsQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, id),
+			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.AttendanceDaySyncsTable, teacher.AttendanceDaySyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

@@ -11,21 +11,21 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // AttendanceDaySyncsQuery is the builder for querying AttendanceDaySyncs entities.
 type AttendanceDaySyncsQuery struct {
 	config
-	limit           *int
-	offset          *int
-	unique          *bool
-	order           []OrderFunc
-	fields          []string
-	predicates      []predicate.AttendanceDaySyncs
-	withClassPeriod *ClassPeriodQuery
-	withFKs         bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.AttendanceDaySyncs
+	withTeacher *TeacherQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +62,9 @@ func (adsq *AttendanceDaySyncsQuery) Order(o ...OrderFunc) *AttendanceDaySyncsQu
 	return adsq
 }
 
-// QueryClassPeriod chains the current query on the "classPeriod" edge.
-func (adsq *AttendanceDaySyncsQuery) QueryClassPeriod() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: adsq.config}
+// QueryTeacher chains the current query on the "teacher" edge.
+func (adsq *AttendanceDaySyncsQuery) QueryTeacher() *TeacherQuery {
+	query := &TeacherQuery{config: adsq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := adsq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +75,8 @@ func (adsq *AttendanceDaySyncsQuery) QueryClassPeriod() *ClassPeriodQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(attendancedaysyncs.Table, attendancedaysyncs.FieldID, selector),
-			sqlgraph.To(classperiod.Table, classperiod.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.ClassPeriodTable, attendancedaysyncs.ClassPeriodColumn),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.TeacherTable, attendancedaysyncs.TeacherColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(adsq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +260,12 @@ func (adsq *AttendanceDaySyncsQuery) Clone() *AttendanceDaySyncsQuery {
 		return nil
 	}
 	return &AttendanceDaySyncsQuery{
-		config:          adsq.config,
-		limit:           adsq.limit,
-		offset:          adsq.offset,
-		order:           append([]OrderFunc{}, adsq.order...),
-		predicates:      append([]predicate.AttendanceDaySyncs{}, adsq.predicates...),
-		withClassPeriod: adsq.withClassPeriod.Clone(),
+		config:      adsq.config,
+		limit:       adsq.limit,
+		offset:      adsq.offset,
+		order:       append([]OrderFunc{}, adsq.order...),
+		predicates:  append([]predicate.AttendanceDaySyncs{}, adsq.predicates...),
+		withTeacher: adsq.withTeacher.Clone(),
 		// clone intermediate query.
 		sql:    adsq.sql.Clone(),
 		path:   adsq.path,
@@ -273,14 +273,14 @@ func (adsq *AttendanceDaySyncsQuery) Clone() *AttendanceDaySyncsQuery {
 	}
 }
 
-// WithClassPeriod tells the query-builder to eager-load the nodes that are connected to
-// the "classPeriod" edge. The optional arguments are used to configure the query builder of the edge.
-func (adsq *AttendanceDaySyncsQuery) WithClassPeriod(opts ...func(*ClassPeriodQuery)) *AttendanceDaySyncsQuery {
-	query := &ClassPeriodQuery{config: adsq.config}
+// WithTeacher tells the query-builder to eager-load the nodes that are connected to
+// the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
+func (adsq *AttendanceDaySyncsQuery) WithTeacher(opts ...func(*TeacherQuery)) *AttendanceDaySyncsQuery {
+	query := &TeacherQuery{config: adsq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	adsq.withClassPeriod = query
+	adsq.withTeacher = query
 	return adsq
 }
 
@@ -354,10 +354,10 @@ func (adsq *AttendanceDaySyncsQuery) sqlAll(ctx context.Context, hooks ...queryH
 		withFKs     = adsq.withFKs
 		_spec       = adsq.querySpec()
 		loadedTypes = [1]bool{
-			adsq.withClassPeriod != nil,
+			adsq.withTeacher != nil,
 		}
 	)
-	if adsq.withClassPeriod != nil {
+	if adsq.withTeacher != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -381,29 +381,29 @@ func (adsq *AttendanceDaySyncsQuery) sqlAll(ctx context.Context, hooks ...queryH
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := adsq.withClassPeriod; query != nil {
-		if err := adsq.loadClassPeriod(ctx, query, nodes, nil,
-			func(n *AttendanceDaySyncs, e *ClassPeriod) { n.Edges.ClassPeriod = e }); err != nil {
+	if query := adsq.withTeacher; query != nil {
+		if err := adsq.loadTeacher(ctx, query, nodes, nil,
+			func(n *AttendanceDaySyncs, e *Teacher) { n.Edges.Teacher = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (adsq *AttendanceDaySyncsQuery) loadClassPeriod(ctx context.Context, query *ClassPeriodQuery, nodes []*AttendanceDaySyncs, init func(*AttendanceDaySyncs), assign func(*AttendanceDaySyncs, *ClassPeriod)) error {
+func (adsq *AttendanceDaySyncsQuery) loadTeacher(ctx context.Context, query *TeacherQuery, nodes []*AttendanceDaySyncs, init func(*AttendanceDaySyncs), assign func(*AttendanceDaySyncs, *Teacher)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*AttendanceDaySyncs)
 	for i := range nodes {
-		if nodes[i].class_period_attendance_day_syncs == nil {
+		if nodes[i].teacher_attendance_day_syncs == nil {
 			continue
 		}
-		fk := *nodes[i].class_period_attendance_day_syncs
+		fk := *nodes[i].teacher_attendance_day_syncs
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(classperiod.IDIn(ids...))
+	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (adsq *AttendanceDaySyncsQuery) loadClassPeriod(ctx context.Context, query 
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_attendance_day_syncs" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "teacher_attendance_day_syncs" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

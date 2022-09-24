@@ -42,9 +42,11 @@ type TeacherEdges struct {
 	AttendanceSyncs []*AttendanceSync `json:"attendanceSyncs,omitempty"`
 	// ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
 	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
+	// AttendanceDaySyncs holds the value of the attendanceDaySyncs edge.
+	AttendanceDaySyncs []*AttendanceDaySyncs `json:"attendanceDaySyncs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -99,6 +101,15 @@ func (e TeacherEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
 		return e.ClassPeriodSyncs, nil
 	}
 	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
+}
+
+// AttendanceDaySyncsOrErr returns the AttendanceDaySyncs value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) AttendanceDaySyncsOrErr() ([]*AttendanceDaySyncs, error) {
+	if e.loadedTypes[6] {
+		return e.AttendanceDaySyncs, nil
+	}
+	return nil, &NotLoadedError{edge: "attendanceDaySyncs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -186,6 +197,11 @@ func (t *Teacher) QueryAttendanceSyncs() *AttendanceSyncQuery {
 // QueryClassPeriodSyncs queries the "classPeriodSyncs" edge of the Teacher entity.
 func (t *Teacher) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
 	return (&TeacherClient{config: t.config}).QueryClassPeriodSyncs(t)
+}
+
+// QueryAttendanceDaySyncs queries the "attendanceDaySyncs" edge of the Teacher entity.
+func (t *Teacher) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
+	return (&TeacherClient{config: t.config}).QueryAttendanceDaySyncs(t)
 }
 
 // Update returns a builder for updating this Teacher.

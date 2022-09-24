@@ -15,8 +15,6 @@ const (
 	FieldFinished = "finished"
 	// EdgeAttendanceDays holds the string denoting the attendancedays edge name in mutations.
 	EdgeAttendanceDays = "attendanceDays"
-	// EdgeAttendanceDaySyncs holds the string denoting the attendancedaysyncs edge name in mutations.
-	EdgeAttendanceDaySyncs = "attendanceDaySyncs"
 	// EdgeActivities holds the string denoting the activities edge name in mutations.
 	EdgeActivities = "activities"
 	// EdgeClass holds the string denoting the class edge name in mutations.
@@ -32,13 +30,6 @@ const (
 	AttendanceDaysInverseTable = "attendance_days"
 	// AttendanceDaysColumn is the table column denoting the attendanceDays relation/edge.
 	AttendanceDaysColumn = "class_period_attendance_days"
-	// AttendanceDaySyncsTable is the table that holds the attendanceDaySyncs relation/edge.
-	AttendanceDaySyncsTable = "attendance_day_syncs"
-	// AttendanceDaySyncsInverseTable is the table name for the AttendanceDaySyncs entity.
-	// It exists in this package in order to avoid circular dependency with the "attendancedaysyncs" package.
-	AttendanceDaySyncsInverseTable = "attendance_day_syncs"
-	// AttendanceDaySyncsColumn is the table column denoting the attendanceDaySyncs relation/edge.
-	AttendanceDaySyncsColumn = "class_period_attendance_day_syncs"
 	// ActivitiesTable is the table that holds the activities relation/edge.
 	ActivitiesTable = "activities"
 	// ActivitiesInverseTable is the table name for the Activity entity.
