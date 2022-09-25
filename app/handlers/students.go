@@ -1,19 +1,17 @@
 package handlers
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
-	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+		teacherID := c.Locals("id").(string)
 		resp := SyncIDResp{}
-		classID := c.Params("classid")
-		studentSync, err := db.StudentSync.Query().Where(studentsync.HasClassWith(class.IDEQ(classID))).First(c.Context())
+		studentSync, err := db.StudentSync.Query().Where(studentsync.HasTeacherWith(teacher.IDEQ(teacherID))).First(c.Context())
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return c.JSON(resp)
@@ -25,7 +23,7 @@ func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
 	}
 }
 
-func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
+func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 	type studentToSave struct {
 		id       string
 		name     string
@@ -33,14 +31,13 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 		ci       string
 	}
 	return func(c *fiber.Ctx) error {
+		teacherID := c.Locals("id").(string)
 		students := []SyncReq{}
-    log.Println("Parsing req")
 		err := c.BodyParser(&students)
 		if err != nil {
 			return err
 		}
 
-    log.Println("Initializing Transaction")
 		tx, err := db.Tx(c.Context())
 		if err != nil {
 			return err
@@ -84,7 +81,11 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 				return rollback(tx, err)
 			}
 		}
-    err = tx.Commit()
+		_, err = tx.StudentSync.Create().SetID(newID()).SetLastSyncID(lastSyncId).SetTeacherID(teacherID).Save(c.Context())
+		if err != nil {
+			return rollback(tx, err)
+		}
+		err = tx.Commit()
 		if err != nil {
 			return err
 		}
