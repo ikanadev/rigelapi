@@ -3,8 +3,11 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
@@ -20,6 +23,44 @@ func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
 		}
 		resp.LastSyncID = studentSync.LastSyncID
 		return c.JSON(resp)
+	}
+}
+
+func GetStudents(db *ent.Client) func(*fiber.Ctx) error {
+	type studentWithClassID struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		LastName string `json:"last_name"`
+		CI       string `json:"ci"`
+		ClassID  string `json:"class_id"`
+	}
+	return func(c *fiber.Ctx) error {
+		teacherID := c.Locals("id").(string)
+		yearID := c.Params("yearid")
+		students, err := db.Student.
+			Query().
+			Where(
+				student.HasClassWith(
+					class.HasTeacherWith(teacher.IDEQ(teacherID)),
+					class.HasYearWith(year.IDEQ(yearID)),
+				),
+			).
+			WithClass().
+			All(c.Context())
+		if err != nil {
+			return err
+		}
+		studentsResp := make([]studentWithClassID, len(students))
+		for index, student := range students {
+			studentsResp[index] = studentWithClassID{
+				ID:       student.ID,
+				Name:     student.Name,
+				LastName: student.LastName,
+				CI:       student.Ci,
+				ClassID:  student.Edges.Class.ID,
+			}
+		}
+		return c.JSON(studentsResp)
 	}
 }
 

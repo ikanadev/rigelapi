@@ -64,6 +64,7 @@ func (server Server) Run() {
 
 	protected.Post("/students", handlers.SaveStudent(server.db, server.newID))
 	protected.Get("/student/sync", handlers.StudentSyncStatus(server.db))
+	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
