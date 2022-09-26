@@ -24,7 +24,7 @@ func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
 }
 
 func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
-	type studentToSave struct {
+	type studentToUpdate struct {
 		id       string
 		name     string
 		lastName string
@@ -37,7 +37,7 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-    // Check if sync was done before
+		// Check if sync was done before
 		studentSync, err := db.StudentSync.Query().Where(studentsync.HasTeacherWith(teacher.IDEQ(teacherID))).First(c.Context())
 		studentSyncFound := true
 		if err != nil {
@@ -53,7 +53,7 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 			return err
 		}
 		toAdd := []*ent.StudentCreate{}
-		toUpdate := []studentToSave{}
+		toUpdate := []studentToUpdate{}
 		lastSyncId := ""
 		for _, st := range students {
 			switch st.Type {
@@ -71,7 +71,7 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 				}
 			case Update:
 				{
-					toUpdate = append(toUpdate, studentToSave{
+					toUpdate = append(toUpdate, studentToUpdate{
 						st.Data["id"].(string),
 						st.Data["name"].(string),
 						st.Data["last_name"].(string),
