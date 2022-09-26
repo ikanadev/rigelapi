@@ -37,6 +37,16 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+    // Check if sync was done before
+		studentSync, err := db.StudentSync.Query().Where(studentsync.HasTeacherWith(teacher.IDEQ(teacherID))).First(c.Context())
+		studentSyncFound := true
+		if err != nil {
+			if _, isNotFound := err.(*ent.NotFoundError); isNotFound {
+				studentSyncFound = false
+			} else {
+				return err
+			}
+		}
 
 		tx, err := db.Tx(c.Context())
 		if err != nil {
@@ -81,9 +91,16 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 				return rollback(tx, err)
 			}
 		}
-		_, err = tx.StudentSync.Create().SetID(newID()).SetLastSyncID(lastSyncId).SetTeacherID(teacherID).Save(c.Context())
-		if err != nil {
-			return rollback(tx, err)
+		if studentSyncFound {
+			_, err := studentSync.Update().SetLastSyncID(lastSyncId).Save(c.Context())
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = tx.StudentSync.Create().SetID(newID()).SetLastSyncID(lastSyncId).SetTeacherID(teacherID).Save(c.Context())
+			if err != nil {
+				return rollback(tx, err)
+			}
 		}
 		err = tx.Commit()
 		if err != nil {
