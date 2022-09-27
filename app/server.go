@@ -47,7 +47,8 @@ func NewServer(db *ent.Client, config config.Config) Server {
 
 func (server Server) Run() {
 	server.app.Use(cors.New())
-	// Swagger handler
+	server.app.Use(logUserAgent())
+
 	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	server.app.Get("/deps", handlers.DepsHandler(server.db))
@@ -65,6 +66,10 @@ func (server Server) Run() {
 	protected.Post("/students", handlers.SaveStudent(server.db, server.newID))
 	protected.Get("/student/sync", handlers.StudentSyncStatus(server.db))
 	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))
+
+	protected.Post("/classperiods", handlers.SaveClassPeriods(server.db, server.newID))
+	protected.Get("/classperiod/sync", handlers.ClassPeriodSyncStatus(server.db))
+	protected.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.db))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }

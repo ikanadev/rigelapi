@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -26,6 +27,17 @@ func authMiddleware(config config.Config) func(c *fiber.Ctx) error {
 			return errors.New("Could not parse token.")
 		}
 		c.Locals("id", claims.ID)
+		return c.Next()
+	}
+}
+
+func logUserAgent() func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		userAgent := c.Get("User-Agent")
+		if len(userAgent) > 50 {
+			userAgent = userAgent[0:45] + "..."
+		}
+		log.Printf("%s:\t%s\t%s\n", c.Method(), c.Path(), userAgent)
 		return c.Next()
 	}
 }

@@ -44,9 +44,14 @@ const (
 	Delete             = "DELETE"
 )
 
+type SyncReqBase struct {
+	ID       string      `json:"id"`
+	DateTime int64       `json:"date_time"`
+	Type     DBOperation `json:"type"`
+}
 type SyncReq struct {
 	ID       string                 `json:"id"`
-	DateTime string                 `json:"date_time"`
+	DateTime int64                  `json:"date_time"`
 	Type     DBOperation            `json:"type"`
 	Data     map[string]interface{} `json:"data"`
 }
