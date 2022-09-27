@@ -49,12 +49,6 @@ type SyncReqBase struct {
 	DateTime int64       `json:"date_time"`
 	Type     DBOperation `json:"type"`
 }
-type SyncReq struct {
-	ID       string                 `json:"id"`
-	DateTime int64                  `json:"date_time"`
-	Type     DBOperation            `json:"type"`
-	Data     map[string]interface{} `json:"data"`
-}
 
 /* rollback a transaction */
 
