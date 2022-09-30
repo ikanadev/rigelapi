@@ -7,7 +7,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
@@ -23,26 +22,6 @@ type ClassPeriod struct {
 	End      int64             `json:"end"`
 	Period   ClassPeriodPeriod `json:"period"`
 	ClassID  string            `json:"class_id"`
-}
-
-func ClassPeriodSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		teacherID := c.Locals("id").(string)
-		resp := SyncIDResp{}
-		classPeriodSync, err := db.
-			ClassPeriodSync.
-			Query().
-			Where(classperiodsync.HasTeacherWith(teacher.IDEQ(teacherID))).
-			First(c.Context())
-		if err != nil {
-			if _, ok := err.(*ent.NotFoundError); ok {
-				return c.JSON(resp)
-			}
-			return err
-		}
-		resp.LastSyncID = classPeriodSync.LastSyncID
-		return c.JSON(resp)
-	}
 }
 
 func GetClassPeriods(db *ent.Client) func(*fiber.Ctx) error {
@@ -87,7 +66,6 @@ func SaveClassPeriods(db *ent.Client, newID func() string) func(*fiber.Ctx) erro
 		Data ClassPeriod `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
-		teacherID := c.Locals("id").(string)
 		classPeriods := []ClassPeriodReq{}
 		if err := c.BodyParser(&classPeriods); err != nil {
 			return err
@@ -99,7 +77,6 @@ func SaveClassPeriods(db *ent.Client, newID func() string) func(*fiber.Ctx) erro
 		}
 		toAdd := []*ent.ClassPeriodCreate{}
 		toUpdate := []ClassPeriod{}
-		lastSyncID := ""
 
 		for _, classP := range classPeriods {
 			switch classP.Type {
@@ -122,7 +99,6 @@ func SaveClassPeriods(db *ent.Client, newID func() string) func(*fiber.Ctx) erro
 					toUpdate = append(toUpdate, classP.Data)
 				}
 			}
-			lastSyncID = classP.ID
 		}
 
 		_, err = tx.ClassPeriod.CreateBulk(toAdd...).Save(c.Context())
@@ -140,38 +116,11 @@ func SaveClassPeriods(db *ent.Client, newID func() string) func(*fiber.Ctx) erro
 			}
 		}
 
-		classPeriodsSyncFound := true
-		classPeriodsSync, err := tx.ClassPeriodSync.
-			Query().
-			Where(classperiodsync.HasTeacherWith(teacher.IDEQ(teacherID))).
-			First(c.Context())
-		if err != nil {
-			if _, isNotFound := err.(*ent.NotFoundError); isNotFound {
-				classPeriodsSyncFound = false
-			} else {
-				return rollback(tx, err)
-			}
-		}
-
-		if classPeriodsSyncFound {
-			_, err = classPeriodsSync.Update().SetLastSyncID(lastSyncID).Save(c.Context())
-		} else {
-			_, err = tx.ClassPeriodSync.
-				Create().
-				SetID(newID()).
-				SetLastSyncID(lastSyncID).
-				SetTeacherID(teacherID).
-				Save(c.Context())
-		}
-		if err != nil {
-			return rollback(tx, err)
-		}
-
 		err = tx.Commit()
 		if err != nil {
 			return rollback(tx, err)
 		}
 
-		return c.JSON(SyncIDResp{lastSyncID})
+		return c.SendStatus(fiber.StatusNoContent)
 	}
 }

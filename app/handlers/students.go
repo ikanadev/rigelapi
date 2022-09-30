@@ -5,7 +5,6 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
@@ -16,22 +15,6 @@ type Student struct {
 	LastName string `json:"last_name"`
 	CI       string `json:"ci"`
 	ClassID  string `json:"class_id"`
-}
-
-func StudentSyncStatus(db *ent.Client) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		teacherID := c.Locals("id").(string)
-		resp := SyncIDResp{}
-		studentSync, err := db.StudentSync.Query().Where(studentsync.HasTeacherWith(teacher.IDEQ(teacherID))).First(c.Context())
-		if err != nil {
-			if _, ok := err.(*ent.NotFoundError); ok {
-				return c.JSON(resp)
-			}
-			return err
-		}
-		resp.LastSyncID = studentSync.LastSyncID
-		return c.JSON(resp)
-	}
 }
 
 func GetStudents(db *ent.Client) func(*fiber.Ctx) error {
@@ -71,7 +54,6 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 		Data Student `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
-		teacherID := c.Locals("id").(string)
 		students := []ReqStudent{}
 		err := c.BodyParser(&students)
 		if err != nil {
@@ -84,7 +66,6 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 		}
 		toAdd := []*ent.StudentCreate{}
 		toUpdate := []Student{}
-		lastSyncId := ""
 		for _, st := range students {
 			switch st.Type {
 			case Insert:
@@ -104,7 +85,6 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 					toUpdate = append(toUpdate, st.Data)
 				}
 			}
-			lastSyncId = st.ID
 		}
 		_, err = tx.Student.CreateBulk(toAdd...).Save(c.Context())
 		if err != nil {
@@ -122,36 +102,10 @@ func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 			}
 		}
 
-		// Check if sync was done before
-		studentSync, err := tx.StudentSync.Query().Where(
-			studentsync.HasTeacherWith(teacher.IDEQ(teacherID)),
-		).First(c.Context())
-		studentSyncFound := true
-		if err != nil {
-			if _, isNotFound := err.(*ent.NotFoundError); isNotFound {
-				studentSyncFound = false
-			} else {
-				return err
-			}
-		}
-
-		if studentSyncFound {
-			_, err = studentSync.Update().SetLastSyncID(lastSyncId).Save(c.Context())
-		} else {
-			_, err = tx.StudentSync.Create().
-				SetID(newID()).
-				SetLastSyncID(lastSyncId).
-				SetTeacherID(teacherID).
-				Save(c.Context())
-		}
-		if err != nil {
-			return rollback(tx, err)
-		}
-
 		err = tx.Commit()
 		if err != nil {
 			return err
 		}
-		return c.JSON(SyncIDResp{lastSyncId})
+		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
