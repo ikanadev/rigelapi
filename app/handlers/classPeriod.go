@@ -60,7 +60,7 @@ func GetClassPeriods(db *ent.Client) func(*fiber.Ctx) error {
 	}
 }
 
-func SaveClassPeriods(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
+func SaveClassPeriods(db *ent.Client) func(*fiber.Ctx) error {
 	type ClassPeriodReq struct {
 		SyncReqBase
 		Data ClassPeriod `json:"data"`

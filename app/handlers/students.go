@@ -48,7 +48,7 @@ func GetStudents(db *ent.Client) func(*fiber.Ctx) error {
 	}
 }
 
-func SaveStudent(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
+func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 	type ReqStudent struct {
 		SyncReqBase
 		Data Student `json:"data"`

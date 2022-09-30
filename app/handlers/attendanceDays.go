@@ -49,7 +49,7 @@ func GetAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 	}
 }
 
-func SaveAttendanceDays(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
+func SaveAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 	type AttendanceDayReq struct {
 		SyncReqBase
 		Data AttendanceDay `json:"data"`
