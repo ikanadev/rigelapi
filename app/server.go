@@ -63,13 +63,13 @@ func (server Server) Run() {
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
 
-	protected.Post("/students", handlers.SaveStudent(server.db, server.newID))
+	protected.Post("/students", handlers.SaveStudent(server.db))
 	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))
 
-	protected.Post("/classperiods", handlers.SaveClassPeriods(server.db, server.newID))
+	protected.Post("/classperiods", handlers.SaveClassPeriods(server.db))
 	protected.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.db))
 
-	protected.Post("/attendancedays", handlers.SaveAttendanceDays(server.db, server.newID))
+	protected.Post("/attendancedays", handlers.SaveAttendanceDays(server.db))
 	protected.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.db))
 
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
