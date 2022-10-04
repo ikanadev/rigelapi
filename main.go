@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/vmkevv/rigelapi/app"
 	"github.com/vmkevv/rigelapi/config"
@@ -16,7 +17,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error setting up database: %v", err)
 	}
+	file, err := os.OpenFile("errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Error setting up log file: %v", err)
+	}
+	defer file.Close()
+	logger := log.New(file, "", log.LstdFlags)
 
-	server := app.NewServer(entClient, config)
+	server := app.NewServer(entClient, config, logger)
 	server.Run()
 }
