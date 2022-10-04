@@ -12,6 +12,7 @@ import (
 
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
@@ -48,6 +49,8 @@ type Client struct {
 	Activity *ActivityClient
 	// ActivitySync is the client for interacting with the ActivitySync builders.
 	ActivitySync *ActivitySyncClient
+	// AppError is the client for interacting with the AppError builders.
+	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
 	Area *AreaClient
 	// Attendance is the client for interacting with the Attendance builders.
@@ -105,6 +108,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Activity = NewActivityClient(c.config)
 	c.ActivitySync = NewActivitySyncClient(c.config)
+	c.AppError = NewAppErrorClient(c.config)
 	c.Area = NewAreaClient(c.config)
 	c.Attendance = NewAttendanceClient(c.config)
 	c.AttendanceDay = NewAttendanceDayClient(c.config)
@@ -161,6 +165,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:             cfg,
 		Activity:           NewActivityClient(cfg),
 		ActivitySync:       NewActivitySyncClient(cfg),
+		AppError:           NewAppErrorClient(cfg),
 		Area:               NewAreaClient(cfg),
 		Attendance:         NewAttendanceClient(cfg),
 		AttendanceDay:      NewAttendanceDayClient(cfg),
@@ -203,6 +208,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:             cfg,
 		Activity:           NewActivityClient(cfg),
 		ActivitySync:       NewActivitySyncClient(cfg),
+		AppError:           NewAppErrorClient(cfg),
 		Area:               NewAreaClient(cfg),
 		Attendance:         NewAttendanceClient(cfg),
 		AttendanceDay:      NewAttendanceDayClient(cfg),
@@ -254,6 +260,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Activity.Use(hooks...)
 	c.ActivitySync.Use(hooks...)
+	c.AppError.Use(hooks...)
 	c.Area.Use(hooks...)
 	c.Attendance.Use(hooks...)
 	c.AttendanceDay.Use(hooks...)
@@ -519,6 +526,96 @@ func (c *ActivitySyncClient) QueryTeacher(as *ActivitySync) *TeacherQuery {
 // Hooks returns the client hooks.
 func (c *ActivitySyncClient) Hooks() []Hook {
 	return c.hooks.ActivitySync
+}
+
+// AppErrorClient is a client for the AppError schema.
+type AppErrorClient struct {
+	config
+}
+
+// NewAppErrorClient returns a client for the AppError from the given config.
+func NewAppErrorClient(c config) *AppErrorClient {
+	return &AppErrorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `apperror.Hooks(f(g(h())))`.
+func (c *AppErrorClient) Use(hooks ...Hook) {
+	c.hooks.AppError = append(c.hooks.AppError, hooks...)
+}
+
+// Create returns a builder for creating a AppError entity.
+func (c *AppErrorClient) Create() *AppErrorCreate {
+	mutation := newAppErrorMutation(c.config, OpCreate)
+	return &AppErrorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AppError entities.
+func (c *AppErrorClient) CreateBulk(builders ...*AppErrorCreate) *AppErrorCreateBulk {
+	return &AppErrorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AppError.
+func (c *AppErrorClient) Update() *AppErrorUpdate {
+	mutation := newAppErrorMutation(c.config, OpUpdate)
+	return &AppErrorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AppErrorClient) UpdateOne(ae *AppError) *AppErrorUpdateOne {
+	mutation := newAppErrorMutation(c.config, OpUpdateOne, withAppError(ae))
+	return &AppErrorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AppErrorClient) UpdateOneID(id string) *AppErrorUpdateOne {
+	mutation := newAppErrorMutation(c.config, OpUpdateOne, withAppErrorID(id))
+	return &AppErrorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AppError.
+func (c *AppErrorClient) Delete() *AppErrorDelete {
+	mutation := newAppErrorMutation(c.config, OpDelete)
+	return &AppErrorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AppErrorClient) DeleteOne(ae *AppError) *AppErrorDeleteOne {
+	return c.DeleteOneID(ae.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *AppErrorClient) DeleteOneID(id string) *AppErrorDeleteOne {
+	builder := c.Delete().Where(apperror.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AppErrorDeleteOne{builder}
+}
+
+// Query returns a query builder for AppError.
+func (c *AppErrorClient) Query() *AppErrorQuery {
+	return &AppErrorQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AppError entity by its id.
+func (c *AppErrorClient) Get(ctx context.Context, id string) (*AppError, error) {
+	return c.Query().Where(apperror.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AppErrorClient) GetX(ctx context.Context, id string) *AppError {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AppErrorClient) Hooks() []Hook {
+	return c.hooks.AppError
 }
 
 // AreaClient is a client for the Area schema.

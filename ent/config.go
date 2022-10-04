@@ -26,6 +26,7 @@ type config struct {
 type hooks struct {
 	Activity           []ent.Hook
 	ActivitySync       []ent.Hook
+	AppError           []ent.Hook
 	Area               []ent.Hook
 	Attendance         []ent.Hook
 	AttendanceDay      []ent.Hook

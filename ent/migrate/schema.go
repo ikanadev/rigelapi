@@ -56,6 +56,20 @@ var (
 			},
 		},
 	}
+	// AppErrorsColumns holds the columns for the "app_errors" table.
+	AppErrorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "cause", Type: field.TypeString},
+		{Name: "error_msg", Type: field.TypeString},
+		{Name: "error_stack", Type: field.TypeString},
+	}
+	// AppErrorsTable holds the schema information for the "app_errors" table.
+	AppErrorsTable = &schema.Table{
+		Name:       "app_errors",
+		Columns:    AppErrorsColumns,
+		PrimaryKey: []*schema.Column{AppErrorsColumns[0]},
+	}
 	// AreasColumns holds the columns for the "areas" table.
 	AreasColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -494,6 +508,7 @@ var (
 	Tables = []*schema.Table{
 		ActivitiesTable,
 		ActivitySyncsTable,
+		AppErrorsTable,
 		AreasTable,
 		AttendancesTable,
 		AttendanceDaysTable,

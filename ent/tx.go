@@ -16,6 +16,8 @@ type Tx struct {
 	Activity *ActivityClient
 	// ActivitySync is the client for interacting with the ActivitySync builders.
 	ActivitySync *ActivitySyncClient
+	// AppError is the client for interacting with the AppError builders.
+	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
 	Area *AreaClient
 	// Attendance is the client for interacting with the Attendance builders.
@@ -195,6 +197,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
 	tx.ActivitySync = NewActivitySyncClient(tx.config)
+	tx.AppError = NewAppErrorClient(tx.config)
 	tx.Area = NewAreaClient(tx.config)
 	tx.Attendance = NewAttendanceClient(tx.config)
 	tx.AttendanceDay = NewAttendanceDayClient(tx.config)

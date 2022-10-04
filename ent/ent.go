@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
@@ -55,6 +56,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		activity.Table:           activity.ValidColumn,
 		activitysync.Table:       activitysync.ValidColumn,
+		apperror.Table:           apperror.ValidColumn,
 		area.Table:               area.ValidColumn,
 		attendance.Table:         attendance.ValidColumn,
 		attendanceday.Table:      attendanceday.ValidColumn,
