@@ -78,5 +78,8 @@ func (server Server) Run() {
 	protected.Post("/activities", handlers.SaveActivities(server.db))
 	protected.Get("/activities/year/:yearid", handlers.GetActivities(server.db))
 
+	protected.Post("/scores", handlers.SaveScores(server.db))
+	protected.Get("/scores/year/:yearid", handlers.GetScores(server.db))
+
 	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
