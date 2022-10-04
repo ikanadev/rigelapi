@@ -12,6 +12,9 @@ type Activity func(*sql.Selector)
 // ActivitySync is the predicate function for activitysync builders.
 type ActivitySync func(*sql.Selector)
 
+// AppError is the predicate function for apperror builders.
+type AppError func(*sql.Selector)
+
 // Area is the predicate function for area builders.
 type Area func(*sql.Selector)
 

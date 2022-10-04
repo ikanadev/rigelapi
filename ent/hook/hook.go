@@ -35,6 +35,19 @@ func (f ActivitySyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return f(ctx, mv)
 }
 
+// The AppErrorFunc type is an adapter to allow the use of ordinary
+// function as AppError mutator.
+type AppErrorFunc func(context.Context, *ent.AppErrorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AppErrorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AppErrorMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AppErrorMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The AreaFunc type is an adapter to allow the use of ordinary
 // function as Area mutator.
 type AreaFunc func(context.Context, *ent.AreaMutation) (ent.Value, error)
