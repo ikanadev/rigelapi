@@ -22,7 +22,7 @@ type errMsg struct {
 	Message string `json:"message"`
 }
 
-func NewServer(db *ent.Client, config config.Config) Server {
+func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -32,7 +32,18 @@ func NewServer(db *ent.Client, config config.Config) Server {
 				msg = err.Error()
 			}
 			if code == fiber.StatusInternalServerError {
-				log.Printf("Fatal: %v\n", err)
+				userId, _ := c.Locals("id").(string)
+				// Method;IP;BaseURL;Path;Protocol\n",
+				logger.Printf(
+					"%s|%s|%s|%s|%s|%s|%s\n",
+					c.Method(),
+					c.IP(),
+					c.BaseURL(),
+					c.Path(),
+					userId,
+					c.Get("User-Agent"),
+					err.Error(),
+				)
 			}
 			return c.Status(code).JSON(errMsg{Message: msg})
 		},
