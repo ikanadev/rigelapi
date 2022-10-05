@@ -56,7 +56,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server 
 	}
 }
 
-func (server Server) Run() {
+func (server Server) Run() error {
 	server.app.Use(cors.New())
 	server.app.Use(logUserAgent())
 
@@ -93,5 +93,5 @@ func (server Server) Run() {
 	protected.Post("/scores", handlers.SaveScores(server.db))
 	protected.Get("/scores/year/:yearid", handlers.GetScores(server.db))
 
-	server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
+	return server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
