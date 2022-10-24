@@ -14,6 +14,15 @@ func SchoolsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(schools)
+		schoolsRes := make([]School, len(schools))
+		for i, school := range schools {
+			schoolsRes[i] = School{
+				school.ID,
+				school.Name,
+				school.Lat,
+				school.Lon,
+			}
+		}
+		return c.JSON(schoolsRes)
 	}
 }

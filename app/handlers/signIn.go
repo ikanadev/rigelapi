@@ -15,8 +15,8 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 		Password string `json:"password"`
 	}
 	type res struct {
-		Teacher *ent.Teacher `json:"teacher"`
-		JWT     string       `json:"jwt"`
+		Teacher Teacher `json:"teacher"`
+		JWT     string  `json:"jwt"`
 	}
 	return func(c *fiber.Ctx) error {
 		var reqData req
@@ -45,8 +45,13 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 			return err
 		}
 		return c.JSON(res{
-			Teacher: teacher,
-			JWT:     tokenStr,
+			Teacher: Teacher{
+				teacher.ID,
+				teacher.Name,
+				teacher.LastName,
+				teacher.Email,
+			},
+			JWT: tokenStr,
 		})
 	}
 }

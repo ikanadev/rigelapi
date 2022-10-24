@@ -14,6 +14,10 @@ func MunsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(muns)
+		munsResp := make([]Municipio, len(muns))
+		for i, mun := range muns {
+			munsResp[i] = Municipio{mun.ID, mun.Name}
+		}
+		return c.JSON(munsResp)
 	}
 }
