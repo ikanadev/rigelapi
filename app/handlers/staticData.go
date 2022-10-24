@@ -7,9 +7,9 @@ import (
 )
 
 func StaticDataHandler(db *ent.Client) func(*fiber.Ctx) error {
-	type resp struct {
-		Grades   []*ent.Grade   `json:"grades"`
-		Subjects []*ent.Subject `json:"subjects"`
+	type Resp struct {
+		Grades   []Grade   `json:"grades"`
+		Subjects []Subject `json:"subjects"`
 	}
 	return func(c *fiber.Ctx) error {
 		grades, err := db.Grade.Query().All(c.Context())
@@ -20,6 +20,16 @@ func StaticDataHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(resp{grades, subjects})
+
+		gradesResp := make([]Grade, len(grades))
+		subjectsResp := make([]Subject, len(subjects))
+		for index, grade := range grades {
+			gradesResp[index] = Grade{grade.ID, grade.Name}
+		}
+		for index, subject := range subjects {
+			subjectsResp[index] = Subject{subject.ID, subject.Name}
+		}
+
+		return c.JSON(Resp{gradesResp, subjectsResp})
 	}
 }

@@ -12,6 +12,10 @@ func DepsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(deps)
+		depsRes := make([]Dpto, len(deps))
+		for i, dep := range deps {
+			depsRes[i] = Dpto{dep.ID, dep.Name}
+		}
+		return c.JSON(depsRes)
 	}
 }

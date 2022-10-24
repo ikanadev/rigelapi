@@ -8,6 +8,38 @@ import (
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
+type ClassResp struct {
+	Class
+	Subject Subject `json:"subject"`
+	Grade   Grade   `json:"grade"`
+	Year    Year    `json:"year"`
+}
+
+func entClassToRespClass(entClasses []*ent.Class) []ClassResp {
+	classesResp := make([]ClassResp, len(entClasses))
+	for i, class := range entClasses {
+		classesResp[i] = ClassResp{
+			Class: Class{
+				ID:       class.ID,
+				Parallel: class.Parallel,
+			},
+			Subject: Subject{
+				ID:   class.Edges.Subject.ID,
+				Name: class.Edges.Subject.Name,
+			},
+			Grade: Grade{
+				ID:   class.Edges.Grade.ID,
+				Name: class.Edges.Grade.Name,
+			},
+			Year: Year{
+				ID:    class.Edges.Year.ID,
+				Value: class.Edges.Year.Value,
+			},
+		}
+	}
+	return classesResp
+}
+
 func ClassListHandler(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		teacherID := c.Locals("id").(string)
@@ -25,7 +57,8 @@ func ClassListHandler(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(classes)
+		classesResp := entClassToRespClass(classes)
+		return c.JSON(classesResp)
 	}
 }
 
@@ -67,6 +100,7 @@ func NewClassHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error
 			WithSubject().
 			WithYear().
 			All(c.Context())
-		return c.JSON(classes)
+		classesResp := entClassToRespClass(classes)
+		return c.JSON(classesResp)
 	}
 }
