@@ -3,7 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/score"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -66,6 +68,7 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 		}
 		toAdd := []*ent.StudentCreate{}
 		toUpdate := []Student{}
+		toDelete := []string{}
 		for _, st := range students {
 			switch st.Type {
 			case Insert:
@@ -84,6 +87,10 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 				{
 					toUpdate = append(toUpdate, st.Data)
 				}
+			case Delete:
+				{
+					toDelete = append(toDelete, st.Data.ID)
+				}
 			}
 		}
 		_, err = tx.Student.CreateBulk(toAdd...).Save(c.Context())
@@ -100,6 +107,22 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 			if err != nil {
 				return rollback(tx, err)
 			}
+		}
+
+		// Delete student attendances
+		_, err = tx.Attendance.Delete().Where(attendance.HasStudentWith(student.IDIn(toDelete...))).Exec(c.Context())
+		if err != nil {
+			return rollback(tx, err)
+		}
+		// Delete student scores
+		_, err = tx.Score.Delete().Where(score.HasStudentWith(student.IDIn(toDelete...))).Exec(c.Context())
+		if err != nil {
+			return rollback(tx, err)
+		}
+		// Delete student
+		_, err = tx.Student.Delete().Where(student.IDIn(toDelete...)).Exec(c.Context())
+		if err != nil {
+			return rollback(tx, err)
 		}
 
 		err = tx.Commit()
