@@ -36,26 +36,6 @@ var (
 			},
 		},
 	}
-	// ActivitySyncsColumns holds the columns for the "activity_syncs" table.
-	ActivitySyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_activity_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// ActivitySyncsTable holds the schema information for the "activity_syncs" table.
-	ActivitySyncsTable = &schema.Table{
-		Name:       "activity_syncs",
-		Columns:    ActivitySyncsColumns,
-		PrimaryKey: []*schema.Column{ActivitySyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "activity_syncs_teachers_activitySyncs",
-				Columns:    []*schema.Column{ActivitySyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// AppErrorsColumns holds the columns for the "app_errors" table.
 	AppErrorsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -138,46 +118,6 @@ var (
 			},
 		},
 	}
-	// AttendanceDaySyncsColumns holds the columns for the "attendance_day_syncs" table.
-	AttendanceDaySyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_attendance_day_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// AttendanceDaySyncsTable holds the schema information for the "attendance_day_syncs" table.
-	AttendanceDaySyncsTable = &schema.Table{
-		Name:       "attendance_day_syncs",
-		Columns:    AttendanceDaySyncsColumns,
-		PrimaryKey: []*schema.Column{AttendanceDaySyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "attendance_day_syncs_teachers_attendanceDaySyncs",
-				Columns:    []*schema.Column{AttendanceDaySyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// AttendanceSyncsColumns holds the columns for the "attendance_syncs" table.
-	AttendanceSyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_attendance_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// AttendanceSyncsTable holds the schema information for the "attendance_syncs" table.
-	AttendanceSyncsTable = &schema.Table{
-		Name:       "attendance_syncs",
-		Columns:    AttendanceSyncsColumns,
-		PrimaryKey: []*schema.Column{AttendanceSyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "attendance_syncs_teachers_attendanceSyncs",
-				Columns:    []*schema.Column{AttendanceSyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// ClassesColumns holds the columns for the "classes" table.
 	ClassesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -251,26 +191,6 @@ var (
 				Symbol:     "class_periods_periods_classPeriods",
 				Columns:    []*schema.Column{ClassPeriodsColumns[5]},
 				RefColumns: []*schema.Column{PeriodsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// ClassPeriodSyncsColumns holds the columns for the "class_period_syncs" table.
-	ClassPeriodSyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_class_period_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// ClassPeriodSyncsTable holds the schema information for the "class_period_syncs" table.
-	ClassPeriodSyncsTable = &schema.Table{
-		Name:       "class_period_syncs",
-		Columns:    ClassPeriodSyncsColumns,
-		PrimaryKey: []*schema.Column{ClassPeriodSyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "class_period_syncs_teachers_classPeriodSyncs",
-				Columns:    []*schema.Column{ClassPeriodSyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -406,26 +326,6 @@ var (
 			},
 		},
 	}
-	// ScoreSyncsColumns holds the columns for the "score_syncs" table.
-	ScoreSyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_score_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// ScoreSyncsTable holds the schema information for the "score_syncs" table.
-	ScoreSyncsTable = &schema.Table{
-		Name:       "score_syncs",
-		Columns:    ScoreSyncsColumns,
-		PrimaryKey: []*schema.Column{ScoreSyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "score_syncs_teachers_scoreSyncs",
-				Columns:    []*schema.Column{ScoreSyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// StudentsColumns holds the columns for the "students" table.
 	StudentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -444,26 +344,6 @@ var (
 				Symbol:     "students_classes_students",
 				Columns:    []*schema.Column{StudentsColumns[4]},
 				RefColumns: []*schema.Column{ClassesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// StudentSyncsColumns holds the columns for the "student_syncs" table.
-	StudentSyncsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "last_sync_id", Type: field.TypeString},
-		{Name: "teacher_student_syncs", Type: field.TypeString, Nullable: true},
-	}
-	// StudentSyncsTable holds the schema information for the "student_syncs" table.
-	StudentSyncsTable = &schema.Table{
-		Name:       "student_syncs",
-		Columns:    StudentSyncsColumns,
-		PrimaryKey: []*schema.Column{StudentSyncsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "student_syncs_teachers_studentSyncs",
-				Columns:    []*schema.Column{StudentSyncsColumns[2]},
-				RefColumns: []*schema.Column{TeachersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -507,16 +387,12 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivitiesTable,
-		ActivitySyncsTable,
 		AppErrorsTable,
 		AreasTable,
 		AttendancesTable,
 		AttendanceDaysTable,
-		AttendanceDaySyncsTable,
-		AttendanceSyncsTable,
 		ClassesTable,
 		ClassPeriodsTable,
-		ClassPeriodSyncsTable,
 		DptosTable,
 		GradesTable,
 		MunicipiosTable,
@@ -524,9 +400,7 @@ var (
 		ProvinciaTable,
 		SchoolsTable,
 		ScoresTable,
-		ScoreSyncsTable,
 		StudentsTable,
-		StudentSyncsTable,
 		SubjectsTable,
 		TeachersTable,
 		YearsTable,
@@ -536,13 +410,10 @@ var (
 func init() {
 	ActivitiesTable.ForeignKeys[0].RefTable = AreasTable
 	ActivitiesTable.ForeignKeys[1].RefTable = ClassPeriodsTable
-	ActivitySyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	AreasTable.ForeignKeys[0].RefTable = YearsTable
 	AttendancesTable.ForeignKeys[0].RefTable = AttendanceDaysTable
 	AttendancesTable.ForeignKeys[1].RefTable = StudentsTable
 	AttendanceDaysTable.ForeignKeys[0].RefTable = ClassPeriodsTable
-	AttendanceDaySyncsTable.ForeignKeys[0].RefTable = TeachersTable
-	AttendanceSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	ClassesTable.ForeignKeys[0].RefTable = GradesTable
 	ClassesTable.ForeignKeys[1].RefTable = SchoolsTable
 	ClassesTable.ForeignKeys[2].RefTable = SubjectsTable
@@ -550,14 +421,11 @@ func init() {
 	ClassesTable.ForeignKeys[4].RefTable = YearsTable
 	ClassPeriodsTable.ForeignKeys[0].RefTable = ClassesTable
 	ClassPeriodsTable.ForeignKeys[1].RefTable = PeriodsTable
-	ClassPeriodSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	MunicipiosTable.ForeignKeys[0].RefTable = ProvinciaTable
 	PeriodsTable.ForeignKeys[0].RefTable = YearsTable
 	ProvinciaTable.ForeignKeys[0].RefTable = DptosTable
 	SchoolsTable.ForeignKeys[0].RefTable = MunicipiosTable
 	ScoresTable.ForeignKeys[0].RefTable = ActivitiesTable
 	ScoresTable.ForeignKeys[1].RefTable = StudentsTable
-	ScoreSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 	StudentsTable.ForeignKeys[0].RefTable = ClassesTable
-	StudentSyncsTable.ForeignKeys[0].RefTable = TeachersTable
 }

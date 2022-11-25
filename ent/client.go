@@ -11,16 +11,12 @@ import (
 	"github.com/vmkevv/rigelapi/ent/migrate"
 
 	"github.com/vmkevv/rigelapi/ent/activity"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
 	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/dpto"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/municipio"
@@ -28,9 +24,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/provincia"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -47,8 +41,6 @@ type Client struct {
 	Schema *migrate.Schema
 	// Activity is the client for interacting with the Activity builders.
 	Activity *ActivityClient
-	// ActivitySync is the client for interacting with the ActivitySync builders.
-	ActivitySync *ActivitySyncClient
 	// AppError is the client for interacting with the AppError builders.
 	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
@@ -57,16 +49,10 @@ type Client struct {
 	Attendance *AttendanceClient
 	// AttendanceDay is the client for interacting with the AttendanceDay builders.
 	AttendanceDay *AttendanceDayClient
-	// AttendanceDaySyncs is the client for interacting with the AttendanceDaySyncs builders.
-	AttendanceDaySyncs *AttendanceDaySyncsClient
-	// AttendanceSync is the client for interacting with the AttendanceSync builders.
-	AttendanceSync *AttendanceSyncClient
 	// Class is the client for interacting with the Class builders.
 	Class *ClassClient
 	// ClassPeriod is the client for interacting with the ClassPeriod builders.
 	ClassPeriod *ClassPeriodClient
-	// ClassPeriodSync is the client for interacting with the ClassPeriodSync builders.
-	ClassPeriodSync *ClassPeriodSyncClient
 	// Dpto is the client for interacting with the Dpto builders.
 	Dpto *DptoClient
 	// Grade is the client for interacting with the Grade builders.
@@ -81,12 +67,8 @@ type Client struct {
 	School *SchoolClient
 	// Score is the client for interacting with the Score builders.
 	Score *ScoreClient
-	// ScoreSync is the client for interacting with the ScoreSync builders.
-	ScoreSync *ScoreSyncClient
 	// Student is the client for interacting with the Student builders.
 	Student *StudentClient
-	// StudentSync is the client for interacting with the StudentSync builders.
-	StudentSync *StudentSyncClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
 	// Teacher is the client for interacting with the Teacher builders.
@@ -107,16 +89,12 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Activity = NewActivityClient(c.config)
-	c.ActivitySync = NewActivitySyncClient(c.config)
 	c.AppError = NewAppErrorClient(c.config)
 	c.Area = NewAreaClient(c.config)
 	c.Attendance = NewAttendanceClient(c.config)
 	c.AttendanceDay = NewAttendanceDayClient(c.config)
-	c.AttendanceDaySyncs = NewAttendanceDaySyncsClient(c.config)
-	c.AttendanceSync = NewAttendanceSyncClient(c.config)
 	c.Class = NewClassClient(c.config)
 	c.ClassPeriod = NewClassPeriodClient(c.config)
-	c.ClassPeriodSync = NewClassPeriodSyncClient(c.config)
 	c.Dpto = NewDptoClient(c.config)
 	c.Grade = NewGradeClient(c.config)
 	c.Municipio = NewMunicipioClient(c.config)
@@ -124,9 +102,7 @@ func (c *Client) init() {
 	c.Provincia = NewProvinciaClient(c.config)
 	c.School = NewSchoolClient(c.config)
 	c.Score = NewScoreClient(c.config)
-	c.ScoreSync = NewScoreSyncClient(c.config)
 	c.Student = NewStudentClient(c.config)
-	c.StudentSync = NewStudentSyncClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 	c.Teacher = NewTeacherClient(c.config)
 	c.Year = NewYearClient(c.config)
@@ -161,32 +137,26 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		Activity:           NewActivityClient(cfg),
-		ActivitySync:       NewActivitySyncClient(cfg),
-		AppError:           NewAppErrorClient(cfg),
-		Area:               NewAreaClient(cfg),
-		Attendance:         NewAttendanceClient(cfg),
-		AttendanceDay:      NewAttendanceDayClient(cfg),
-		AttendanceDaySyncs: NewAttendanceDaySyncsClient(cfg),
-		AttendanceSync:     NewAttendanceSyncClient(cfg),
-		Class:              NewClassClient(cfg),
-		ClassPeriod:        NewClassPeriodClient(cfg),
-		ClassPeriodSync:    NewClassPeriodSyncClient(cfg),
-		Dpto:               NewDptoClient(cfg),
-		Grade:              NewGradeClient(cfg),
-		Municipio:          NewMunicipioClient(cfg),
-		Period:             NewPeriodClient(cfg),
-		Provincia:          NewProvinciaClient(cfg),
-		School:             NewSchoolClient(cfg),
-		Score:              NewScoreClient(cfg),
-		ScoreSync:          NewScoreSyncClient(cfg),
-		Student:            NewStudentClient(cfg),
-		StudentSync:        NewStudentSyncClient(cfg),
-		Subject:            NewSubjectClient(cfg),
-		Teacher:            NewTeacherClient(cfg),
-		Year:               NewYearClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Activity:      NewActivityClient(cfg),
+		AppError:      NewAppErrorClient(cfg),
+		Area:          NewAreaClient(cfg),
+		Attendance:    NewAttendanceClient(cfg),
+		AttendanceDay: NewAttendanceDayClient(cfg),
+		Class:         NewClassClient(cfg),
+		ClassPeriod:   NewClassPeriodClient(cfg),
+		Dpto:          NewDptoClient(cfg),
+		Grade:         NewGradeClient(cfg),
+		Municipio:     NewMunicipioClient(cfg),
+		Period:        NewPeriodClient(cfg),
+		Provincia:     NewProvinciaClient(cfg),
+		School:        NewSchoolClient(cfg),
+		Score:         NewScoreClient(cfg),
+		Student:       NewStudentClient(cfg),
+		Subject:       NewSubjectClient(cfg),
+		Teacher:       NewTeacherClient(cfg),
+		Year:          NewYearClient(cfg),
 	}, nil
 }
 
@@ -204,32 +174,26 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		Activity:           NewActivityClient(cfg),
-		ActivitySync:       NewActivitySyncClient(cfg),
-		AppError:           NewAppErrorClient(cfg),
-		Area:               NewAreaClient(cfg),
-		Attendance:         NewAttendanceClient(cfg),
-		AttendanceDay:      NewAttendanceDayClient(cfg),
-		AttendanceDaySyncs: NewAttendanceDaySyncsClient(cfg),
-		AttendanceSync:     NewAttendanceSyncClient(cfg),
-		Class:              NewClassClient(cfg),
-		ClassPeriod:        NewClassPeriodClient(cfg),
-		ClassPeriodSync:    NewClassPeriodSyncClient(cfg),
-		Dpto:               NewDptoClient(cfg),
-		Grade:              NewGradeClient(cfg),
-		Municipio:          NewMunicipioClient(cfg),
-		Period:             NewPeriodClient(cfg),
-		Provincia:          NewProvinciaClient(cfg),
-		School:             NewSchoolClient(cfg),
-		Score:              NewScoreClient(cfg),
-		ScoreSync:          NewScoreSyncClient(cfg),
-		Student:            NewStudentClient(cfg),
-		StudentSync:        NewStudentSyncClient(cfg),
-		Subject:            NewSubjectClient(cfg),
-		Teacher:            NewTeacherClient(cfg),
-		Year:               NewYearClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Activity:      NewActivityClient(cfg),
+		AppError:      NewAppErrorClient(cfg),
+		Area:          NewAreaClient(cfg),
+		Attendance:    NewAttendanceClient(cfg),
+		AttendanceDay: NewAttendanceDayClient(cfg),
+		Class:         NewClassClient(cfg),
+		ClassPeriod:   NewClassPeriodClient(cfg),
+		Dpto:          NewDptoClient(cfg),
+		Grade:         NewGradeClient(cfg),
+		Municipio:     NewMunicipioClient(cfg),
+		Period:        NewPeriodClient(cfg),
+		Provincia:     NewProvinciaClient(cfg),
+		School:        NewSchoolClient(cfg),
+		Score:         NewScoreClient(cfg),
+		Student:       NewStudentClient(cfg),
+		Subject:       NewSubjectClient(cfg),
+		Teacher:       NewTeacherClient(cfg),
+		Year:          NewYearClient(cfg),
 	}, nil
 }
 
@@ -259,16 +223,12 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Activity.Use(hooks...)
-	c.ActivitySync.Use(hooks...)
 	c.AppError.Use(hooks...)
 	c.Area.Use(hooks...)
 	c.Attendance.Use(hooks...)
 	c.AttendanceDay.Use(hooks...)
-	c.AttendanceDaySyncs.Use(hooks...)
-	c.AttendanceSync.Use(hooks...)
 	c.Class.Use(hooks...)
 	c.ClassPeriod.Use(hooks...)
-	c.ClassPeriodSync.Use(hooks...)
 	c.Dpto.Use(hooks...)
 	c.Grade.Use(hooks...)
 	c.Municipio.Use(hooks...)
@@ -276,9 +236,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Provincia.Use(hooks...)
 	c.School.Use(hooks...)
 	c.Score.Use(hooks...)
-	c.ScoreSync.Use(hooks...)
 	c.Student.Use(hooks...)
-	c.StudentSync.Use(hooks...)
 	c.Subject.Use(hooks...)
 	c.Teacher.Use(hooks...)
 	c.Year.Use(hooks...)
@@ -420,112 +378,6 @@ func (c *ActivityClient) QueryClassPeriod(a *Activity) *ClassPeriodQuery {
 // Hooks returns the client hooks.
 func (c *ActivityClient) Hooks() []Hook {
 	return c.hooks.Activity
-}
-
-// ActivitySyncClient is a client for the ActivitySync schema.
-type ActivitySyncClient struct {
-	config
-}
-
-// NewActivitySyncClient returns a client for the ActivitySync from the given config.
-func NewActivitySyncClient(c config) *ActivitySyncClient {
-	return &ActivitySyncClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `activitysync.Hooks(f(g(h())))`.
-func (c *ActivitySyncClient) Use(hooks ...Hook) {
-	c.hooks.ActivitySync = append(c.hooks.ActivitySync, hooks...)
-}
-
-// Create returns a builder for creating a ActivitySync entity.
-func (c *ActivitySyncClient) Create() *ActivitySyncCreate {
-	mutation := newActivitySyncMutation(c.config, OpCreate)
-	return &ActivitySyncCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ActivitySync entities.
-func (c *ActivitySyncClient) CreateBulk(builders ...*ActivitySyncCreate) *ActivitySyncCreateBulk {
-	return &ActivitySyncCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ActivitySync.
-func (c *ActivitySyncClient) Update() *ActivitySyncUpdate {
-	mutation := newActivitySyncMutation(c.config, OpUpdate)
-	return &ActivitySyncUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ActivitySyncClient) UpdateOne(as *ActivitySync) *ActivitySyncUpdateOne {
-	mutation := newActivitySyncMutation(c.config, OpUpdateOne, withActivitySync(as))
-	return &ActivitySyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ActivitySyncClient) UpdateOneID(id string) *ActivitySyncUpdateOne {
-	mutation := newActivitySyncMutation(c.config, OpUpdateOne, withActivitySyncID(id))
-	return &ActivitySyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ActivitySync.
-func (c *ActivitySyncClient) Delete() *ActivitySyncDelete {
-	mutation := newActivitySyncMutation(c.config, OpDelete)
-	return &ActivitySyncDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ActivitySyncClient) DeleteOne(as *ActivitySync) *ActivitySyncDeleteOne {
-	return c.DeleteOneID(as.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *ActivitySyncClient) DeleteOneID(id string) *ActivitySyncDeleteOne {
-	builder := c.Delete().Where(activitysync.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ActivitySyncDeleteOne{builder}
-}
-
-// Query returns a query builder for ActivitySync.
-func (c *ActivitySyncClient) Query() *ActivitySyncQuery {
-	return &ActivitySyncQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a ActivitySync entity by its id.
-func (c *ActivitySyncClient) Get(ctx context.Context, id string) (*ActivitySync, error) {
-	return c.Query().Where(activitysync.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ActivitySyncClient) GetX(ctx context.Context, id string) *ActivitySync {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a ActivitySync.
-func (c *ActivitySyncClient) QueryTeacher(as *ActivitySync) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := as.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(activitysync.Table, activitysync.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, activitysync.TeacherTable, activitysync.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(as.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ActivitySyncClient) Hooks() []Hook {
-	return c.hooks.ActivitySync
 }
 
 // AppErrorClient is a client for the AppError schema.
@@ -984,218 +836,6 @@ func (c *AttendanceDayClient) Hooks() []Hook {
 	return c.hooks.AttendanceDay
 }
 
-// AttendanceDaySyncsClient is a client for the AttendanceDaySyncs schema.
-type AttendanceDaySyncsClient struct {
-	config
-}
-
-// NewAttendanceDaySyncsClient returns a client for the AttendanceDaySyncs from the given config.
-func NewAttendanceDaySyncsClient(c config) *AttendanceDaySyncsClient {
-	return &AttendanceDaySyncsClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `attendancedaysyncs.Hooks(f(g(h())))`.
-func (c *AttendanceDaySyncsClient) Use(hooks ...Hook) {
-	c.hooks.AttendanceDaySyncs = append(c.hooks.AttendanceDaySyncs, hooks...)
-}
-
-// Create returns a builder for creating a AttendanceDaySyncs entity.
-func (c *AttendanceDaySyncsClient) Create() *AttendanceDaySyncsCreate {
-	mutation := newAttendanceDaySyncsMutation(c.config, OpCreate)
-	return &AttendanceDaySyncsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of AttendanceDaySyncs entities.
-func (c *AttendanceDaySyncsClient) CreateBulk(builders ...*AttendanceDaySyncsCreate) *AttendanceDaySyncsCreateBulk {
-	return &AttendanceDaySyncsCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for AttendanceDaySyncs.
-func (c *AttendanceDaySyncsClient) Update() *AttendanceDaySyncsUpdate {
-	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdate)
-	return &AttendanceDaySyncsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *AttendanceDaySyncsClient) UpdateOne(ads *AttendanceDaySyncs) *AttendanceDaySyncsUpdateOne {
-	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdateOne, withAttendanceDaySyncs(ads))
-	return &AttendanceDaySyncsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *AttendanceDaySyncsClient) UpdateOneID(id string) *AttendanceDaySyncsUpdateOne {
-	mutation := newAttendanceDaySyncsMutation(c.config, OpUpdateOne, withAttendanceDaySyncsID(id))
-	return &AttendanceDaySyncsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for AttendanceDaySyncs.
-func (c *AttendanceDaySyncsClient) Delete() *AttendanceDaySyncsDelete {
-	mutation := newAttendanceDaySyncsMutation(c.config, OpDelete)
-	return &AttendanceDaySyncsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *AttendanceDaySyncsClient) DeleteOne(ads *AttendanceDaySyncs) *AttendanceDaySyncsDeleteOne {
-	return c.DeleteOneID(ads.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *AttendanceDaySyncsClient) DeleteOneID(id string) *AttendanceDaySyncsDeleteOne {
-	builder := c.Delete().Where(attendancedaysyncs.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &AttendanceDaySyncsDeleteOne{builder}
-}
-
-// Query returns a query builder for AttendanceDaySyncs.
-func (c *AttendanceDaySyncsClient) Query() *AttendanceDaySyncsQuery {
-	return &AttendanceDaySyncsQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a AttendanceDaySyncs entity by its id.
-func (c *AttendanceDaySyncsClient) Get(ctx context.Context, id string) (*AttendanceDaySyncs, error) {
-	return c.Query().Where(attendancedaysyncs.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *AttendanceDaySyncsClient) GetX(ctx context.Context, id string) *AttendanceDaySyncs {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a AttendanceDaySyncs.
-func (c *AttendanceDaySyncsClient) QueryTeacher(ads *AttendanceDaySyncs) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := ads.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(attendancedaysyncs.Table, attendancedaysyncs.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendancedaysyncs.TeacherTable, attendancedaysyncs.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(ads.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *AttendanceDaySyncsClient) Hooks() []Hook {
-	return c.hooks.AttendanceDaySyncs
-}
-
-// AttendanceSyncClient is a client for the AttendanceSync schema.
-type AttendanceSyncClient struct {
-	config
-}
-
-// NewAttendanceSyncClient returns a client for the AttendanceSync from the given config.
-func NewAttendanceSyncClient(c config) *AttendanceSyncClient {
-	return &AttendanceSyncClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `attendancesync.Hooks(f(g(h())))`.
-func (c *AttendanceSyncClient) Use(hooks ...Hook) {
-	c.hooks.AttendanceSync = append(c.hooks.AttendanceSync, hooks...)
-}
-
-// Create returns a builder for creating a AttendanceSync entity.
-func (c *AttendanceSyncClient) Create() *AttendanceSyncCreate {
-	mutation := newAttendanceSyncMutation(c.config, OpCreate)
-	return &AttendanceSyncCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of AttendanceSync entities.
-func (c *AttendanceSyncClient) CreateBulk(builders ...*AttendanceSyncCreate) *AttendanceSyncCreateBulk {
-	return &AttendanceSyncCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for AttendanceSync.
-func (c *AttendanceSyncClient) Update() *AttendanceSyncUpdate {
-	mutation := newAttendanceSyncMutation(c.config, OpUpdate)
-	return &AttendanceSyncUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *AttendanceSyncClient) UpdateOne(as *AttendanceSync) *AttendanceSyncUpdateOne {
-	mutation := newAttendanceSyncMutation(c.config, OpUpdateOne, withAttendanceSync(as))
-	return &AttendanceSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *AttendanceSyncClient) UpdateOneID(id string) *AttendanceSyncUpdateOne {
-	mutation := newAttendanceSyncMutation(c.config, OpUpdateOne, withAttendanceSyncID(id))
-	return &AttendanceSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for AttendanceSync.
-func (c *AttendanceSyncClient) Delete() *AttendanceSyncDelete {
-	mutation := newAttendanceSyncMutation(c.config, OpDelete)
-	return &AttendanceSyncDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *AttendanceSyncClient) DeleteOne(as *AttendanceSync) *AttendanceSyncDeleteOne {
-	return c.DeleteOneID(as.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *AttendanceSyncClient) DeleteOneID(id string) *AttendanceSyncDeleteOne {
-	builder := c.Delete().Where(attendancesync.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &AttendanceSyncDeleteOne{builder}
-}
-
-// Query returns a query builder for AttendanceSync.
-func (c *AttendanceSyncClient) Query() *AttendanceSyncQuery {
-	return &AttendanceSyncQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a AttendanceSync entity by its id.
-func (c *AttendanceSyncClient) Get(ctx context.Context, id string) (*AttendanceSync, error) {
-	return c.Query().Where(attendancesync.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *AttendanceSyncClient) GetX(ctx context.Context, id string) *AttendanceSync {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a AttendanceSync.
-func (c *AttendanceSyncClient) QueryTeacher(as *AttendanceSync) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := as.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(attendancesync.Table, attendancesync.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, attendancesync.TeacherTable, attendancesync.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(as.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *AttendanceSyncClient) Hooks() []Hook {
-	return c.hooks.AttendanceSync
-}
-
 // ClassClient is a client for the Class schema.
 type ClassClient struct {
 	config
@@ -1550,112 +1190,6 @@ func (c *ClassPeriodClient) QueryPeriod(cp *ClassPeriod) *PeriodQuery {
 // Hooks returns the client hooks.
 func (c *ClassPeriodClient) Hooks() []Hook {
 	return c.hooks.ClassPeriod
-}
-
-// ClassPeriodSyncClient is a client for the ClassPeriodSync schema.
-type ClassPeriodSyncClient struct {
-	config
-}
-
-// NewClassPeriodSyncClient returns a client for the ClassPeriodSync from the given config.
-func NewClassPeriodSyncClient(c config) *ClassPeriodSyncClient {
-	return &ClassPeriodSyncClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `classperiodsync.Hooks(f(g(h())))`.
-func (c *ClassPeriodSyncClient) Use(hooks ...Hook) {
-	c.hooks.ClassPeriodSync = append(c.hooks.ClassPeriodSync, hooks...)
-}
-
-// Create returns a builder for creating a ClassPeriodSync entity.
-func (c *ClassPeriodSyncClient) Create() *ClassPeriodSyncCreate {
-	mutation := newClassPeriodSyncMutation(c.config, OpCreate)
-	return &ClassPeriodSyncCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ClassPeriodSync entities.
-func (c *ClassPeriodSyncClient) CreateBulk(builders ...*ClassPeriodSyncCreate) *ClassPeriodSyncCreateBulk {
-	return &ClassPeriodSyncCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ClassPeriodSync.
-func (c *ClassPeriodSyncClient) Update() *ClassPeriodSyncUpdate {
-	mutation := newClassPeriodSyncMutation(c.config, OpUpdate)
-	return &ClassPeriodSyncUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ClassPeriodSyncClient) UpdateOne(cps *ClassPeriodSync) *ClassPeriodSyncUpdateOne {
-	mutation := newClassPeriodSyncMutation(c.config, OpUpdateOne, withClassPeriodSync(cps))
-	return &ClassPeriodSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ClassPeriodSyncClient) UpdateOneID(id string) *ClassPeriodSyncUpdateOne {
-	mutation := newClassPeriodSyncMutation(c.config, OpUpdateOne, withClassPeriodSyncID(id))
-	return &ClassPeriodSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ClassPeriodSync.
-func (c *ClassPeriodSyncClient) Delete() *ClassPeriodSyncDelete {
-	mutation := newClassPeriodSyncMutation(c.config, OpDelete)
-	return &ClassPeriodSyncDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ClassPeriodSyncClient) DeleteOne(cps *ClassPeriodSync) *ClassPeriodSyncDeleteOne {
-	return c.DeleteOneID(cps.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *ClassPeriodSyncClient) DeleteOneID(id string) *ClassPeriodSyncDeleteOne {
-	builder := c.Delete().Where(classperiodsync.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ClassPeriodSyncDeleteOne{builder}
-}
-
-// Query returns a query builder for ClassPeriodSync.
-func (c *ClassPeriodSyncClient) Query() *ClassPeriodSyncQuery {
-	return &ClassPeriodSyncQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a ClassPeriodSync entity by its id.
-func (c *ClassPeriodSyncClient) Get(ctx context.Context, id string) (*ClassPeriodSync, error) {
-	return c.Query().Where(classperiodsync.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ClassPeriodSyncClient) GetX(ctx context.Context, id string) *ClassPeriodSync {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a ClassPeriodSync.
-func (c *ClassPeriodSyncClient) QueryTeacher(cps *ClassPeriodSync) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := cps.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(classperiodsync.Table, classperiodsync.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, classperiodsync.TeacherTable, classperiodsync.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(cps.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ClassPeriodSyncClient) Hooks() []Hook {
-	return c.hooks.ClassPeriodSync
 }
 
 // DptoClient is a client for the Dpto schema.
@@ -2480,112 +2014,6 @@ func (c *ScoreClient) Hooks() []Hook {
 	return c.hooks.Score
 }
 
-// ScoreSyncClient is a client for the ScoreSync schema.
-type ScoreSyncClient struct {
-	config
-}
-
-// NewScoreSyncClient returns a client for the ScoreSync from the given config.
-func NewScoreSyncClient(c config) *ScoreSyncClient {
-	return &ScoreSyncClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `scoresync.Hooks(f(g(h())))`.
-func (c *ScoreSyncClient) Use(hooks ...Hook) {
-	c.hooks.ScoreSync = append(c.hooks.ScoreSync, hooks...)
-}
-
-// Create returns a builder for creating a ScoreSync entity.
-func (c *ScoreSyncClient) Create() *ScoreSyncCreate {
-	mutation := newScoreSyncMutation(c.config, OpCreate)
-	return &ScoreSyncCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ScoreSync entities.
-func (c *ScoreSyncClient) CreateBulk(builders ...*ScoreSyncCreate) *ScoreSyncCreateBulk {
-	return &ScoreSyncCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ScoreSync.
-func (c *ScoreSyncClient) Update() *ScoreSyncUpdate {
-	mutation := newScoreSyncMutation(c.config, OpUpdate)
-	return &ScoreSyncUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ScoreSyncClient) UpdateOne(ss *ScoreSync) *ScoreSyncUpdateOne {
-	mutation := newScoreSyncMutation(c.config, OpUpdateOne, withScoreSync(ss))
-	return &ScoreSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ScoreSyncClient) UpdateOneID(id string) *ScoreSyncUpdateOne {
-	mutation := newScoreSyncMutation(c.config, OpUpdateOne, withScoreSyncID(id))
-	return &ScoreSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ScoreSync.
-func (c *ScoreSyncClient) Delete() *ScoreSyncDelete {
-	mutation := newScoreSyncMutation(c.config, OpDelete)
-	return &ScoreSyncDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ScoreSyncClient) DeleteOne(ss *ScoreSync) *ScoreSyncDeleteOne {
-	return c.DeleteOneID(ss.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *ScoreSyncClient) DeleteOneID(id string) *ScoreSyncDeleteOne {
-	builder := c.Delete().Where(scoresync.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ScoreSyncDeleteOne{builder}
-}
-
-// Query returns a query builder for ScoreSync.
-func (c *ScoreSyncClient) Query() *ScoreSyncQuery {
-	return &ScoreSyncQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a ScoreSync entity by its id.
-func (c *ScoreSyncClient) Get(ctx context.Context, id string) (*ScoreSync, error) {
-	return c.Query().Where(scoresync.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ScoreSyncClient) GetX(ctx context.Context, id string) *ScoreSync {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a ScoreSync.
-func (c *ScoreSyncClient) QueryTeacher(ss *ScoreSync) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := ss.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(scoresync.Table, scoresync.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, scoresync.TeacherTable, scoresync.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(ss.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ScoreSyncClient) Hooks() []Hook {
-	return c.hooks.ScoreSync
-}
-
 // StudentClient is a client for the Student schema.
 type StudentClient struct {
 	config
@@ -2722,112 +2150,6 @@ func (c *StudentClient) QueryClass(s *Student) *ClassQuery {
 // Hooks returns the client hooks.
 func (c *StudentClient) Hooks() []Hook {
 	return c.hooks.Student
-}
-
-// StudentSyncClient is a client for the StudentSync schema.
-type StudentSyncClient struct {
-	config
-}
-
-// NewStudentSyncClient returns a client for the StudentSync from the given config.
-func NewStudentSyncClient(c config) *StudentSyncClient {
-	return &StudentSyncClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `studentsync.Hooks(f(g(h())))`.
-func (c *StudentSyncClient) Use(hooks ...Hook) {
-	c.hooks.StudentSync = append(c.hooks.StudentSync, hooks...)
-}
-
-// Create returns a builder for creating a StudentSync entity.
-func (c *StudentSyncClient) Create() *StudentSyncCreate {
-	mutation := newStudentSyncMutation(c.config, OpCreate)
-	return &StudentSyncCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of StudentSync entities.
-func (c *StudentSyncClient) CreateBulk(builders ...*StudentSyncCreate) *StudentSyncCreateBulk {
-	return &StudentSyncCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for StudentSync.
-func (c *StudentSyncClient) Update() *StudentSyncUpdate {
-	mutation := newStudentSyncMutation(c.config, OpUpdate)
-	return &StudentSyncUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *StudentSyncClient) UpdateOne(ss *StudentSync) *StudentSyncUpdateOne {
-	mutation := newStudentSyncMutation(c.config, OpUpdateOne, withStudentSync(ss))
-	return &StudentSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *StudentSyncClient) UpdateOneID(id string) *StudentSyncUpdateOne {
-	mutation := newStudentSyncMutation(c.config, OpUpdateOne, withStudentSyncID(id))
-	return &StudentSyncUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for StudentSync.
-func (c *StudentSyncClient) Delete() *StudentSyncDelete {
-	mutation := newStudentSyncMutation(c.config, OpDelete)
-	return &StudentSyncDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *StudentSyncClient) DeleteOne(ss *StudentSync) *StudentSyncDeleteOne {
-	return c.DeleteOneID(ss.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *StudentSyncClient) DeleteOneID(id string) *StudentSyncDeleteOne {
-	builder := c.Delete().Where(studentsync.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &StudentSyncDeleteOne{builder}
-}
-
-// Query returns a query builder for StudentSync.
-func (c *StudentSyncClient) Query() *StudentSyncQuery {
-	return &StudentSyncQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a StudentSync entity by its id.
-func (c *StudentSyncClient) Get(ctx context.Context, id string) (*StudentSync, error) {
-	return c.Query().Where(studentsync.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *StudentSyncClient) GetX(ctx context.Context, id string) *StudentSync {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTeacher queries the teacher edge of a StudentSync.
-func (c *StudentSyncClient) QueryTeacher(ss *StudentSync) *TeacherQuery {
-	query := &TeacherQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := ss.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(studentsync.Table, studentsync.FieldID, id),
-			sqlgraph.To(teacher.Table, teacher.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, studentsync.TeacherTable, studentsync.TeacherColumn),
-		)
-		fromV = sqlgraph.Neighbors(ss.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *StudentSyncClient) Hooks() []Hook {
-	return c.hooks.StudentSync
 }
 
 // SubjectClient is a client for the Subject schema.
@@ -3030,102 +2352,6 @@ func (c *TeacherClient) QueryClasses(t *Teacher) *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, id),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryScoreSyncs queries the scoreSyncs edge of a Teacher.
-func (c *TeacherClient) QueryScoreSyncs(t *Teacher) *ScoreSyncQuery {
-	query := &ScoreSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(scoresync.Table, scoresync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ScoreSyncsTable, teacher.ScoreSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryStudentSyncs queries the studentSyncs edge of a Teacher.
-func (c *TeacherClient) QueryStudentSyncs(t *Teacher) *StudentSyncQuery {
-	query := &StudentSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(studentsync.Table, studentsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.StudentSyncsTable, teacher.StudentSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryActivitySyncs queries the activitySyncs edge of a Teacher.
-func (c *TeacherClient) QueryActivitySyncs(t *Teacher) *ActivitySyncQuery {
-	query := &ActivitySyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(activitysync.Table, activitysync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ActivitySyncsTable, teacher.ActivitySyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAttendanceSyncs queries the attendanceSyncs edge of a Teacher.
-func (c *TeacherClient) QueryAttendanceSyncs(t *Teacher) *AttendanceSyncQuery {
-	query := &AttendanceSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(attendancesync.Table, attendancesync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.AttendanceSyncsTable, teacher.AttendanceSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryClassPeriodSyncs queries the classPeriodSyncs edge of a Teacher.
-func (c *TeacherClient) QueryClassPeriodSyncs(t *Teacher) *ClassPeriodSyncQuery {
-	query := &ClassPeriodSyncQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassPeriodSyncsTable, teacher.ClassPeriodSyncsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAttendanceDaySyncs queries the attendanceDaySyncs edge of a Teacher.
-func (c *TeacherClient) QueryAttendanceDaySyncs(t *Teacher) *AttendanceDaySyncsQuery {
-	query := &AttendanceDaySyncsQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, id),
-			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.AttendanceDaySyncsTable, teacher.AttendanceDaySyncsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

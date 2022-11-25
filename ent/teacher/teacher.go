@@ -17,18 +17,6 @@ const (
 	FieldPassword = "password"
 	// EdgeClasses holds the string denoting the classes edge name in mutations.
 	EdgeClasses = "classes"
-	// EdgeScoreSyncs holds the string denoting the scoresyncs edge name in mutations.
-	EdgeScoreSyncs = "scoreSyncs"
-	// EdgeStudentSyncs holds the string denoting the studentsyncs edge name in mutations.
-	EdgeStudentSyncs = "studentSyncs"
-	// EdgeActivitySyncs holds the string denoting the activitysyncs edge name in mutations.
-	EdgeActivitySyncs = "activitySyncs"
-	// EdgeAttendanceSyncs holds the string denoting the attendancesyncs edge name in mutations.
-	EdgeAttendanceSyncs = "attendanceSyncs"
-	// EdgeClassPeriodSyncs holds the string denoting the classperiodsyncs edge name in mutations.
-	EdgeClassPeriodSyncs = "classPeriodSyncs"
-	// EdgeAttendanceDaySyncs holds the string denoting the attendancedaysyncs edge name in mutations.
-	EdgeAttendanceDaySyncs = "attendanceDaySyncs"
 	// Table holds the table name of the teacher in the database.
 	Table = "teachers"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -38,48 +26,6 @@ const (
 	ClassesInverseTable = "classes"
 	// ClassesColumn is the table column denoting the classes relation/edge.
 	ClassesColumn = "teacher_classes"
-	// ScoreSyncsTable is the table that holds the scoreSyncs relation/edge.
-	ScoreSyncsTable = "score_syncs"
-	// ScoreSyncsInverseTable is the table name for the ScoreSync entity.
-	// It exists in this package in order to avoid circular dependency with the "scoresync" package.
-	ScoreSyncsInverseTable = "score_syncs"
-	// ScoreSyncsColumn is the table column denoting the scoreSyncs relation/edge.
-	ScoreSyncsColumn = "teacher_score_syncs"
-	// StudentSyncsTable is the table that holds the studentSyncs relation/edge.
-	StudentSyncsTable = "student_syncs"
-	// StudentSyncsInverseTable is the table name for the StudentSync entity.
-	// It exists in this package in order to avoid circular dependency with the "studentsync" package.
-	StudentSyncsInverseTable = "student_syncs"
-	// StudentSyncsColumn is the table column denoting the studentSyncs relation/edge.
-	StudentSyncsColumn = "teacher_student_syncs"
-	// ActivitySyncsTable is the table that holds the activitySyncs relation/edge.
-	ActivitySyncsTable = "activity_syncs"
-	// ActivitySyncsInverseTable is the table name for the ActivitySync entity.
-	// It exists in this package in order to avoid circular dependency with the "activitysync" package.
-	ActivitySyncsInverseTable = "activity_syncs"
-	// ActivitySyncsColumn is the table column denoting the activitySyncs relation/edge.
-	ActivitySyncsColumn = "teacher_activity_syncs"
-	// AttendanceSyncsTable is the table that holds the attendanceSyncs relation/edge.
-	AttendanceSyncsTable = "attendance_syncs"
-	// AttendanceSyncsInverseTable is the table name for the AttendanceSync entity.
-	// It exists in this package in order to avoid circular dependency with the "attendancesync" package.
-	AttendanceSyncsInverseTable = "attendance_syncs"
-	// AttendanceSyncsColumn is the table column denoting the attendanceSyncs relation/edge.
-	AttendanceSyncsColumn = "teacher_attendance_syncs"
-	// ClassPeriodSyncsTable is the table that holds the classPeriodSyncs relation/edge.
-	ClassPeriodSyncsTable = "class_period_syncs"
-	// ClassPeriodSyncsInverseTable is the table name for the ClassPeriodSync entity.
-	// It exists in this package in order to avoid circular dependency with the "classperiodsync" package.
-	ClassPeriodSyncsInverseTable = "class_period_syncs"
-	// ClassPeriodSyncsColumn is the table column denoting the classPeriodSyncs relation/edge.
-	ClassPeriodSyncsColumn = "teacher_class_period_syncs"
-	// AttendanceDaySyncsTable is the table that holds the attendanceDaySyncs relation/edge.
-	AttendanceDaySyncsTable = "attendance_day_syncs"
-	// AttendanceDaySyncsInverseTable is the table name for the AttendanceDaySyncs entity.
-	// It exists in this package in order to avoid circular dependency with the "attendancedaysyncs" package.
-	AttendanceDaySyncsInverseTable = "attendance_day_syncs"
-	// AttendanceDaySyncsColumn is the table column denoting the attendanceDaySyncs relation/edge.
-	AttendanceDaySyncsColumn = "teacher_attendance_day_syncs"
 )
 
 // Columns holds all SQL columns for teacher fields.

@@ -11,16 +11,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/vmkevv/rigelapi/ent/activity"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
 	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/dpto"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/municipio"
@@ -28,9 +24,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/provincia"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -54,30 +48,24 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		activity.Table:           activity.ValidColumn,
-		activitysync.Table:       activitysync.ValidColumn,
-		apperror.Table:           apperror.ValidColumn,
-		area.Table:               area.ValidColumn,
-		attendance.Table:         attendance.ValidColumn,
-		attendanceday.Table:      attendanceday.ValidColumn,
-		attendancedaysyncs.Table: attendancedaysyncs.ValidColumn,
-		attendancesync.Table:     attendancesync.ValidColumn,
-		class.Table:              class.ValidColumn,
-		classperiod.Table:        classperiod.ValidColumn,
-		classperiodsync.Table:    classperiodsync.ValidColumn,
-		dpto.Table:               dpto.ValidColumn,
-		grade.Table:              grade.ValidColumn,
-		municipio.Table:          municipio.ValidColumn,
-		period.Table:             period.ValidColumn,
-		provincia.Table:          provincia.ValidColumn,
-		school.Table:             school.ValidColumn,
-		score.Table:              score.ValidColumn,
-		scoresync.Table:          scoresync.ValidColumn,
-		student.Table:            student.ValidColumn,
-		studentsync.Table:        studentsync.ValidColumn,
-		subject.Table:            subject.ValidColumn,
-		teacher.Table:            teacher.ValidColumn,
-		year.Table:               year.ValidColumn,
+		activity.Table:      activity.ValidColumn,
+		apperror.Table:      apperror.ValidColumn,
+		area.Table:          area.ValidColumn,
+		attendance.Table:    attendance.ValidColumn,
+		attendanceday.Table: attendanceday.ValidColumn,
+		class.Table:         class.ValidColumn,
+		classperiod.Table:   classperiod.ValidColumn,
+		dpto.Table:          dpto.ValidColumn,
+		grade.Table:         grade.ValidColumn,
+		municipio.Table:     municipio.ValidColumn,
+		period.Table:        period.ValidColumn,
+		provincia.Table:     provincia.ValidColumn,
+		school.Table:        school.ValidColumn,
+		score.Table:         score.ValidColumn,
+		student.Table:       student.ValidColumn,
+		subject.Table:       subject.ValidColumn,
+		teacher.Table:       teacher.ValidColumn,
+		year.Table:          year.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -11,33 +11,21 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // TeacherQuery is the builder for querying Teacher entities.
 type TeacherQuery struct {
 	config
-	limit                  *int
-	offset                 *int
-	unique                 *bool
-	order                  []OrderFunc
-	fields                 []string
-	predicates             []predicate.Teacher
-	withClasses            *ClassQuery
-	withScoreSyncs         *ScoreSyncQuery
-	withStudentSyncs       *StudentSyncQuery
-	withActivitySyncs      *ActivitySyncQuery
-	withAttendanceSyncs    *AttendanceSyncQuery
-	withClassPeriodSyncs   *ClassPeriodSyncQuery
-	withAttendanceDaySyncs *AttendanceDaySyncsQuery
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.Teacher
+	withClasses *ClassQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -89,138 +77,6 @@ func (tq *TeacherQuery) QueryClasses() *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryScoreSyncs chains the current query on the "scoreSyncs" edge.
-func (tq *TeacherQuery) QueryScoreSyncs() *ScoreSyncQuery {
-	query := &ScoreSyncQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(scoresync.Table, scoresync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ScoreSyncsTable, teacher.ScoreSyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryStudentSyncs chains the current query on the "studentSyncs" edge.
-func (tq *TeacherQuery) QueryStudentSyncs() *StudentSyncQuery {
-	query := &StudentSyncQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(studentsync.Table, studentsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.StudentSyncsTable, teacher.StudentSyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryActivitySyncs chains the current query on the "activitySyncs" edge.
-func (tq *TeacherQuery) QueryActivitySyncs() *ActivitySyncQuery {
-	query := &ActivitySyncQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(activitysync.Table, activitysync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ActivitySyncsTable, teacher.ActivitySyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAttendanceSyncs chains the current query on the "attendanceSyncs" edge.
-func (tq *TeacherQuery) QueryAttendanceSyncs() *AttendanceSyncQuery {
-	query := &AttendanceSyncQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(attendancesync.Table, attendancesync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.AttendanceSyncsTable, teacher.AttendanceSyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryClassPeriodSyncs chains the current query on the "classPeriodSyncs" edge.
-func (tq *TeacherQuery) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
-	query := &ClassPeriodSyncQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(classperiodsync.Table, classperiodsync.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassPeriodSyncsTable, teacher.ClassPeriodSyncsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAttendanceDaySyncs chains the current query on the "attendanceDaySyncs" edge.
-func (tq *TeacherQuery) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
-	query := &AttendanceDaySyncsQuery{config: tq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
-			sqlgraph.To(attendancedaysyncs.Table, attendancedaysyncs.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, teacher.AttendanceDaySyncsTable, teacher.AttendanceDaySyncsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -404,18 +260,12 @@ func (tq *TeacherQuery) Clone() *TeacherQuery {
 		return nil
 	}
 	return &TeacherQuery{
-		config:                 tq.config,
-		limit:                  tq.limit,
-		offset:                 tq.offset,
-		order:                  append([]OrderFunc{}, tq.order...),
-		predicates:             append([]predicate.Teacher{}, tq.predicates...),
-		withClasses:            tq.withClasses.Clone(),
-		withScoreSyncs:         tq.withScoreSyncs.Clone(),
-		withStudentSyncs:       tq.withStudentSyncs.Clone(),
-		withActivitySyncs:      tq.withActivitySyncs.Clone(),
-		withAttendanceSyncs:    tq.withAttendanceSyncs.Clone(),
-		withClassPeriodSyncs:   tq.withClassPeriodSyncs.Clone(),
-		withAttendanceDaySyncs: tq.withAttendanceDaySyncs.Clone(),
+		config:      tq.config,
+		limit:       tq.limit,
+		offset:      tq.offset,
+		order:       append([]OrderFunc{}, tq.order...),
+		predicates:  append([]predicate.Teacher{}, tq.predicates...),
+		withClasses: tq.withClasses.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -431,72 +281,6 @@ func (tq *TeacherQuery) WithClasses(opts ...func(*ClassQuery)) *TeacherQuery {
 		opt(query)
 	}
 	tq.withClasses = query
-	return tq
-}
-
-// WithScoreSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "scoreSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithScoreSyncs(opts ...func(*ScoreSyncQuery)) *TeacherQuery {
-	query := &ScoreSyncQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withScoreSyncs = query
-	return tq
-}
-
-// WithStudentSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "studentSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithStudentSyncs(opts ...func(*StudentSyncQuery)) *TeacherQuery {
-	query := &StudentSyncQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withStudentSyncs = query
-	return tq
-}
-
-// WithActivitySyncs tells the query-builder to eager-load the nodes that are connected to
-// the "activitySyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithActivitySyncs(opts ...func(*ActivitySyncQuery)) *TeacherQuery {
-	query := &ActivitySyncQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withActivitySyncs = query
-	return tq
-}
-
-// WithAttendanceSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "attendanceSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithAttendanceSyncs(opts ...func(*AttendanceSyncQuery)) *TeacherQuery {
-	query := &AttendanceSyncQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withAttendanceSyncs = query
-	return tq
-}
-
-// WithClassPeriodSyncs tells the query-builder to eager-load the nodes that are connected to
-// the "classPeriodSyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithClassPeriodSyncs(opts ...func(*ClassPeriodSyncQuery)) *TeacherQuery {
-	query := &ClassPeriodSyncQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withClassPeriodSyncs = query
-	return tq
-}
-
-// WithAttendanceDaySyncs tells the query-builder to eager-load the nodes that are connected to
-// the "attendanceDaySyncs" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TeacherQuery) WithAttendanceDaySyncs(opts ...func(*AttendanceDaySyncsQuery)) *TeacherQuery {
-	query := &AttendanceDaySyncsQuery{config: tq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withAttendanceDaySyncs = query
 	return tq
 }
 
@@ -568,14 +352,8 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 	var (
 		nodes       = []*Teacher{}
 		_spec       = tq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [1]bool{
 			tq.withClasses != nil,
-			tq.withScoreSyncs != nil,
-			tq.withStudentSyncs != nil,
-			tq.withActivitySyncs != nil,
-			tq.withAttendanceSyncs != nil,
-			tq.withClassPeriodSyncs != nil,
-			tq.withAttendanceDaySyncs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -600,50 +378,6 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 		if err := tq.loadClasses(ctx, query, nodes,
 			func(n *Teacher) { n.Edges.Classes = []*Class{} },
 			func(n *Teacher, e *Class) { n.Edges.Classes = append(n.Edges.Classes, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withScoreSyncs; query != nil {
-		if err := tq.loadScoreSyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.ScoreSyncs = []*ScoreSync{} },
-			func(n *Teacher, e *ScoreSync) { n.Edges.ScoreSyncs = append(n.Edges.ScoreSyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withStudentSyncs; query != nil {
-		if err := tq.loadStudentSyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.StudentSyncs = []*StudentSync{} },
-			func(n *Teacher, e *StudentSync) { n.Edges.StudentSyncs = append(n.Edges.StudentSyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withActivitySyncs; query != nil {
-		if err := tq.loadActivitySyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.ActivitySyncs = []*ActivitySync{} },
-			func(n *Teacher, e *ActivitySync) { n.Edges.ActivitySyncs = append(n.Edges.ActivitySyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withAttendanceSyncs; query != nil {
-		if err := tq.loadAttendanceSyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.AttendanceSyncs = []*AttendanceSync{} },
-			func(n *Teacher, e *AttendanceSync) { n.Edges.AttendanceSyncs = append(n.Edges.AttendanceSyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withClassPeriodSyncs; query != nil {
-		if err := tq.loadClassPeriodSyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.ClassPeriodSyncs = []*ClassPeriodSync{} },
-			func(n *Teacher, e *ClassPeriodSync) { n.Edges.ClassPeriodSyncs = append(n.Edges.ClassPeriodSyncs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withAttendanceDaySyncs; query != nil {
-		if err := tq.loadAttendanceDaySyncs(ctx, query, nodes,
-			func(n *Teacher) { n.Edges.AttendanceDaySyncs = []*AttendanceDaySyncs{} },
-			func(n *Teacher, e *AttendanceDaySyncs) {
-				n.Edges.AttendanceDaySyncs = append(n.Edges.AttendanceDaySyncs, e)
-			}); err != nil {
 			return nil, err
 		}
 	}
@@ -676,192 +410,6 @@ func (tq *TeacherQuery) loadClasses(ctx context.Context, query *ClassQuery, node
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "teacher_classes" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadScoreSyncs(ctx context.Context, query *ScoreSyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *ScoreSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ScoreSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.ScoreSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_score_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_score_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_score_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadStudentSyncs(ctx context.Context, query *StudentSyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *StudentSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.StudentSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.StudentSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_student_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_student_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_student_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadActivitySyncs(ctx context.Context, query *ActivitySyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *ActivitySync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ActivitySync(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.ActivitySyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_activity_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_activity_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_activity_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadAttendanceSyncs(ctx context.Context, query *AttendanceSyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *AttendanceSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.AttendanceSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.AttendanceSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_attendance_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_attendance_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_attendance_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadClassPeriodSyncs(ctx context.Context, query *ClassPeriodSyncQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *ClassPeriodSync)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.ClassPeriodSync(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.ClassPeriodSyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_class_period_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_class_period_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_class_period_syncs" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *TeacherQuery) loadAttendanceDaySyncs(ctx context.Context, query *AttendanceDaySyncsQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *AttendanceDaySyncs)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[string]*Teacher)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.AttendanceDaySyncs(func(s *sql.Selector) {
-		s.Where(sql.InValues(teacher.AttendanceDaySyncsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.teacher_attendance_day_syncs
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "teacher_attendance_day_syncs" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "teacher_attendance_day_syncs" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

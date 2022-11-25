@@ -22,19 +22,6 @@ func (f ActivityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
-// The ActivitySyncFunc type is an adapter to allow the use of ordinary
-// function as ActivitySync mutator.
-type ActivitySyncFunc func(context.Context, *ent.ActivitySyncMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ActivitySyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ActivitySyncMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivitySyncMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The AppErrorFunc type is an adapter to allow the use of ordinary
 // function as AppError mutator.
 type AppErrorFunc func(context.Context, *ent.AppErrorMutation) (ent.Value, error)
@@ -87,32 +74,6 @@ func (f AttendanceDayFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return f(ctx, mv)
 }
 
-// The AttendanceDaySyncsFunc type is an adapter to allow the use of ordinary
-// function as AttendanceDaySyncs mutator.
-type AttendanceDaySyncsFunc func(context.Context, *ent.AttendanceDaySyncsMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f AttendanceDaySyncsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AttendanceDaySyncsMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttendanceDaySyncsMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The AttendanceSyncFunc type is an adapter to allow the use of ordinary
-// function as AttendanceSync mutator.
-type AttendanceSyncFunc func(context.Context, *ent.AttendanceSyncMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f AttendanceSyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AttendanceSyncMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttendanceSyncMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The ClassFunc type is an adapter to allow the use of ordinary
 // function as Class mutator.
 type ClassFunc func(context.Context, *ent.ClassMutation) (ent.Value, error)
@@ -135,19 +96,6 @@ func (f ClassPeriodFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	mv, ok := m.(*ent.ClassPeriodMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ClassPeriodMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The ClassPeriodSyncFunc type is an adapter to allow the use of ordinary
-// function as ClassPeriodSync mutator.
-type ClassPeriodSyncFunc func(context.Context, *ent.ClassPeriodSyncMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ClassPeriodSyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ClassPeriodSyncMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ClassPeriodSyncMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -243,19 +191,6 @@ func (f ScoreFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
-// The ScoreSyncFunc type is an adapter to allow the use of ordinary
-// function as ScoreSync mutator.
-type ScoreSyncFunc func(context.Context, *ent.ScoreSyncMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ScoreSyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ScoreSyncMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScoreSyncMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The StudentFunc type is an adapter to allow the use of ordinary
 // function as Student mutator.
 type StudentFunc func(context.Context, *ent.StudentMutation) (ent.Value, error)
@@ -265,19 +200,6 @@ func (f StudentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	mv, ok := m.(*ent.StudentMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StudentMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The StudentSyncFunc type is an adapter to allow the use of ordinary
-// function as StudentSync mutator.
-type StudentSyncFunc func(context.Context, *ent.StudentSyncMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f StudentSyncFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.StudentSyncMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StudentSyncMutation", m)
 	}
 	return f(ctx, mv)
 }

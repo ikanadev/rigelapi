@@ -9,9 +9,6 @@ import (
 // Activity is the predicate function for activity builders.
 type Activity func(*sql.Selector)
 
-// ActivitySync is the predicate function for activitysync builders.
-type ActivitySync func(*sql.Selector)
-
 // AppError is the predicate function for apperror builders.
 type AppError func(*sql.Selector)
 
@@ -24,20 +21,11 @@ type Attendance func(*sql.Selector)
 // AttendanceDay is the predicate function for attendanceday builders.
 type AttendanceDay func(*sql.Selector)
 
-// AttendanceDaySyncs is the predicate function for attendancedaysyncs builders.
-type AttendanceDaySyncs func(*sql.Selector)
-
-// AttendanceSync is the predicate function for attendancesync builders.
-type AttendanceSync func(*sql.Selector)
-
 // Class is the predicate function for class builders.
 type Class func(*sql.Selector)
 
 // ClassPeriod is the predicate function for classperiod builders.
 type ClassPeriod func(*sql.Selector)
-
-// ClassPeriodSync is the predicate function for classperiodsync builders.
-type ClassPeriodSync func(*sql.Selector)
 
 // Dpto is the predicate function for dpto builders.
 type Dpto func(*sql.Selector)
@@ -60,14 +48,8 @@ type School func(*sql.Selector)
 // Score is the predicate function for score builders.
 type Score func(*sql.Selector)
 
-// ScoreSync is the predicate function for scoresync builders.
-type ScoreSync func(*sql.Selector)
-
 // Student is the predicate function for student builders.
 type Student func(*sql.Selector)
-
-// StudentSync is the predicate function for studentsync builders.
-type StudentSync func(*sql.Selector)
 
 // Subject is the predicate function for subject builders.
 type Subject func(*sql.Selector)
