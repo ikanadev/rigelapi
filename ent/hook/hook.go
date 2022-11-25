@@ -22,6 +22,19 @@ func (f ActivityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The AdminActionFunc type is an adapter to allow the use of ordinary
+// function as AdminAction mutator.
+type AdminActionFunc func(context.Context, *ent.AdminActionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminActionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AdminActionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminActionMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The AppErrorFunc type is an adapter to allow the use of ordinary
 // function as AppError mutator.
 type AppErrorFunc func(context.Context, *ent.AppErrorMutation) (ent.Value, error)

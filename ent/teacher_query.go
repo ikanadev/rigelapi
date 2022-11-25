@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/teacher"
@@ -26,6 +27,7 @@ type TeacherQuery struct {
 	fields      []string
 	predicates  []predicate.Teacher
 	withClasses *ClassQuery
+	withActions *AdminActionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +79,28 @@ func (tq *TeacherQuery) QueryClasses() *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryActions chains the current query on the "actions" edge.
+func (tq *TeacherQuery) QueryActions() *AdminActionQuery {
+	query := &AdminActionQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
+			sqlgraph.To(adminaction.Table, adminaction.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ActionsTable, teacher.ActionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -266,6 +290,7 @@ func (tq *TeacherQuery) Clone() *TeacherQuery {
 		order:       append([]OrderFunc{}, tq.order...),
 		predicates:  append([]predicate.Teacher{}, tq.predicates...),
 		withClasses: tq.withClasses.Clone(),
+		withActions: tq.withActions.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -281,6 +306,17 @@ func (tq *TeacherQuery) WithClasses(opts ...func(*ClassQuery)) *TeacherQuery {
 		opt(query)
 	}
 	tq.withClasses = query
+	return tq
+}
+
+// WithActions tells the query-builder to eager-load the nodes that are connected to
+// the "actions" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TeacherQuery) WithActions(opts ...func(*AdminActionQuery)) *TeacherQuery {
+	query := &AdminActionQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withActions = query
 	return tq
 }
 
@@ -352,8 +388,9 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 	var (
 		nodes       = []*Teacher{}
 		_spec       = tq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			tq.withClasses != nil,
+			tq.withActions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -378,6 +415,13 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 		if err := tq.loadClasses(ctx, query, nodes,
 			func(n *Teacher) { n.Edges.Classes = []*Class{} },
 			func(n *Teacher, e *Class) { n.Edges.Classes = append(n.Edges.Classes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withActions; query != nil {
+		if err := tq.loadActions(ctx, query, nodes,
+			func(n *Teacher) { n.Edges.Actions = []*AdminAction{} },
+			func(n *Teacher, e *AdminAction) { n.Edges.Actions = append(n.Edges.Actions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -410,6 +454,37 @@ func (tq *TeacherQuery) loadClasses(ctx context.Context, query *ClassQuery, node
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "teacher_classes" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TeacherQuery) loadActions(ctx context.Context, query *AdminActionQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *AdminAction)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Teacher)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.AdminAction(func(s *sql.Selector) {
+		s.Where(sql.InValues(teacher.ActionsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.teacher_actions
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "teacher_actions" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "teacher_actions" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

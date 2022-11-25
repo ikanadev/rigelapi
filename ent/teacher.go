@@ -23,6 +23,8 @@ type Teacher struct {
 	Email string `json:"email,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"password,omitempty"`
+	// IsAdmin holds the value of the "is_admin" field.
+	IsAdmin bool `json:"is_admin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeacherQuery when eager-loading is set.
 	Edges TeacherEdges `json:"edges"`
@@ -32,9 +34,11 @@ type Teacher struct {
 type TeacherEdges struct {
 	// Classes holds the value of the classes edge.
 	Classes []*Class `json:"classes,omitempty"`
+	// Actions holds the value of the actions edge.
+	Actions []*AdminAction `json:"actions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -46,11 +50,22 @@ func (e TeacherEdges) ClassesOrErr() ([]*Class, error) {
 	return nil, &NotLoadedError{edge: "classes"}
 }
 
+// ActionsOrErr returns the Actions value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) ActionsOrErr() ([]*AdminAction, error) {
+	if e.loadedTypes[1] {
+		return e.Actions, nil
+	}
+	return nil, &NotLoadedError{edge: "actions"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Teacher) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case teacher.FieldIsAdmin:
+			values[i] = new(sql.NullBool)
 		case teacher.FieldID, teacher.FieldName, teacher.FieldLastName, teacher.FieldEmail, teacher.FieldPassword:
 			values[i] = new(sql.NullString)
 		default:
@@ -98,6 +113,12 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				t.Password = value.String
 			}
+		case teacher.FieldIsAdmin:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
+			} else if value.Valid {
+				t.IsAdmin = value.Bool
+			}
 		}
 	}
 	return nil
@@ -106,6 +127,11 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 // QueryClasses queries the "classes" edge of the Teacher entity.
 func (t *Teacher) QueryClasses() *ClassQuery {
 	return (&TeacherClient{config: t.config}).QueryClasses(t)
+}
+
+// QueryActions queries the "actions" edge of the Teacher entity.
+func (t *Teacher) QueryActions() *AdminActionQuery {
+	return (&TeacherClient{config: t.config}).QueryActions(t)
 }
 
 // Update returns a builder for updating this Teacher.
@@ -142,6 +168,9 @@ func (t *Teacher) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("password=")
 	builder.WriteString(t.Password)
+	builder.WriteString(", ")
+	builder.WriteString("is_admin=")
+	builder.WriteString(fmt.Sprintf("%v", t.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
 }

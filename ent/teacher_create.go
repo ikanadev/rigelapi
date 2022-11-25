@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
@@ -44,6 +45,20 @@ func (tc *TeacherCreate) SetPassword(s string) *TeacherCreate {
 	return tc
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tc *TeacherCreate) SetIsAdmin(b bool) *TeacherCreate {
+	tc.mutation.SetIsAdmin(b)
+	return tc
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tc *TeacherCreate) SetNillableIsAdmin(b *bool) *TeacherCreate {
+	if b != nil {
+		tc.SetIsAdmin(*b)
+	}
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TeacherCreate) SetID(s string) *TeacherCreate {
 	tc.mutation.SetID(s)
@@ -65,6 +80,21 @@ func (tc *TeacherCreate) AddClasses(c ...*Class) *TeacherCreate {
 	return tc.AddClassIDs(ids...)
 }
 
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tc *TeacherCreate) AddActionIDs(ids ...string) *TeacherCreate {
+	tc.mutation.AddActionIDs(ids...)
+	return tc
+}
+
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tc *TeacherCreate) AddActions(a ...*AdminAction) *TeacherCreate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tc.AddActionIDs(ids...)
+}
+
 // Mutation returns the TeacherMutation object of the builder.
 func (tc *TeacherCreate) Mutation() *TeacherMutation {
 	return tc.mutation
@@ -76,6 +106,7 @@ func (tc *TeacherCreate) Save(ctx context.Context) (*Teacher, error) {
 		err  error
 		node *Teacher
 	)
+	tc.defaults()
 	if len(tc.hooks) == 0 {
 		if err = tc.check(); err != nil {
 			return nil, err
@@ -139,6 +170,14 @@ func (tc *TeacherCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tc *TeacherCreate) defaults() {
+	if _, ok := tc.mutation.IsAdmin(); !ok {
+		v := teacher.DefaultIsAdmin
+		tc.mutation.SetIsAdmin(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tc *TeacherCreate) check() error {
 	if _, ok := tc.mutation.Name(); !ok {
@@ -152,6 +191,9 @@ func (tc *TeacherCreate) check() error {
 	}
 	if _, ok := tc.mutation.Password(); !ok {
 		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "Teacher.password"`)}
+	}
+	if _, ok := tc.mutation.IsAdmin(); !ok {
+		return &ValidationError{Name: "is_admin", err: errors.New(`ent: missing required field "Teacher.is_admin"`)}
 	}
 	return nil
 }
@@ -221,6 +263,14 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
+	if value, ok := tc.mutation.IsAdmin(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+		_node.IsAdmin = value
+	}
 	if nodes := tc.mutation.ClassesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -232,6 +282,25 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: class.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -257,6 +326,7 @@ func (tcb *TeacherCreateBulk) Save(ctx context.Context) ([]*Teacher, error) {
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TeacherMutation)
 				if !ok {

@@ -9,6 +9,9 @@ import (
 // Activity is the predicate function for activity builders.
 type Activity func(*sql.Selector)
 
+// AdminAction is the predicate function for adminaction builders.
+type AdminAction func(*sql.Selector)
+
 // AppError is the predicate function for apperror builders.
 type AppError func(*sql.Selector)
 

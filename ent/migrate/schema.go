@@ -36,6 +36,27 @@ var (
 			},
 		},
 	}
+	// AdminActionsColumns holds the columns for the "admin_actions" table.
+	AdminActionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "action", Type: field.TypeString},
+		{Name: "info", Type: field.TypeString},
+		{Name: "teacher_actions", Type: field.TypeString, Nullable: true},
+	}
+	// AdminActionsTable holds the schema information for the "admin_actions" table.
+	AdminActionsTable = &schema.Table{
+		Name:       "admin_actions",
+		Columns:    AdminActionsColumns,
+		PrimaryKey: []*schema.Column{AdminActionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_actions_teachers_actions",
+				Columns:    []*schema.Column{AdminActionsColumns[3]},
+				RefColumns: []*schema.Column{TeachersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// AppErrorsColumns holds the columns for the "app_errors" table.
 	AppErrorsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -366,6 +387,7 @@ var (
 		{Name: "last_name", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString},
 		{Name: "password", Type: field.TypeString},
+		{Name: "is_admin", Type: field.TypeBool, Default: false},
 	}
 	// TeachersTable holds the schema information for the "teachers" table.
 	TeachersTable = &schema.Table{
@@ -387,6 +409,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivitiesTable,
+		AdminActionsTable,
 		AppErrorsTable,
 		AreasTable,
 		AttendancesTable,
@@ -410,6 +433,7 @@ var (
 func init() {
 	ActivitiesTable.ForeignKeys[0].RefTable = AreasTable
 	ActivitiesTable.ForeignKeys[1].RefTable = ClassPeriodsTable
+	AdminActionsTable.ForeignKeys[0].RefTable = TeachersTable
 	AreasTable.ForeignKeys[0].RefTable = YearsTable
 	AttendancesTable.ForeignKeys[0].RefTable = AttendanceDaysTable
 	AttendancesTable.ForeignKeys[1].RefTable = StudentsTable

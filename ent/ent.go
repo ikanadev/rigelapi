@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/vmkevv/rigelapi/ent/activity"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -49,6 +50,7 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		activity.Table:      activity.ValidColumn,
+		adminaction.Table:   adminaction.ValidColumn,
 		apperror.Table:      apperror.ValidColumn,
 		area.Table:          area.ValidColumn,
 		attendance.Table:    attendance.ValidColumn,

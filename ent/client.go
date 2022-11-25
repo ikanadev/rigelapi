@@ -11,6 +11,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/migrate"
 
 	"github.com/vmkevv/rigelapi/ent/activity"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -41,6 +42,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Activity is the client for interacting with the Activity builders.
 	Activity *ActivityClient
+	// AdminAction is the client for interacting with the AdminAction builders.
+	AdminAction *AdminActionClient
 	// AppError is the client for interacting with the AppError builders.
 	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
@@ -89,6 +92,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Activity = NewActivityClient(c.config)
+	c.AdminAction = NewAdminActionClient(c.config)
 	c.AppError = NewAppErrorClient(c.config)
 	c.Area = NewAreaClient(c.config)
 	c.Attendance = NewAttendanceClient(c.config)
@@ -140,6 +144,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:           ctx,
 		config:        cfg,
 		Activity:      NewActivityClient(cfg),
+		AdminAction:   NewAdminActionClient(cfg),
 		AppError:      NewAppErrorClient(cfg),
 		Area:          NewAreaClient(cfg),
 		Attendance:    NewAttendanceClient(cfg),
@@ -177,6 +182,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:           ctx,
 		config:        cfg,
 		Activity:      NewActivityClient(cfg),
+		AdminAction:   NewAdminActionClient(cfg),
 		AppError:      NewAppErrorClient(cfg),
 		Area:          NewAreaClient(cfg),
 		Attendance:    NewAttendanceClient(cfg),
@@ -223,6 +229,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Activity.Use(hooks...)
+	c.AdminAction.Use(hooks...)
 	c.AppError.Use(hooks...)
 	c.Area.Use(hooks...)
 	c.Attendance.Use(hooks...)
@@ -378,6 +385,112 @@ func (c *ActivityClient) QueryClassPeriod(a *Activity) *ClassPeriodQuery {
 // Hooks returns the client hooks.
 func (c *ActivityClient) Hooks() []Hook {
 	return c.hooks.Activity
+}
+
+// AdminActionClient is a client for the AdminAction schema.
+type AdminActionClient struct {
+	config
+}
+
+// NewAdminActionClient returns a client for the AdminAction from the given config.
+func NewAdminActionClient(c config) *AdminActionClient {
+	return &AdminActionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminaction.Hooks(f(g(h())))`.
+func (c *AdminActionClient) Use(hooks ...Hook) {
+	c.hooks.AdminAction = append(c.hooks.AdminAction, hooks...)
+}
+
+// Create returns a builder for creating a AdminAction entity.
+func (c *AdminActionClient) Create() *AdminActionCreate {
+	mutation := newAdminActionMutation(c.config, OpCreate)
+	return &AdminActionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminAction entities.
+func (c *AdminActionClient) CreateBulk(builders ...*AdminActionCreate) *AdminActionCreateBulk {
+	return &AdminActionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminAction.
+func (c *AdminActionClient) Update() *AdminActionUpdate {
+	mutation := newAdminActionMutation(c.config, OpUpdate)
+	return &AdminActionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminActionClient) UpdateOne(aa *AdminAction) *AdminActionUpdateOne {
+	mutation := newAdminActionMutation(c.config, OpUpdateOne, withAdminAction(aa))
+	return &AdminActionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminActionClient) UpdateOneID(id string) *AdminActionUpdateOne {
+	mutation := newAdminActionMutation(c.config, OpUpdateOne, withAdminActionID(id))
+	return &AdminActionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminAction.
+func (c *AdminActionClient) Delete() *AdminActionDelete {
+	mutation := newAdminActionMutation(c.config, OpDelete)
+	return &AdminActionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminActionClient) DeleteOne(aa *AdminAction) *AdminActionDeleteOne {
+	return c.DeleteOneID(aa.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *AdminActionClient) DeleteOneID(id string) *AdminActionDeleteOne {
+	builder := c.Delete().Where(adminaction.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminActionDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminAction.
+func (c *AdminActionClient) Query() *AdminActionQuery {
+	return &AdminActionQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a AdminAction entity by its id.
+func (c *AdminActionClient) Get(ctx context.Context, id string) (*AdminAction, error) {
+	return c.Query().Where(adminaction.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminActionClient) GetX(ctx context.Context, id string) *AdminAction {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTeacher queries the teacher edge of a AdminAction.
+func (c *AdminActionClient) QueryTeacher(aa *AdminAction) *TeacherQuery {
+	query := &TeacherQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := aa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminaction.Table, adminaction.FieldID, id),
+			sqlgraph.To(teacher.Table, teacher.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, adminaction.TeacherTable, adminaction.TeacherColumn),
+		)
+		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AdminActionClient) Hooks() []Hook {
+	return c.hooks.AdminAction
 }
 
 // AppErrorClient is a client for the AppError schema.
@@ -2352,6 +2465,22 @@ func (c *TeacherClient) QueryClasses(t *Teacher) *ClassQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, id),
 			sqlgraph.To(class.Table, class.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ClassesTable, teacher.ClassesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryActions queries the actions edge of a Teacher.
+func (c *TeacherClient) QueryActions(t *Teacher) *AdminActionQuery {
+	query := &AdminActionQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, id),
+			sqlgraph.To(adminaction.Table, adminaction.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ActionsTable, teacher.ActionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

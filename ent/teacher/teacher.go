@@ -15,8 +15,12 @@ const (
 	FieldEmail = "email"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldIsAdmin holds the string denoting the is_admin field in the database.
+	FieldIsAdmin = "is_admin"
 	// EdgeClasses holds the string denoting the classes edge name in mutations.
 	EdgeClasses = "classes"
+	// EdgeActions holds the string denoting the actions edge name in mutations.
+	EdgeActions = "actions"
 	// Table holds the table name of the teacher in the database.
 	Table = "teachers"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -26,6 +30,13 @@ const (
 	ClassesInverseTable = "classes"
 	// ClassesColumn is the table column denoting the classes relation/edge.
 	ClassesColumn = "teacher_classes"
+	// ActionsTable is the table that holds the actions relation/edge.
+	ActionsTable = "admin_actions"
+	// ActionsInverseTable is the table name for the AdminAction entity.
+	// It exists in this package in order to avoid circular dependency with the "adminaction" package.
+	ActionsInverseTable = "admin_actions"
+	// ActionsColumn is the table column denoting the actions relation/edge.
+	ActionsColumn = "teacher_actions"
 )
 
 // Columns holds all SQL columns for teacher fields.
@@ -35,6 +46,7 @@ var Columns = []string{
 	FieldLastName,
 	FieldEmail,
 	FieldPassword,
+	FieldIsAdmin,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -46,3 +58,8 @@ func ValidColumn(column string) bool {
 	}
 	return false
 }
+
+var (
+	// DefaultIsAdmin holds the default value on creation for the "is_admin" field.
+	DefaultIsAdmin bool
+)

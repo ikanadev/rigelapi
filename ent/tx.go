@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Activity is the client for interacting with the Activity builders.
 	Activity *ActivityClient
+	// AdminAction is the client for interacting with the AdminAction builders.
+	AdminAction *AdminActionClient
 	// AppError is the client for interacting with the AppError builders.
 	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
@@ -184,6 +186,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
+	tx.AdminAction = NewAdminActionClient(tx.config)
 	tx.AppError = NewAppErrorClient(tx.config)
 	tx.Area = NewAreaClient(tx.config)
 	tx.Attendance = NewAttendanceClient(tx.config)

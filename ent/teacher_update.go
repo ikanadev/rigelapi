@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
 	"github.com/vmkevv/rigelapi/ent/teacher"
@@ -52,6 +53,20 @@ func (tu *TeacherUpdate) SetPassword(s string) *TeacherUpdate {
 	return tu
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tu *TeacherUpdate) SetIsAdmin(b bool) *TeacherUpdate {
+	tu.mutation.SetIsAdmin(b)
+	return tu
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tu *TeacherUpdate) SetNillableIsAdmin(b *bool) *TeacherUpdate {
+	if b != nil {
+		tu.SetIsAdmin(*b)
+	}
+	return tu
+}
+
 // AddClassIDs adds the "classes" edge to the Class entity by IDs.
 func (tu *TeacherUpdate) AddClassIDs(ids ...string) *TeacherUpdate {
 	tu.mutation.AddClassIDs(ids...)
@@ -65,6 +80,21 @@ func (tu *TeacherUpdate) AddClasses(c ...*Class) *TeacherUpdate {
 		ids[i] = c[i].ID
 	}
 	return tu.AddClassIDs(ids...)
+}
+
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tu *TeacherUpdate) AddActionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddActionIDs(ids...)
+	return tu
+}
+
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tu *TeacherUpdate) AddActions(a ...*AdminAction) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.AddActionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -91,6 +121,27 @@ func (tu *TeacherUpdate) RemoveClasses(c ...*Class) *TeacherUpdate {
 		ids[i] = c[i].ID
 	}
 	return tu.RemoveClassIDs(ids...)
+}
+
+// ClearActions clears all "actions" edges to the AdminAction entity.
+func (tu *TeacherUpdate) ClearActions() *TeacherUpdate {
+	tu.mutation.ClearActions()
+	return tu
+}
+
+// RemoveActionIDs removes the "actions" edge to AdminAction entities by IDs.
+func (tu *TeacherUpdate) RemoveActionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveActionIDs(ids...)
+	return tu
+}
+
+// RemoveActions removes "actions" edges to AdminAction entities.
+func (tu *TeacherUpdate) RemoveActions(a ...*AdminAction) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.RemoveActionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -193,6 +244,13 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: teacher.FieldPassword,
 		})
 	}
+	if value, ok := tu.mutation.IsAdmin(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+	}
 	if tu.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -247,6 +305,60 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedActionsIDs(); len(nodes) > 0 && !tu.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{teacher.Label}
@@ -290,6 +402,20 @@ func (tuo *TeacherUpdateOne) SetPassword(s string) *TeacherUpdateOne {
 	return tuo
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tuo *TeacherUpdateOne) SetIsAdmin(b bool) *TeacherUpdateOne {
+	tuo.mutation.SetIsAdmin(b)
+	return tuo
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tuo *TeacherUpdateOne) SetNillableIsAdmin(b *bool) *TeacherUpdateOne {
+	if b != nil {
+		tuo.SetIsAdmin(*b)
+	}
+	return tuo
+}
+
 // AddClassIDs adds the "classes" edge to the Class entity by IDs.
 func (tuo *TeacherUpdateOne) AddClassIDs(ids ...string) *TeacherUpdateOne {
 	tuo.mutation.AddClassIDs(ids...)
@@ -303,6 +429,21 @@ func (tuo *TeacherUpdateOne) AddClasses(c ...*Class) *TeacherUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return tuo.AddClassIDs(ids...)
+}
+
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tuo *TeacherUpdateOne) AddActionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddActionIDs(ids...)
+	return tuo
+}
+
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tuo *TeacherUpdateOne) AddActions(a ...*AdminAction) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.AddActionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -329,6 +470,27 @@ func (tuo *TeacherUpdateOne) RemoveClasses(c ...*Class) *TeacherUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return tuo.RemoveClassIDs(ids...)
+}
+
+// ClearActions clears all "actions" edges to the AdminAction entity.
+func (tuo *TeacherUpdateOne) ClearActions() *TeacherUpdateOne {
+	tuo.mutation.ClearActions()
+	return tuo
+}
+
+// RemoveActionIDs removes the "actions" edge to AdminAction entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveActionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveActionIDs(ids...)
+	return tuo
+}
+
+// RemoveActions removes "actions" edges to AdminAction entities.
+func (tuo *TeacherUpdateOne) RemoveActions(a ...*AdminAction) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.RemoveActionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -461,6 +623,13 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Column: teacher.FieldPassword,
 		})
 	}
+	if value, ok := tuo.mutation.IsAdmin(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+	}
 	if tuo.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -507,6 +676,60 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: class.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedActionsIDs(); len(nodes) > 0 && !tuo.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: adminaction.FieldID,
 				},
 			},
 		}

@@ -107,6 +107,13 @@ func Password(v string) predicate.Teacher {
 	})
 }
 
+// IsAdmin applies equality check predicate on the "is_admin" field. It's identical to IsAdminEQ.
+func IsAdmin(v bool) predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldIsAdmin), v))
+	})
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Teacher {
 	return predicate.Teacher(func(s *sql.Selector) {
@@ -503,6 +510,20 @@ func PasswordContainsFold(v string) predicate.Teacher {
 	})
 }
 
+// IsAdminEQ applies the EQ predicate on the "is_admin" field.
+func IsAdminEQ(v bool) predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldIsAdmin), v))
+	})
+}
+
+// IsAdminNEQ applies the NEQ predicate on the "is_admin" field.
+func IsAdminNEQ(v bool) predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldIsAdmin), v))
+	})
+}
+
 // HasClasses applies the HasEdge predicate on the "classes" edge.
 func HasClasses() predicate.Teacher {
 	return predicate.Teacher(func(s *sql.Selector) {
@@ -522,6 +543,34 @@ func HasClassesWith(preds ...predicate.Class) predicate.Teacher {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ClassesInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, ClassesTable, ClassesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasActions applies the HasEdge predicate on the "actions" edge.
+func HasActions() predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActionsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActionsTable, ActionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActionsWith applies the HasEdge predicate on the "actions" edge with a given conditions (other predicates).
+func HasActionsWith(preds ...predicate.AdminAction) predicate.Teacher {
+	return predicate.Teacher(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActionsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActionsTable, ActionsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

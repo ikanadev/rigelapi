@@ -19,6 +19,7 @@ func (Teacher) Fields() []ent.Field {
 		field.String("last_name"),
 		field.String("email"),
 		field.String("password"),
+		field.Bool("is_admin").Default(false),
 	}
 }
 
@@ -26,5 +27,6 @@ func (Teacher) Fields() []ent.Field {
 func (Teacher) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("classes", Class.Type),
+		edge.To("actions", AdminAction.Type),
 	}
 }
