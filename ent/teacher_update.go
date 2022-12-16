@@ -13,6 +13,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
@@ -97,6 +98,21 @@ func (tu *TeacherUpdate) AddActions(a ...*AdminAction) *TeacherUpdate {
 	return tu.AddActionIDs(ids...)
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tu *TeacherUpdate) AddSubscriptionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddSubscriptionIDs(ids...)
+	return tu
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tu *TeacherUpdate) AddSubscriptions(s ...*Subscription) *TeacherUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.AddSubscriptionIDs(ids...)
+}
+
 // Mutation returns the TeacherMutation object of the builder.
 func (tu *TeacherUpdate) Mutation() *TeacherMutation {
 	return tu.mutation
@@ -142,6 +158,27 @@ func (tu *TeacherUpdate) RemoveActions(a ...*AdminAction) *TeacherUpdate {
 		ids[i] = a[i].ID
 	}
 	return tu.RemoveActionIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (tu *TeacherUpdate) ClearSubscriptions() *TeacherUpdate {
+	tu.mutation.ClearSubscriptions()
+	return tu
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (tu *TeacherUpdate) RemoveSubscriptionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveSubscriptionIDs(ids...)
+	return tu
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (tu *TeacherUpdate) RemoveSubscriptions(s ...*Subscription) *TeacherUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tu.RemoveSubscriptionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -359,6 +396,60 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !tu.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{teacher.Label}
@@ -446,6 +537,21 @@ func (tuo *TeacherUpdateOne) AddActions(a ...*AdminAction) *TeacherUpdateOne {
 	return tuo.AddActionIDs(ids...)
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tuo *TeacherUpdateOne) AddSubscriptionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddSubscriptionIDs(ids...)
+	return tuo
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tuo *TeacherUpdateOne) AddSubscriptions(s ...*Subscription) *TeacherUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.AddSubscriptionIDs(ids...)
+}
+
 // Mutation returns the TeacherMutation object of the builder.
 func (tuo *TeacherUpdateOne) Mutation() *TeacherMutation {
 	return tuo.mutation
@@ -491,6 +597,27 @@ func (tuo *TeacherUpdateOne) RemoveActions(a ...*AdminAction) *TeacherUpdateOne 
 		ids[i] = a[i].ID
 	}
 	return tuo.RemoveActionIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (tuo *TeacherUpdateOne) ClearSubscriptions() *TeacherUpdateOne {
+	tuo.mutation.ClearSubscriptions()
+	return tuo
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveSubscriptionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveSubscriptionIDs(ids...)
+	return tuo
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (tuo *TeacherUpdateOne) RemoveSubscriptions(s ...*Subscription) *TeacherUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tuo.RemoveSubscriptionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -730,6 +857,60 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: adminaction.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !tuo.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
 				},
 			},
 		}

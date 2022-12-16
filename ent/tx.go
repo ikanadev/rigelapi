@@ -46,6 +46,8 @@ type Tx struct {
 	Student *StudentClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
+	// Subscription is the client for interacting with the Subscription builders.
+	Subscription *SubscriptionClient
 	// Teacher is the client for interacting with the Teacher builders.
 	Teacher *TeacherClient
 	// Year is the client for interacting with the Year builders.
@@ -202,6 +204,7 @@ func (tx *Tx) init() {
 	tx.Score = NewScoreClient(tx.config)
 	tx.Student = NewStudentClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
+	tx.Subscription = NewSubscriptionClient(tx.config)
 	tx.Teacher = NewTeacherClient(tx.config)
 	tx.Year = NewYearClient(tx.config)
 }

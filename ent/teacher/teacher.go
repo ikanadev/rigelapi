@@ -21,6 +21,8 @@ const (
 	EdgeClasses = "classes"
 	// EdgeActions holds the string denoting the actions edge name in mutations.
 	EdgeActions = "actions"
+	// EdgeSubscriptions holds the string denoting the subscriptions edge name in mutations.
+	EdgeSubscriptions = "subscriptions"
 	// Table holds the table name of the teacher in the database.
 	Table = "teachers"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -37,6 +39,13 @@ const (
 	ActionsInverseTable = "admin_actions"
 	// ActionsColumn is the table column denoting the actions relation/edge.
 	ActionsColumn = "teacher_actions"
+	// SubscriptionsTable is the table that holds the subscriptions relation/edge.
+	SubscriptionsTable = "subscriptions"
+	// SubscriptionsInverseTable is the table name for the Subscription entity.
+	// It exists in this package in order to avoid circular dependency with the "subscription" package.
+	SubscriptionsInverseTable = "subscriptions"
+	// SubscriptionsColumn is the table column denoting the subscriptions relation/edge.
+	SubscriptionsColumn = "teacher_subscriptions"
 )
 
 // Columns holds all SQL columns for teacher fields.

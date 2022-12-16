@@ -28,5 +28,6 @@ func (Teacher) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("classes", Class.Type),
 		edge.To("actions", AdminAction.Type),
+		edge.To("subscriptions", Subscription.Type),
 	}
 }

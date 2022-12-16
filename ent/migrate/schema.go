@@ -380,6 +380,35 @@ var (
 		Columns:    SubjectsColumns,
 		PrimaryKey: []*schema.Column{SubjectsColumns[0]},
 	}
+	// SubscriptionsColumns holds the columns for the "subscriptions" table.
+	SubscriptionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "method", Type: field.TypeString},
+		{Name: "qtty", Type: field.TypeInt},
+		{Name: "date", Type: field.TypeTime},
+		{Name: "teacher_subscriptions", Type: field.TypeString, Nullable: true},
+		{Name: "year_subscriptions", Type: field.TypeString, Nullable: true},
+	}
+	// SubscriptionsTable holds the schema information for the "subscriptions" table.
+	SubscriptionsTable = &schema.Table{
+		Name:       "subscriptions",
+		Columns:    SubscriptionsColumns,
+		PrimaryKey: []*schema.Column{SubscriptionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "subscriptions_teachers_subscriptions",
+				Columns:    []*schema.Column{SubscriptionsColumns[4]},
+				RefColumns: []*schema.Column{TeachersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "subscriptions_years_subscriptions",
+				Columns:    []*schema.Column{SubscriptionsColumns[5]},
+				RefColumns: []*schema.Column{YearsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// TeachersColumns holds the columns for the "teachers" table.
 	TeachersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -425,6 +454,7 @@ var (
 		ScoresTable,
 		StudentsTable,
 		SubjectsTable,
+		SubscriptionsTable,
 		TeachersTable,
 		YearsTable,
 	}
@@ -452,4 +482,6 @@ func init() {
 	ScoresTable.ForeignKeys[0].RefTable = ActivitiesTable
 	ScoresTable.ForeignKeys[1].RefTable = StudentsTable
 	StudentsTable.ForeignKeys[0].RefTable = ClassesTable
+	SubscriptionsTable.ForeignKeys[0].RefTable = TeachersTable
+	SubscriptionsTable.ForeignKeys[1].RefTable = YearsTable
 }

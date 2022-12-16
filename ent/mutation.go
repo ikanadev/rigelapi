@@ -27,6 +27,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/score"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/subject"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 
@@ -59,6 +60,7 @@ const (
 	TypeScore         = "Score"
 	TypeStudent       = "Student"
 	TypeSubject       = "Subject"
+	TypeSubscription  = "Subscription"
 	TypeTeacher       = "Teacher"
 	TypeYear          = "Year"
 )
@@ -8899,27 +8901,619 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Subject edge %s", name)
 }
 
-// TeacherMutation represents an operation that mutates the Teacher nodes in the graph.
-type TeacherMutation struct {
+// SubscriptionMutation represents an operation that mutates the Subscription nodes in the graph.
+type SubscriptionMutation struct {
 	config
 	op             Op
 	typ            string
 	id             *string
-	name           *string
-	last_name      *string
-	email          *string
-	password       *string
-	is_admin       *bool
+	method         *string
+	qtty           *int
+	addqtty        *int
+	date           *time.Time
 	clearedFields  map[string]struct{}
-	classes        map[string]struct{}
-	removedclasses map[string]struct{}
-	clearedclasses bool
-	actions        map[string]struct{}
-	removedactions map[string]struct{}
-	clearedactions bool
+	teacher        *string
+	clearedteacher bool
+	year           *string
+	clearedyear    bool
 	done           bool
-	oldValue       func(context.Context) (*Teacher, error)
-	predicates     []predicate.Teacher
+	oldValue       func(context.Context) (*Subscription, error)
+	predicates     []predicate.Subscription
+}
+
+var _ ent.Mutation = (*SubscriptionMutation)(nil)
+
+// subscriptionOption allows management of the mutation configuration using functional options.
+type subscriptionOption func(*SubscriptionMutation)
+
+// newSubscriptionMutation creates new mutation for the Subscription entity.
+func newSubscriptionMutation(c config, op Op, opts ...subscriptionOption) *SubscriptionMutation {
+	m := &SubscriptionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSubscription,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSubscriptionID sets the ID field of the mutation.
+func withSubscriptionID(id string) subscriptionOption {
+	return func(m *SubscriptionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Subscription
+		)
+		m.oldValue = func(ctx context.Context) (*Subscription, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Subscription.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSubscription sets the old Subscription of the mutation.
+func withSubscription(node *Subscription) subscriptionOption {
+	return func(m *SubscriptionMutation) {
+		m.oldValue = func(context.Context) (*Subscription, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SubscriptionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SubscriptionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Subscription entities.
+func (m *SubscriptionMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SubscriptionMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SubscriptionMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Subscription.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetMethod sets the "method" field.
+func (m *SubscriptionMutation) SetMethod(s string) {
+	m.method = &s
+}
+
+// Method returns the value of the "method" field in the mutation.
+func (m *SubscriptionMutation) Method() (r string, exists bool) {
+	v := m.method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMethod returns the old "method" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMethod: %w", err)
+	}
+	return oldValue.Method, nil
+}
+
+// ResetMethod resets all changes to the "method" field.
+func (m *SubscriptionMutation) ResetMethod() {
+	m.method = nil
+}
+
+// SetQtty sets the "qtty" field.
+func (m *SubscriptionMutation) SetQtty(i int) {
+	m.qtty = &i
+	m.addqtty = nil
+}
+
+// Qtty returns the value of the "qtty" field in the mutation.
+func (m *SubscriptionMutation) Qtty() (r int, exists bool) {
+	v := m.qtty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQtty returns the old "qtty" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldQtty(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQtty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQtty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQtty: %w", err)
+	}
+	return oldValue.Qtty, nil
+}
+
+// AddQtty adds i to the "qtty" field.
+func (m *SubscriptionMutation) AddQtty(i int) {
+	if m.addqtty != nil {
+		*m.addqtty += i
+	} else {
+		m.addqtty = &i
+	}
+}
+
+// AddedQtty returns the value that was added to the "qtty" field in this mutation.
+func (m *SubscriptionMutation) AddedQtty() (r int, exists bool) {
+	v := m.addqtty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQtty resets all changes to the "qtty" field.
+func (m *SubscriptionMutation) ResetQtty() {
+	m.qtty = nil
+	m.addqtty = nil
+}
+
+// SetDate sets the "date" field.
+func (m *SubscriptionMutation) SetDate(t time.Time) {
+	m.date = &t
+}
+
+// Date returns the value of the "date" field in the mutation.
+func (m *SubscriptionMutation) Date() (r time.Time, exists bool) {
+	v := m.date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDate returns the old "date" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDate: %w", err)
+	}
+	return oldValue.Date, nil
+}
+
+// ResetDate resets all changes to the "date" field.
+func (m *SubscriptionMutation) ResetDate() {
+	m.date = nil
+}
+
+// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
+func (m *SubscriptionMutation) SetTeacherID(id string) {
+	m.teacher = &id
+}
+
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (m *SubscriptionMutation) ClearTeacher() {
+	m.clearedteacher = true
+}
+
+// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
+func (m *SubscriptionMutation) TeacherCleared() bool {
+	return m.clearedteacher
+}
+
+// TeacherID returns the "teacher" edge ID in the mutation.
+func (m *SubscriptionMutation) TeacherID() (id string, exists bool) {
+	if m.teacher != nil {
+		return *m.teacher, true
+	}
+	return
+}
+
+// TeacherIDs returns the "teacher" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TeacherID instead. It exists only for internal usage by the builders.
+func (m *SubscriptionMutation) TeacherIDs() (ids []string) {
+	if id := m.teacher; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTeacher resets all changes to the "teacher" edge.
+func (m *SubscriptionMutation) ResetTeacher() {
+	m.teacher = nil
+	m.clearedteacher = false
+}
+
+// SetYearID sets the "year" edge to the Year entity by id.
+func (m *SubscriptionMutation) SetYearID(id string) {
+	m.year = &id
+}
+
+// ClearYear clears the "year" edge to the Year entity.
+func (m *SubscriptionMutation) ClearYear() {
+	m.clearedyear = true
+}
+
+// YearCleared reports if the "year" edge to the Year entity was cleared.
+func (m *SubscriptionMutation) YearCleared() bool {
+	return m.clearedyear
+}
+
+// YearID returns the "year" edge ID in the mutation.
+func (m *SubscriptionMutation) YearID() (id string, exists bool) {
+	if m.year != nil {
+		return *m.year, true
+	}
+	return
+}
+
+// YearIDs returns the "year" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YearID instead. It exists only for internal usage by the builders.
+func (m *SubscriptionMutation) YearIDs() (ids []string) {
+	if id := m.year; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYear resets all changes to the "year" edge.
+func (m *SubscriptionMutation) ResetYear() {
+	m.year = nil
+	m.clearedyear = false
+}
+
+// Where appends a list predicates to the SubscriptionMutation builder.
+func (m *SubscriptionMutation) Where(ps ...predicate.Subscription) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *SubscriptionMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Subscription).
+func (m *SubscriptionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SubscriptionMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.method != nil {
+		fields = append(fields, subscription.FieldMethod)
+	}
+	if m.qtty != nil {
+		fields = append(fields, subscription.FieldQtty)
+	}
+	if m.date != nil {
+		fields = append(fields, subscription.FieldDate)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SubscriptionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case subscription.FieldMethod:
+		return m.Method()
+	case subscription.FieldQtty:
+		return m.Qtty()
+	case subscription.FieldDate:
+		return m.Date()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SubscriptionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case subscription.FieldMethod:
+		return m.OldMethod(ctx)
+	case subscription.FieldQtty:
+		return m.OldQtty(ctx)
+	case subscription.FieldDate:
+		return m.OldDate(ctx)
+	}
+	return nil, fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubscriptionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case subscription.FieldMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMethod(v)
+		return nil
+	case subscription.FieldQtty:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQtty(v)
+		return nil
+	case subscription.FieldDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDate(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SubscriptionMutation) AddedFields() []string {
+	var fields []string
+	if m.addqtty != nil {
+		fields = append(fields, subscription.FieldQtty)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SubscriptionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case subscription.FieldQtty:
+		return m.AddedQtty()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubscriptionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case subscription.FieldQtty:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQtty(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SubscriptionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SubscriptionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SubscriptionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Subscription nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SubscriptionMutation) ResetField(name string) error {
+	switch name {
+	case subscription.FieldMethod:
+		m.ResetMethod()
+		return nil
+	case subscription.FieldQtty:
+		m.ResetQtty()
+		return nil
+	case subscription.FieldDate:
+		m.ResetDate()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SubscriptionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.teacher != nil {
+		edges = append(edges, subscription.EdgeTeacher)
+	}
+	if m.year != nil {
+		edges = append(edges, subscription.EdgeYear)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SubscriptionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case subscription.EdgeTeacher:
+		if id := m.teacher; id != nil {
+			return []ent.Value{*id}
+		}
+	case subscription.EdgeYear:
+		if id := m.year; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SubscriptionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SubscriptionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SubscriptionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedteacher {
+		edges = append(edges, subscription.EdgeTeacher)
+	}
+	if m.clearedyear {
+		edges = append(edges, subscription.EdgeYear)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SubscriptionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case subscription.EdgeTeacher:
+		return m.clearedteacher
+	case subscription.EdgeYear:
+		return m.clearedyear
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SubscriptionMutation) ClearEdge(name string) error {
+	switch name {
+	case subscription.EdgeTeacher:
+		m.ClearTeacher()
+		return nil
+	case subscription.EdgeYear:
+		m.ClearYear()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SubscriptionMutation) ResetEdge(name string) error {
+	switch name {
+	case subscription.EdgeTeacher:
+		m.ResetTeacher()
+		return nil
+	case subscription.EdgeYear:
+		m.ResetYear()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription edge %s", name)
+}
+
+// TeacherMutation represents an operation that mutates the Teacher nodes in the graph.
+type TeacherMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *string
+	name                 *string
+	last_name            *string
+	email                *string
+	password             *string
+	is_admin             *bool
+	clearedFields        map[string]struct{}
+	classes              map[string]struct{}
+	removedclasses       map[string]struct{}
+	clearedclasses       bool
+	actions              map[string]struct{}
+	removedactions       map[string]struct{}
+	clearedactions       bool
+	subscriptions        map[string]struct{}
+	removedsubscriptions map[string]struct{}
+	clearedsubscriptions bool
+	done                 bool
+	oldValue             func(context.Context) (*Teacher, error)
+	predicates           []predicate.Teacher
 }
 
 var _ ent.Mutation = (*TeacherMutation)(nil)
@@ -9314,6 +9908,60 @@ func (m *TeacherMutation) ResetActions() {
 	m.removedactions = nil
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by ids.
+func (m *TeacherMutation) AddSubscriptionIDs(ids ...string) {
+	if m.subscriptions == nil {
+		m.subscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.subscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscriptions clears the "subscriptions" edge to the Subscription entity.
+func (m *TeacherMutation) ClearSubscriptions() {
+	m.clearedsubscriptions = true
+}
+
+// SubscriptionsCleared reports if the "subscriptions" edge to the Subscription entity was cleared.
+func (m *TeacherMutation) SubscriptionsCleared() bool {
+	return m.clearedsubscriptions
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to the Subscription entity by IDs.
+func (m *TeacherMutation) RemoveSubscriptionIDs(ids ...string) {
+	if m.removedsubscriptions == nil {
+		m.removedsubscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.subscriptions, ids[i])
+		m.removedsubscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscriptions returns the removed IDs of the "subscriptions" edge to the Subscription entity.
+func (m *TeacherMutation) RemovedSubscriptionsIDs() (ids []string) {
+	for id := range m.removedsubscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscriptionsIDs returns the "subscriptions" edge IDs in the mutation.
+func (m *TeacherMutation) SubscriptionsIDs() (ids []string) {
+	for id := range m.subscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscriptions resets all changes to the "subscriptions" edge.
+func (m *TeacherMutation) ResetSubscriptions() {
+	m.subscriptions = nil
+	m.clearedsubscriptions = false
+	m.removedsubscriptions = nil
+}
+
 // Where appends a list predicates to the TeacherMutation builder.
 func (m *TeacherMutation) Where(ps ...predicate.Teacher) {
 	m.predicates = append(m.predicates, ps...)
@@ -9500,12 +10148,15 @@ func (m *TeacherMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeacherMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.classes != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.actions != nil {
 		edges = append(edges, teacher.EdgeActions)
+	}
+	if m.subscriptions != nil {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -9526,18 +10177,27 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.subscriptions))
+		for id := range m.subscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeacherMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedclasses != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.removedactions != nil {
 		edges = append(edges, teacher.EdgeActions)
+	}
+	if m.removedsubscriptions != nil {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -9558,18 +10218,27 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case teacher.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.removedsubscriptions))
+		for id := range m.removedsubscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeacherMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedclasses {
 		edges = append(edges, teacher.EdgeClasses)
 	}
 	if m.clearedactions {
 		edges = append(edges, teacher.EdgeActions)
+	}
+	if m.clearedsubscriptions {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -9582,6 +10251,8 @@ func (m *TeacherMutation) EdgeCleared(name string) bool {
 		return m.clearedclasses
 	case teacher.EdgeActions:
 		return m.clearedactions
+	case teacher.EdgeSubscriptions:
+		return m.clearedsubscriptions
 	}
 	return false
 }
@@ -9604,6 +10275,9 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 	case teacher.EdgeActions:
 		m.ResetActions()
 		return nil
+	case teacher.EdgeSubscriptions:
+		m.ResetSubscriptions()
+		return nil
 	}
 	return fmt.Errorf("unknown Teacher edge %s", name)
 }
@@ -9611,24 +10285,27 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 // YearMutation represents an operation that mutates the Year nodes in the graph.
 type YearMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *string
-	value          *int
-	addvalue       *int
-	clearedFields  map[string]struct{}
-	classes        map[string]struct{}
-	removedclasses map[string]struct{}
-	clearedclasses bool
-	periods        map[string]struct{}
-	removedperiods map[string]struct{}
-	clearedperiods bool
-	areas          map[string]struct{}
-	removedareas   map[string]struct{}
-	clearedareas   bool
-	done           bool
-	oldValue       func(context.Context) (*Year, error)
-	predicates     []predicate.Year
+	op                   Op
+	typ                  string
+	id                   *string
+	value                *int
+	addvalue             *int
+	clearedFields        map[string]struct{}
+	classes              map[string]struct{}
+	removedclasses       map[string]struct{}
+	clearedclasses       bool
+	periods              map[string]struct{}
+	removedperiods       map[string]struct{}
+	clearedperiods       bool
+	areas                map[string]struct{}
+	removedareas         map[string]struct{}
+	clearedareas         bool
+	subscriptions        map[string]struct{}
+	removedsubscriptions map[string]struct{}
+	clearedsubscriptions bool
+	done                 bool
+	oldValue             func(context.Context) (*Year, error)
+	predicates           []predicate.Year
 }
 
 var _ ent.Mutation = (*YearMutation)(nil)
@@ -9953,6 +10630,60 @@ func (m *YearMutation) ResetAreas() {
 	m.removedareas = nil
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by ids.
+func (m *YearMutation) AddSubscriptionIDs(ids ...string) {
+	if m.subscriptions == nil {
+		m.subscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.subscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscriptions clears the "subscriptions" edge to the Subscription entity.
+func (m *YearMutation) ClearSubscriptions() {
+	m.clearedsubscriptions = true
+}
+
+// SubscriptionsCleared reports if the "subscriptions" edge to the Subscription entity was cleared.
+func (m *YearMutation) SubscriptionsCleared() bool {
+	return m.clearedsubscriptions
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to the Subscription entity by IDs.
+func (m *YearMutation) RemoveSubscriptionIDs(ids ...string) {
+	if m.removedsubscriptions == nil {
+		m.removedsubscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.subscriptions, ids[i])
+		m.removedsubscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscriptions returns the removed IDs of the "subscriptions" edge to the Subscription entity.
+func (m *YearMutation) RemovedSubscriptionsIDs() (ids []string) {
+	for id := range m.removedsubscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscriptionsIDs returns the "subscriptions" edge IDs in the mutation.
+func (m *YearMutation) SubscriptionsIDs() (ids []string) {
+	for id := range m.subscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscriptions resets all changes to the "subscriptions" edge.
+func (m *YearMutation) ResetSubscriptions() {
+	m.subscriptions = nil
+	m.clearedsubscriptions = false
+	m.removedsubscriptions = nil
+}
+
 // Where appends a list predicates to the YearMutation builder.
 func (m *YearMutation) Where(ps ...predicate.Year) {
 	m.predicates = append(m.predicates, ps...)
@@ -10086,7 +10817,7 @@ func (m *YearMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *YearMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.classes != nil {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -10095,6 +10826,9 @@ func (m *YearMutation) AddedEdges() []string {
 	}
 	if m.areas != nil {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.subscriptions != nil {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -10121,13 +10855,19 @@ func (m *YearMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case year.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.subscriptions))
+		for id := range m.subscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *YearMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedclasses != nil {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -10136,6 +10876,9 @@ func (m *YearMutation) RemovedEdges() []string {
 	}
 	if m.removedareas != nil {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.removedsubscriptions != nil {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -10162,13 +10905,19 @@ func (m *YearMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case year.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.removedsubscriptions))
+		for id := range m.removedsubscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *YearMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedclasses {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -10177,6 +10926,9 @@ func (m *YearMutation) ClearedEdges() []string {
 	}
 	if m.clearedareas {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.clearedsubscriptions {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -10191,6 +10943,8 @@ func (m *YearMutation) EdgeCleared(name string) bool {
 		return m.clearedperiods
 	case year.EdgeAreas:
 		return m.clearedareas
+	case year.EdgeSubscriptions:
+		return m.clearedsubscriptions
 	}
 	return false
 }
@@ -10215,6 +10969,9 @@ func (m *YearMutation) ResetEdge(name string) error {
 		return nil
 	case year.EdgeAreas:
 		m.ResetAreas()
+		return nil
+	case year.EdgeSubscriptions:
+		m.ResetSubscriptions()
 		return nil
 	}
 	return fmt.Errorf("unknown Year edge %s", name)

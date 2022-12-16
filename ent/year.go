@@ -30,9 +30,11 @@ type YearEdges struct {
 	Periods []*Period `json:"periods,omitempty"`
 	// Areas holds the value of the areas edge.
 	Areas []*Area `json:"areas,omitempty"`
+	// Subscriptions holds the value of the subscriptions edge.
+	Subscriptions []*Subscription `json:"subscriptions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -60,6 +62,15 @@ func (e YearEdges) AreasOrErr() ([]*Area, error) {
 		return e.Areas, nil
 	}
 	return nil, &NotLoadedError{edge: "areas"}
+}
+
+// SubscriptionsOrErr returns the Subscriptions value or an error if the edge
+// was not loaded in eager-loading.
+func (e YearEdges) SubscriptionsOrErr() ([]*Subscription, error) {
+	if e.loadedTypes[3] {
+		return e.Subscriptions, nil
+	}
+	return nil, &NotLoadedError{edge: "subscriptions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -116,6 +127,11 @@ func (y *Year) QueryPeriods() *PeriodQuery {
 // QueryAreas queries the "areas" edge of the Year entity.
 func (y *Year) QueryAreas() *AreaQuery {
 	return (&YearClient{config: y.config}).QueryAreas(y)
+}
+
+// QuerySubscriptions queries the "subscriptions" edge of the Year entity.
+func (y *Year) QuerySubscriptions() *SubscriptionQuery {
+	return (&YearClient{config: y.config}).QuerySubscriptions(y)
 }
 
 // Update returns a builder for updating this Year.

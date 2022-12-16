@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
@@ -93,6 +94,21 @@ func (tc *TeacherCreate) AddActions(a ...*AdminAction) *TeacherCreate {
 		ids[i] = a[i].ID
 	}
 	return tc.AddActionIDs(ids...)
+}
+
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tc *TeacherCreate) AddSubscriptionIDs(ids ...string) *TeacherCreate {
+	tc.mutation.AddSubscriptionIDs(ids...)
+	return tc
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tc *TeacherCreate) AddSubscriptions(s ...*Subscription) *TeacherCreate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tc.AddSubscriptionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -301,6 +317,25 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: adminaction.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
 				},
 			},
 		}

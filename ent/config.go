@@ -41,6 +41,7 @@ type hooks struct {
 	Score         []ent.Hook
 	Student       []ent.Hook
 	Subject       []ent.Hook
+	Subscription  []ent.Hook
 	Teacher       []ent.Hook
 	Year          []ent.Hook
 }

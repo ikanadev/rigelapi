@@ -15,6 +15,8 @@ const (
 	EdgePeriods = "periods"
 	// EdgeAreas holds the string denoting the areas edge name in mutations.
 	EdgeAreas = "areas"
+	// EdgeSubscriptions holds the string denoting the subscriptions edge name in mutations.
+	EdgeSubscriptions = "subscriptions"
 	// Table holds the table name of the year in the database.
 	Table = "years"
 	// ClassesTable is the table that holds the classes relation/edge.
@@ -38,6 +40,13 @@ const (
 	AreasInverseTable = "areas"
 	// AreasColumn is the table column denoting the areas relation/edge.
 	AreasColumn = "year_areas"
+	// SubscriptionsTable is the table that holds the subscriptions relation/edge.
+	SubscriptionsTable = "subscriptions"
+	// SubscriptionsInverseTable is the table name for the Subscription entity.
+	// It exists in this package in order to avoid circular dependency with the "subscription" package.
+	SubscriptionsInverseTable = "subscriptions"
+	// SubscriptionsColumn is the table column denoting the subscriptions relation/edge.
+	SubscriptionsColumn = "year_subscriptions"
 )
 
 // Columns holds all SQL columns for year fields.

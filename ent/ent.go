@@ -27,6 +27,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/score"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/subject"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
@@ -66,6 +67,7 @@ func columnChecker(table string) func(string) error {
 		score.Table:         score.ValidColumn,
 		student.Table:       student.ValidColumn,
 		subject.Table:       subject.ValidColumn,
+		subscription.Table:  subscription.ValidColumn,
 		teacher.Table:       teacher.ValidColumn,
 		year.Table:          year.ValidColumn,
 	}

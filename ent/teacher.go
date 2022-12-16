@@ -36,9 +36,11 @@ type TeacherEdges struct {
 	Classes []*Class `json:"classes,omitempty"`
 	// Actions holds the value of the actions edge.
 	Actions []*AdminAction `json:"actions,omitempty"`
+	// Subscriptions holds the value of the subscriptions edge.
+	Subscriptions []*Subscription `json:"subscriptions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -57,6 +59,15 @@ func (e TeacherEdges) ActionsOrErr() ([]*AdminAction, error) {
 		return e.Actions, nil
 	}
 	return nil, &NotLoadedError{edge: "actions"}
+}
+
+// SubscriptionsOrErr returns the Subscriptions value or an error if the edge
+// was not loaded in eager-loading.
+func (e TeacherEdges) SubscriptionsOrErr() ([]*Subscription, error) {
+	if e.loadedTypes[2] {
+		return e.Subscriptions, nil
+	}
+	return nil, &NotLoadedError{edge: "subscriptions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -132,6 +143,11 @@ func (t *Teacher) QueryClasses() *ClassQuery {
 // QueryActions queries the "actions" edge of the Teacher entity.
 func (t *Teacher) QueryActions() *AdminActionQuery {
 	return (&TeacherClient{config: t.config}).QueryActions(t)
+}
+
+// QuerySubscriptions queries the "subscriptions" edge of the Teacher entity.
+func (t *Teacher) QuerySubscriptions() *SubscriptionQuery {
+	return (&TeacherClient{config: t.config}).QuerySubscriptions(t)
 }
 
 // Update returns a builder for updating this Teacher.

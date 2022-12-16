@@ -57,6 +57,9 @@ type Student func(*sql.Selector)
 // Subject is the predicate function for subject builders.
 type Subject func(*sql.Selector)
 
+// Subscription is the predicate function for subscription builders.
+type Subscription func(*sql.Selector)
+
 // Teacher is the predicate function for teacher builders.
 type Teacher func(*sql.Selector)
 

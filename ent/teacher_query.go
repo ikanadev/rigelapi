@@ -14,20 +14,22 @@ import (
 	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 // TeacherQuery is the builder for querying Teacher entities.
 type TeacherQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
-	predicates  []predicate.Teacher
-	withClasses *ClassQuery
-	withActions *AdminActionQuery
+	limit             *int
+	offset            *int
+	unique            *bool
+	order             []OrderFunc
+	fields            []string
+	predicates        []predicate.Teacher
+	withClasses       *ClassQuery
+	withActions       *AdminActionQuery
+	withSubscriptions *SubscriptionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (tq *TeacherQuery) QueryActions() *AdminActionQuery {
 			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
 			sqlgraph.To(adminaction.Table, adminaction.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, teacher.ActionsTable, teacher.ActionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubscriptions chains the current query on the "subscriptions" edge.
+func (tq *TeacherQuery) QuerySubscriptions() *SubscriptionQuery {
+	query := &SubscriptionQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teacher.Table, teacher.FieldID, selector),
+			sqlgraph.To(subscription.Table, subscription.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, teacher.SubscriptionsTable, teacher.SubscriptionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -284,13 +308,14 @@ func (tq *TeacherQuery) Clone() *TeacherQuery {
 		return nil
 	}
 	return &TeacherQuery{
-		config:      tq.config,
-		limit:       tq.limit,
-		offset:      tq.offset,
-		order:       append([]OrderFunc{}, tq.order...),
-		predicates:  append([]predicate.Teacher{}, tq.predicates...),
-		withClasses: tq.withClasses.Clone(),
-		withActions: tq.withActions.Clone(),
+		config:            tq.config,
+		limit:             tq.limit,
+		offset:            tq.offset,
+		order:             append([]OrderFunc{}, tq.order...),
+		predicates:        append([]predicate.Teacher{}, tq.predicates...),
+		withClasses:       tq.withClasses.Clone(),
+		withActions:       tq.withActions.Clone(),
+		withSubscriptions: tq.withSubscriptions.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -317,6 +342,17 @@ func (tq *TeacherQuery) WithActions(opts ...func(*AdminActionQuery)) *TeacherQue
 		opt(query)
 	}
 	tq.withActions = query
+	return tq
+}
+
+// WithSubscriptions tells the query-builder to eager-load the nodes that are connected to
+// the "subscriptions" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TeacherQuery) WithSubscriptions(opts ...func(*SubscriptionQuery)) *TeacherQuery {
+	query := &SubscriptionQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withSubscriptions = query
 	return tq
 }
 
@@ -388,9 +424,10 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 	var (
 		nodes       = []*Teacher{}
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withClasses != nil,
 			tq.withActions != nil,
+			tq.withSubscriptions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -422,6 +459,13 @@ func (tq *TeacherQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Teac
 		if err := tq.loadActions(ctx, query, nodes,
 			func(n *Teacher) { n.Edges.Actions = []*AdminAction{} },
 			func(n *Teacher, e *AdminAction) { n.Edges.Actions = append(n.Edges.Actions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withSubscriptions; query != nil {
+		if err := tq.loadSubscriptions(ctx, query, nodes,
+			func(n *Teacher) { n.Edges.Subscriptions = []*Subscription{} },
+			func(n *Teacher, e *Subscription) { n.Edges.Subscriptions = append(n.Edges.Subscriptions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -485,6 +529,37 @@ func (tq *TeacherQuery) loadActions(ctx context.Context, query *AdminActionQuery
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "teacher_actions" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TeacherQuery) loadSubscriptions(ctx context.Context, query *SubscriptionQuery, nodes []*Teacher, init func(*Teacher), assign func(*Teacher, *Subscription)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Teacher)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Subscription(func(s *sql.Selector) {
+		s.Where(sql.InValues(teacher.SubscriptionsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.teacher_subscriptions
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "teacher_subscriptions" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "teacher_subscriptions" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

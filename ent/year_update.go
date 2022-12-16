@@ -14,6 +14,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/period"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
@@ -88,6 +89,21 @@ func (yu *YearUpdate) AddAreas(a ...*Area) *YearUpdate {
 	return yu.AddAreaIDs(ids...)
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (yu *YearUpdate) AddSubscriptionIDs(ids ...string) *YearUpdate {
+	yu.mutation.AddSubscriptionIDs(ids...)
+	return yu
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (yu *YearUpdate) AddSubscriptions(s ...*Subscription) *YearUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return yu.AddSubscriptionIDs(ids...)
+}
+
 // Mutation returns the YearMutation object of the builder.
 func (yu *YearUpdate) Mutation() *YearMutation {
 	return yu.mutation
@@ -154,6 +170,27 @@ func (yu *YearUpdate) RemoveAreas(a ...*Area) *YearUpdate {
 		ids[i] = a[i].ID
 	}
 	return yu.RemoveAreaIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (yu *YearUpdate) ClearSubscriptions() *YearUpdate {
+	yu.mutation.ClearSubscriptions()
+	return yu
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (yu *YearUpdate) RemoveSubscriptionIDs(ids ...string) *YearUpdate {
+	yu.mutation.RemoveSubscriptionIDs(ids...)
+	return yu
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (yu *YearUpdate) RemoveSubscriptions(s ...*Subscription) *YearUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return yu.RemoveSubscriptionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -404,6 +441,60 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if yu.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := yu.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !yu.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := yu.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, yu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{year.Label}
@@ -481,6 +572,21 @@ func (yuo *YearUpdateOne) AddAreas(a ...*Area) *YearUpdateOne {
 	return yuo.AddAreaIDs(ids...)
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (yuo *YearUpdateOne) AddSubscriptionIDs(ids ...string) *YearUpdateOne {
+	yuo.mutation.AddSubscriptionIDs(ids...)
+	return yuo
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (yuo *YearUpdateOne) AddSubscriptions(s ...*Subscription) *YearUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return yuo.AddSubscriptionIDs(ids...)
+}
+
 // Mutation returns the YearMutation object of the builder.
 func (yuo *YearUpdateOne) Mutation() *YearMutation {
 	return yuo.mutation
@@ -547,6 +653,27 @@ func (yuo *YearUpdateOne) RemoveAreas(a ...*Area) *YearUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return yuo.RemoveAreaIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (yuo *YearUpdateOne) ClearSubscriptions() *YearUpdateOne {
+	yuo.mutation.ClearSubscriptions()
+	return yuo
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (yuo *YearUpdateOne) RemoveSubscriptionIDs(ids ...string) *YearUpdateOne {
+	yuo.mutation.RemoveSubscriptionIDs(ids...)
+	return yuo
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (yuo *YearUpdateOne) RemoveSubscriptions(s ...*Subscription) *YearUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return yuo.RemoveSubscriptionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -819,6 +946,60 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: area.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if yuo.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := yuo.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !yuo.mutation.SubscriptionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := yuo.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
 				},
 			},
 		}
