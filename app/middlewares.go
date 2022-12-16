@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/config"
+	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
 func authMiddleware(config config.Config) func(c *fiber.Ctx) error {
@@ -27,6 +29,21 @@ func authMiddleware(config config.Config) func(c *fiber.Ctx) error {
 			return errors.New("Could not parse token.")
 		}
 		c.Locals("id", claims.ID)
+		return c.Next()
+	}
+}
+
+func adminMiddleware(db *ent.Client) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		// id obtained from authMiddleware
+		teacherID := c.Locals("id").(string)
+		teacher, err := db.Teacher.Query().Where(teacher.IDEQ(teacherID)).First(c.Context())
+		if err != nil {
+			return err
+		}
+		if !teacher.IsAdmin {
+			return handlers.NewClientErr(fiber.StatusUnauthorized, "Not authorized")
+		}
 		return c.Next()
 	}
 }

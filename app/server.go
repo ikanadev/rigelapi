@@ -88,9 +88,13 @@ func (server Server) Run() error {
 	protected.Post("/scores", handlers.SaveScores(server.db))
 	protected.Get("/scores/year/:yearid", handlers.GetScores(server.db))
 
-	admin := server.app.Group("/admin", authMiddleware(server.config))
+	admin := server.app.Group("/admin", authMiddleware(server.config), adminMiddleware(server.db))
 
 	admin.Get("/teachers", handlers.GetTeachers(server.db))
+	admin.Get("/teacher/:id", handlers.GetTeacher(server.db))
+	admin.Post("/subscription", handlers.AddSubscription(server.db, server.newID))
+	admin.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.db))
+	admin.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.db))
 
 	return server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }
