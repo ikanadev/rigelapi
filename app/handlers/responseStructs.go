@@ -60,3 +60,10 @@ type Class struct {
 	ID       string `json:"id"`
 	Parallel string `json:"parallel"`
 }
+
+type Subscription struct {
+	ID     string `json:"id"`
+	Method string `json:"method"`
+	Qtty   int    `json:"qtty"`
+	Date   int64  `json:"date"`
+}
