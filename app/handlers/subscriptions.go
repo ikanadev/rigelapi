@@ -9,12 +9,12 @@ import (
 
 func AddSubscription(db *ent.Client, newID func() string) func(*fiber.Ctx) error {
 	type req struct {
-		YearID string `json:"year_id"`
-		Method string `json:"method"`
-		Qtty   int    `json:"qtty"`
+		TeacherID string `json:"teacher_id"`
+		YearID    string `json:"year_id"`
+		Method    string `json:"method"`
+		Qtty      int    `json:"qtty"`
 	}
 	return func(c *fiber.Ctx) error {
-		teacherID := c.Locals("id").(string)
 		var reqData req
 		err := c.BodyParser(&reqData)
 		if err != nil {
@@ -26,7 +26,7 @@ func AddSubscription(db *ent.Client, newID func() string) func(*fiber.Ctx) error
 			SetMethod(reqData.Method).
 			SetQtty(reqData.Qtty).
 			SetDate(time.Now()).
-			SetTeacherID(teacherID).
+			SetTeacherID(reqData.TeacherID).
 			SetYearID(reqData.YearID).
 			Save(c.Context())
 		if err != nil {
