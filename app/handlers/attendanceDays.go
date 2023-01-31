@@ -12,7 +12,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
-type AttendanceDay struct {
+type AttendanceDayRes struct {
 	ID            string `json:"id"`
 	Day           int64  `json:"day"`
 	ClassPeriodID string `json:"class_period_id"`
@@ -37,9 +37,9 @@ func GetAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		attDays := make([]AttendanceDay, len(dbAttDays))
+		attDays := make([]AttendanceDayRes, len(dbAttDays))
 		for index, attDay := range dbAttDays {
-			attDays[index] = AttendanceDay{
+			attDays[index] = AttendanceDayRes{
 				ID:            attDay.ID,
 				Day:           attDay.Day.UnixMilli(),
 				ClassPeriodID: attDay.Edges.ClassPeriod.ID,
@@ -52,7 +52,7 @@ func GetAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 func SaveAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 	type AttendanceDayReq struct {
 		SyncReqBase
-		Data AttendanceDay `json:"data"`
+		Data AttendanceDayRes `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
 		attDays := []AttendanceDayReq{}

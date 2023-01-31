@@ -1,5 +1,7 @@
 package handlers
 
+import "github.com/vmkevv/rigelapi/ent/attendance"
+
 type Teacher struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -66,4 +68,25 @@ type Subscription struct {
 	Method string `json:"method"`
 	Qtty   int    `json:"qtty"`
 	Date   int64  `json:"date"`
+}
+
+type Score struct {
+	ID     string `json:"id"`
+	Points int    `json:"points"`
+}
+
+type Attendance struct {
+	ID    string           `json:"id"`
+	Value attendance.Value `json:"value"`
+}
+
+type Activity struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Date int64  `json:"date"`
+}
+
+type AttendanceDay struct {
+	ID  string `json:"id"`
+	Day int64  `json:"day"`
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
-type Attendance struct {
+type AttendanceRes struct {
 	ID              string           `json:"id"`
 	Value           attendance.Value `json:"value"`
 	StudentID       string           `json:"student_id"`
@@ -21,7 +21,7 @@ type Attendance struct {
 func SaveAttendances(db *ent.Client) func(*fiber.Ctx) error {
 	type AttendanceReq struct {
 		SyncReqBase
-		Data Attendance `json:"data"`
+		Data AttendanceRes `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
 		atts := []AttendanceReq{}
@@ -36,7 +36,7 @@ func SaveAttendances(db *ent.Client) func(*fiber.Ctx) error {
 		}
 
 		toAdd := []*ent.AttendanceCreate{}
-		toUpdate := []Attendance{}
+		toUpdate := []AttendanceRes{}
 		for _, attReq := range atts {
 			switch attReq.Type {
 			case Insert:
@@ -100,9 +100,9 @@ func GetAttendances(db *ent.Client) func(*fiber.Ctx) error {
 			return err
 		}
 
-		atts := make([]Attendance, len(dbAtts))
+		atts := make([]AttendanceRes, len(dbAtts))
 		for index, dbAtt := range dbAtts {
-			atts[index] = Attendance{
+			atts[index] = AttendanceRes{
 				ID:              dbAtt.ID,
 				Value:           dbAtt.Value,
 				StudentID:       dbAtt.Edges.Student.ID,
