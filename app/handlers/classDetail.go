@@ -58,11 +58,12 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	}
 	type Resp struct {
 		ClassData    ClassData         `json:"class_data"`
-		Areas        []Area            `json:"areas"`
+		Areas        []Area            `json:"areas"` // TODO: check if this is needed
 		Students     []StudentData     `json:"students"`
 		ClassPeriods []ClassPeriodData `json:"class_periods"`
 	}
 	type RespX struct {
+		Resp         Resp               `json:"resp"`
 		Class        *ent.Class         `json:"class"`
 		ClassPeriods []*ent.ClassPeriod `json:"class_periods"`
 		Students     []*ent.Student     `json:"students"`
@@ -112,7 +113,43 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 			return err
 		}
 
+		resp := Resp{
+			ClassData: ClassData{
+				ID:           class.ID,
+				Parallel:     class.Parallel,
+				Municipio:    class.Edges.School.Edges.Municipio.Name,
+				Provincia:    class.Edges.School.Edges.Municipio.Edges.Provincia.Name,
+				Departamento: class.Edges.School.Edges.Municipio.Edges.Provincia.Edges.Departamento.Name,
+				School: School{
+					ID:   class.Edges.School.ID,
+					Name: class.Edges.School.Name,
+					Lat:  class.Edges.School.Lat,
+					Lon:  class.Edges.School.Lon,
+				},
+				Teacher: Teacher{
+					ID:       class.Edges.Teacher.ID,
+					Name:     class.Edges.Teacher.Name,
+					LastName: class.Edges.Teacher.LastName,
+					Email:    class.Edges.Teacher.Email,
+				},
+				Subject: Subject{
+					ID:   class.Edges.Subject.ID,
+					Name: class.Edges.Subject.Name,
+				},
+				Grade: Grade{
+					ID:   class.Edges.Grade.ID,
+					Name: class.Edges.Grade.Name,
+				},
+				Year: Year{
+					ID:    class.Edges.Year.ID,
+					Value: class.Edges.Year.Value,
+				},
+			},
+		}
+		// areas := make([])
+
 		return c.JSON(RespX{
+			Resp:         resp,
 			Class:        class,
 			ClassPeriods: classPeriods,
 			Students:     students,
