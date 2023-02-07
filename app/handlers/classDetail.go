@@ -29,7 +29,7 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		YearScore int    `json:"year_score"`
 		// the map key is activity_id
 		ScoresMap map[string]Score `json:"scores_map"`
-		// the map key is period_id
+		// the map key is class_period_id
 		PeriodScores map[string]struct {
 			Points int `json:"points"`
 			// the map key is area_id
@@ -44,8 +44,6 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	type AreaWithActivities struct {
 		Area
 		Activities []Activity `json:"activities"`
-	}
-	type AttendanceData struct {
 	}
 	type ClassPeriodData struct {
 		ID             string               `json:"id"`
@@ -94,7 +92,9 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		classPeriods, err := class.QueryClassPeriods().
 			WithPeriod().
 			WithAttendanceDays().
-			WithActivities().
+			WithActivities(func(aq *ent.ActivityQuery) {
+				aq.WithArea()
+			}).
 			All(c.Context())
 		if err != nil {
 			return err
@@ -107,10 +107,11 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				})
 			}).
 			WithScores(func(sq *ent.ScoreQuery) {
-				sq.WithActivity()
+				sq.WithActivity(func(aq *ent.ActivityQuery) {
+					aq.WithArea()
+				})
 			}).
 			All(c.Context())
-
 		if err != nil {
 			return err
 		}
@@ -148,6 +149,45 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				},
 			},
 		}
+
+		// class periods data
+		classPeriodsData := make([]ClassPeriodData, len(classPeriods))
+		for i, cp := range classPeriods {
+			areas := make([]AreaWithActivities, len(class.Edges.Year.Edges.Areas))
+			for j, area := range class.Edges.Year.Edges.Areas {
+				acts := make([]Activity, 0)
+				for _, act := range cp.Edges.Activities {
+					if act.Edges.Area.ID == area.ID {
+						acts = append(acts, Activity{
+							ID:   act.ID,
+							Name: act.Name,
+							Date: act.Date.UnixMilli(),
+						})
+					}
+				}
+				areas[j] = AreaWithActivities{
+					Area: Area{
+						ID:     area.ID,
+						Name:   area.Name,
+						Points: area.Points,
+					},
+					Activities: acts,
+				}
+			}
+
+			classPeriodsData[i] = ClassPeriodData{
+				ID:       cp.ID,
+				Start:    cp.Start.UnixMilli(),
+				End:      cp.End.UnixMilli(),
+				Finished: cp.Finished,
+				Period: Period{
+					ID:   cp.Edges.Period.ID,
+					Name: cp.Edges.Period.Name,
+				},
+				Areas: areas,
+			}
+		}
+		resp.ClassPeriods = classPeriodsData
 
 		// Students data
 		studentsData := make([]StudentData, len(students))
