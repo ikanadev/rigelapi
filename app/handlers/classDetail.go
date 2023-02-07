@@ -36,10 +36,10 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 			AreaScores map[string]int `json:"area_scores"`
 		} `json:"scores"`
 		// the map key is attendance_day_id
-		AttendancesMap  map[string]Attendance `json:"attendances_map"`
-		YearAttendances AttendanceTotals      `json:"year_attendances"`
+		AttendancesMap       map[string]Attendance `json:"attendances_map"`
+		YearTotalAttendances AttendanceTotals      `json:"year_total_attendances"`
 		// the map key is period_id
-		PeriodAttendances map[string]AttendanceTotals `json:"period_attendances"`
+		PeriodTotalAttendances map[string]AttendanceTotals `json:"period_total_attendances"`
 	}
 	type AreaWithActivities struct {
 		Area
@@ -102,7 +102,9 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 
 		students, err := class.QueryStudents().
 			WithAttendances(func(aq *ent.AttendanceQuery) {
-				aq.WithAttendanceDay()
+				aq.WithAttendanceDay(func(adq *ent.AttendanceDayQuery) {
+					adq.WithClassPeriod()
+				})
 			}).
 			WithScores(func(sq *ent.ScoreQuery) {
 				sq.WithActivity()
@@ -146,7 +148,50 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				},
 			},
 		}
-		// areas := make([])
+
+		// Students data
+		studentsData := make([]StudentData, len(students))
+		for i, student := range students {
+			// single student info
+			studentData := StudentData{
+				ID:       student.ID,
+				Name:     student.Name,
+				LastName: student.LastName,
+				CI:       student.Ci,
+			}
+
+			// student attendances data
+			attendancesMap := make(map[string]Attendance, len(student.Edges.Attendances))
+			periodTotalAttendances := make(map[string]AttendanceTotals, len(classPeriods))
+			for _, cp := range classPeriods {
+				periodTotalAttendances[cp.ID] = AttendanceTotals{
+					attendance.ValuePresente: 0,
+					attendance.ValueFalta:    0,
+					attendance.ValueAtraso:   0,
+					attendance.ValueLicencia: 0,
+				}
+			}
+			yearTotalAttendances := AttendanceTotals{
+				attendance.ValuePresente: 0,
+				attendance.ValueFalta:    0,
+				attendance.ValueAtraso:   0,
+				attendance.ValueLicencia: 0,
+			}
+			for _, att := range student.Edges.Attendances {
+				periodTotalAttendances[att.Edges.AttendanceDay.Edges.ClassPeriod.ID][att.Value] += 1
+				yearTotalAttendances[att.Value] += 1
+				attendancesMap[att.Edges.AttendanceDay.ID] = Attendance{
+					ID:    att.ID,
+					Value: att.Value,
+				}
+			}
+			studentData.AttendancesMap = attendancesMap
+			studentData.PeriodTotalAttendances = periodTotalAttendances
+			studentData.YearTotalAttendances = yearTotalAttendances
+
+			studentsData[i] = studentData
+		}
+		resp.Students = studentsData
 
 		return c.JSON(RespX{
 			Resp:         resp,
