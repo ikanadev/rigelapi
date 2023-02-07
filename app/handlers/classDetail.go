@@ -175,6 +175,14 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				}
 			}
 
+			attDays := make([]AttendanceDay, len(cp.Edges.AttendanceDays))
+			for j, attDay := range cp.Edges.AttendanceDays {
+				attDays[j] = AttendanceDay{
+					ID:  attDay.ID,
+					Day: attDay.Day.UnixMilli(),
+				}
+			}
+
 			classPeriodsData[i] = ClassPeriodData{
 				ID:       cp.ID,
 				Start:    cp.Start.UnixMilli(),
@@ -184,7 +192,8 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 					ID:   cp.Edges.Period.ID,
 					Name: cp.Edges.Period.Name,
 				},
-				Areas: areas,
+				Areas:          areas,
+				AttendanceDays: attDays,
 			}
 		}
 		resp.ClassPeriods = classPeriodsData
