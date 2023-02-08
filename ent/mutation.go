@@ -10,16 +10,13 @@ import (
 	"time"
 
 	"github.com/vmkevv/rigelapi/ent/activity"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/dpto"
 	"github.com/vmkevv/rigelapi/ent/grade"
 	"github.com/vmkevv/rigelapi/ent/municipio"
@@ -28,10 +25,9 @@ import (
 	"github.com/vmkevv/rigelapi/ent/provincia"
 	"github.com/vmkevv/rigelapi/ent/school"
 	"github.com/vmkevv/rigelapi/ent/score"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
 	"github.com/vmkevv/rigelapi/ent/student"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
 	"github.com/vmkevv/rigelapi/ent/subject"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 
@@ -47,30 +43,26 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeActivity           = "Activity"
-	TypeActivitySync       = "ActivitySync"
-	TypeAppError           = "AppError"
-	TypeArea               = "Area"
-	TypeAttendance         = "Attendance"
-	TypeAttendanceDay      = "AttendanceDay"
-	TypeAttendanceDaySyncs = "AttendanceDaySyncs"
-	TypeAttendanceSync     = "AttendanceSync"
-	TypeClass              = "Class"
-	TypeClassPeriod        = "ClassPeriod"
-	TypeClassPeriodSync    = "ClassPeriodSync"
-	TypeDpto               = "Dpto"
-	TypeGrade              = "Grade"
-	TypeMunicipio          = "Municipio"
-	TypePeriod             = "Period"
-	TypeProvincia          = "Provincia"
-	TypeSchool             = "School"
-	TypeScore              = "Score"
-	TypeScoreSync          = "ScoreSync"
-	TypeStudent            = "Student"
-	TypeStudentSync        = "StudentSync"
-	TypeSubject            = "Subject"
-	TypeTeacher            = "Teacher"
-	TypeYear               = "Year"
+	TypeActivity      = "Activity"
+	TypeAdminAction   = "AdminAction"
+	TypeAppError      = "AppError"
+	TypeArea          = "Area"
+	TypeAttendance    = "Attendance"
+	TypeAttendanceDay = "AttendanceDay"
+	TypeClass         = "Class"
+	TypeClassPeriod   = "ClassPeriod"
+	TypeDpto          = "Dpto"
+	TypeGrade         = "Grade"
+	TypeMunicipio     = "Municipio"
+	TypePeriod        = "Period"
+	TypeProvincia     = "Provincia"
+	TypeSchool        = "School"
+	TypeScore         = "Score"
+	TypeStudent       = "Student"
+	TypeSubject       = "Subject"
+	TypeSubscription  = "Subscription"
+	TypeTeacher       = "Teacher"
+	TypeYear          = "Year"
 )
 
 // ActivityMutation represents an operation that mutates the Activity nodes in the graph.
@@ -655,32 +647,33 @@ func (m *ActivityMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Activity edge %s", name)
 }
 
-// ActivitySyncMutation represents an operation that mutates the ActivitySync nodes in the graph.
-type ActivitySyncMutation struct {
+// AdminActionMutation represents an operation that mutates the AdminAction nodes in the graph.
+type AdminActionMutation struct {
 	config
 	op             Op
 	typ            string
 	id             *string
-	last_sync_id   *string
+	action         *string
+	info           *string
 	clearedFields  map[string]struct{}
 	teacher        *string
 	clearedteacher bool
 	done           bool
-	oldValue       func(context.Context) (*ActivitySync, error)
-	predicates     []predicate.ActivitySync
+	oldValue       func(context.Context) (*AdminAction, error)
+	predicates     []predicate.AdminAction
 }
 
-var _ ent.Mutation = (*ActivitySyncMutation)(nil)
+var _ ent.Mutation = (*AdminActionMutation)(nil)
 
-// activitysyncOption allows management of the mutation configuration using functional options.
-type activitysyncOption func(*ActivitySyncMutation)
+// adminactionOption allows management of the mutation configuration using functional options.
+type adminactionOption func(*AdminActionMutation)
 
-// newActivitySyncMutation creates new mutation for the ActivitySync entity.
-func newActivitySyncMutation(c config, op Op, opts ...activitysyncOption) *ActivitySyncMutation {
-	m := &ActivitySyncMutation{
+// newAdminActionMutation creates new mutation for the AdminAction entity.
+func newAdminActionMutation(c config, op Op, opts ...adminactionOption) *AdminActionMutation {
+	m := &AdminActionMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeActivitySync,
+		typ:           TypeAdminAction,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -689,20 +682,20 @@ func newActivitySyncMutation(c config, op Op, opts ...activitysyncOption) *Activ
 	return m
 }
 
-// withActivitySyncID sets the ID field of the mutation.
-func withActivitySyncID(id string) activitysyncOption {
-	return func(m *ActivitySyncMutation) {
+// withAdminActionID sets the ID field of the mutation.
+func withAdminActionID(id string) adminactionOption {
+	return func(m *AdminActionMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *ActivitySync
+			value *AdminAction
 		)
-		m.oldValue = func(ctx context.Context) (*ActivitySync, error) {
+		m.oldValue = func(ctx context.Context) (*AdminAction, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().ActivitySync.Get(ctx, id)
+					value, err = m.Client().AdminAction.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -711,10 +704,10 @@ func withActivitySyncID(id string) activitysyncOption {
 	}
 }
 
-// withActivitySync sets the old ActivitySync of the mutation.
-func withActivitySync(node *ActivitySync) activitysyncOption {
-	return func(m *ActivitySyncMutation) {
-		m.oldValue = func(context.Context) (*ActivitySync, error) {
+// withAdminAction sets the old AdminAction of the mutation.
+func withAdminAction(node *AdminAction) adminactionOption {
+	return func(m *AdminActionMutation) {
+		m.oldValue = func(context.Context) (*AdminAction, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -723,7 +716,7 @@ func withActivitySync(node *ActivitySync) activitysyncOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ActivitySyncMutation) Client() *Client {
+func (m AdminActionMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -731,7 +724,7 @@ func (m ActivitySyncMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m ActivitySyncMutation) Tx() (*Tx, error) {
+func (m AdminActionMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -741,14 +734,14 @@ func (m ActivitySyncMutation) Tx() (*Tx, error) {
 }
 
 // SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of ActivitySync entities.
-func (m *ActivitySyncMutation) SetID(id string) {
+// operation is only accepted on creation of AdminAction entities.
+func (m *AdminActionMutation) SetID(id string) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ActivitySyncMutation) ID() (id string, exists bool) {
+func (m *AdminActionMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -759,7 +752,7 @@ func (m *ActivitySyncMutation) ID() (id string, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ActivitySyncMutation) IDs(ctx context.Context) ([]string, error) {
+func (m *AdminActionMutation) IDs(ctx context.Context) ([]string, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -768,65 +761,101 @@ func (m *ActivitySyncMutation) IDs(ctx context.Context) ([]string, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().ActivitySync.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().AdminAction.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *ActivitySyncMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
+// SetAction sets the "action" field.
+func (m *AdminActionMutation) SetAction(s string) {
+	m.action = &s
 }
 
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *ActivitySyncMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
+// Action returns the value of the "action" field in the mutation.
+func (m *AdminActionMutation) Action() (r string, exists bool) {
+	v := m.action
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastSyncID returns the old "last_sync_id" field's value of the ActivitySync entity.
-// If the ActivitySync object wasn't provided to the builder, the object is fetched from the database.
+// OldAction returns the old "action" field's value of the AdminAction entity.
+// If the AdminAction object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ActivitySyncMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
+func (m *AdminActionMutation) OldAction(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
+		return v, errors.New("OldAction requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
 	}
-	return oldValue.LastSyncID, nil
+	return oldValue.Action, nil
 }
 
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *ActivitySyncMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
+// ResetAction resets all changes to the "action" field.
+func (m *AdminActionMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetInfo sets the "info" field.
+func (m *AdminActionMutation) SetInfo(s string) {
+	m.info = &s
+}
+
+// Info returns the value of the "info" field in the mutation.
+func (m *AdminActionMutation) Info() (r string, exists bool) {
+	v := m.info
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInfo returns the old "info" field's value of the AdminAction entity.
+// If the AdminAction object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminActionMutation) OldInfo(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInfo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInfo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInfo: %w", err)
+	}
+	return oldValue.Info, nil
+}
+
+// ResetInfo resets all changes to the "info" field.
+func (m *AdminActionMutation) ResetInfo() {
+	m.info = nil
 }
 
 // SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *ActivitySyncMutation) SetTeacherID(id string) {
+func (m *AdminActionMutation) SetTeacherID(id string) {
 	m.teacher = &id
 }
 
 // ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *ActivitySyncMutation) ClearTeacher() {
+func (m *AdminActionMutation) ClearTeacher() {
 	m.clearedteacher = true
 }
 
 // TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *ActivitySyncMutation) TeacherCleared() bool {
+func (m *AdminActionMutation) TeacherCleared() bool {
 	return m.clearedteacher
 }
 
 // TeacherID returns the "teacher" edge ID in the mutation.
-func (m *ActivitySyncMutation) TeacherID() (id string, exists bool) {
+func (m *AdminActionMutation) TeacherID() (id string, exists bool) {
 	if m.teacher != nil {
 		return *m.teacher, true
 	}
@@ -836,7 +865,7 @@ func (m *ActivitySyncMutation) TeacherID() (id string, exists bool) {
 // TeacherIDs returns the "teacher" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // TeacherID instead. It exists only for internal usage by the builders.
-func (m *ActivitySyncMutation) TeacherIDs() (ids []string) {
+func (m *AdminActionMutation) TeacherIDs() (ids []string) {
 	if id := m.teacher; id != nil {
 		ids = append(ids, *id)
 	}
@@ -844,33 +873,36 @@ func (m *ActivitySyncMutation) TeacherIDs() (ids []string) {
 }
 
 // ResetTeacher resets all changes to the "teacher" edge.
-func (m *ActivitySyncMutation) ResetTeacher() {
+func (m *AdminActionMutation) ResetTeacher() {
 	m.teacher = nil
 	m.clearedteacher = false
 }
 
-// Where appends a list predicates to the ActivitySyncMutation builder.
-func (m *ActivitySyncMutation) Where(ps ...predicate.ActivitySync) {
+// Where appends a list predicates to the AdminActionMutation builder.
+func (m *AdminActionMutation) Where(ps ...predicate.AdminAction) {
 	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
-func (m *ActivitySyncMutation) Op() Op {
+func (m *AdminActionMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (ActivitySync).
-func (m *ActivitySyncMutation) Type() string {
+// Type returns the node type of this mutation (AdminAction).
+func (m *AdminActionMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *ActivitySyncMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, activitysync.FieldLastSyncID)
+func (m *AdminActionMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.action != nil {
+		fields = append(fields, adminaction.FieldAction)
+	}
+	if m.info != nil {
+		fields = append(fields, adminaction.FieldInfo)
 	}
 	return fields
 }
@@ -878,10 +910,12 @@ func (m *ActivitySyncMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *ActivitySyncMutation) Field(name string) (ent.Value, bool) {
+func (m *AdminActionMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case activitysync.FieldLastSyncID:
-		return m.LastSyncID()
+	case adminaction.FieldAction:
+		return m.Action()
+	case adminaction.FieldInfo:
+		return m.Info()
 	}
 	return nil, false
 }
@@ -889,96 +923,108 @@ func (m *ActivitySyncMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *ActivitySyncMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *AdminActionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case activitysync.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
+	case adminaction.FieldAction:
+		return m.OldAction(ctx)
+	case adminaction.FieldInfo:
+		return m.OldInfo(ctx)
 	}
-	return nil, fmt.Errorf("unknown ActivitySync field %s", name)
+	return nil, fmt.Errorf("unknown AdminAction field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ActivitySyncMutation) SetField(name string, value ent.Value) error {
+func (m *AdminActionMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case activitysync.FieldLastSyncID:
+	case adminaction.FieldAction:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetLastSyncID(v)
+		m.SetAction(v)
+		return nil
+	case adminaction.FieldInfo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInfo(v)
 		return nil
 	}
-	return fmt.Errorf("unknown ActivitySync field %s", name)
+	return fmt.Errorf("unknown AdminAction field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *ActivitySyncMutation) AddedFields() []string {
+func (m *AdminActionMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *ActivitySyncMutation) AddedField(name string) (ent.Value, bool) {
+func (m *AdminActionMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ActivitySyncMutation) AddField(name string, value ent.Value) error {
+func (m *AdminActionMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown ActivitySync numeric field %s", name)
+	return fmt.Errorf("unknown AdminAction numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *ActivitySyncMutation) ClearedFields() []string {
+func (m *AdminActionMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *ActivitySyncMutation) FieldCleared(name string) bool {
+func (m *AdminActionMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *ActivitySyncMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown ActivitySync nullable field %s", name)
+func (m *AdminActionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AdminAction nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *ActivitySyncMutation) ResetField(name string) error {
+func (m *AdminActionMutation) ResetField(name string) error {
 	switch name {
-	case activitysync.FieldLastSyncID:
-		m.ResetLastSyncID()
+	case adminaction.FieldAction:
+		m.ResetAction()
+		return nil
+	case adminaction.FieldInfo:
+		m.ResetInfo()
 		return nil
 	}
-	return fmt.Errorf("unknown ActivitySync field %s", name)
+	return fmt.Errorf("unknown AdminAction field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ActivitySyncMutation) AddedEdges() []string {
+func (m *AdminActionMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
 	if m.teacher != nil {
-		edges = append(edges, activitysync.EdgeTeacher)
+		edges = append(edges, adminaction.EdgeTeacher)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *ActivitySyncMutation) AddedIDs(name string) []ent.Value {
+func (m *AdminActionMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case activitysync.EdgeTeacher:
+	case adminaction.EdgeTeacher:
 		if id := m.teacher; id != nil {
 			return []ent.Value{*id}
 		}
@@ -987,33 +1033,33 @@ func (m *ActivitySyncMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ActivitySyncMutation) RemovedEdges() []string {
+func (m *AdminActionMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *ActivitySyncMutation) RemovedIDs(name string) []ent.Value {
+func (m *AdminActionMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ActivitySyncMutation) ClearedEdges() []string {
+func (m *AdminActionMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
 	if m.clearedteacher {
-		edges = append(edges, activitysync.EdgeTeacher)
+		edges = append(edges, adminaction.EdgeTeacher)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *ActivitySyncMutation) EdgeCleared(name string) bool {
+func (m *AdminActionMutation) EdgeCleared(name string) bool {
 	switch name {
-	case activitysync.EdgeTeacher:
+	case adminaction.EdgeTeacher:
 		return m.clearedteacher
 	}
 	return false
@@ -1021,24 +1067,24 @@ func (m *ActivitySyncMutation) EdgeCleared(name string) bool {
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *ActivitySyncMutation) ClearEdge(name string) error {
+func (m *AdminActionMutation) ClearEdge(name string) error {
 	switch name {
-	case activitysync.EdgeTeacher:
+	case adminaction.EdgeTeacher:
 		m.ClearTeacher()
 		return nil
 	}
-	return fmt.Errorf("unknown ActivitySync unique edge %s", name)
+	return fmt.Errorf("unknown AdminAction unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *ActivitySyncMutation) ResetEdge(name string) error {
+func (m *AdminActionMutation) ResetEdge(name string) error {
 	switch name {
-	case activitysync.EdgeTeacher:
+	case adminaction.EdgeTeacher:
 		m.ResetTeacher()
 		return nil
 	}
-	return fmt.Errorf("unknown ActivitySync edge %s", name)
+	return fmt.Errorf("unknown AdminAction edge %s", name)
 }
 
 // AppErrorMutation represents an operation that mutates the AppError nodes in the graph.
@@ -2993,778 +3039,6 @@ func (m *AttendanceDayMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AttendanceDay edge %s", name)
 }
 
-// AttendanceDaySyncsMutation represents an operation that mutates the AttendanceDaySyncs nodes in the graph.
-type AttendanceDaySyncsMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *string
-	last_sync_id   *string
-	clearedFields  map[string]struct{}
-	teacher        *string
-	clearedteacher bool
-	done           bool
-	oldValue       func(context.Context) (*AttendanceDaySyncs, error)
-	predicates     []predicate.AttendanceDaySyncs
-}
-
-var _ ent.Mutation = (*AttendanceDaySyncsMutation)(nil)
-
-// attendancedaysyncsOption allows management of the mutation configuration using functional options.
-type attendancedaysyncsOption func(*AttendanceDaySyncsMutation)
-
-// newAttendanceDaySyncsMutation creates new mutation for the AttendanceDaySyncs entity.
-func newAttendanceDaySyncsMutation(c config, op Op, opts ...attendancedaysyncsOption) *AttendanceDaySyncsMutation {
-	m := &AttendanceDaySyncsMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeAttendanceDaySyncs,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withAttendanceDaySyncsID sets the ID field of the mutation.
-func withAttendanceDaySyncsID(id string) attendancedaysyncsOption {
-	return func(m *AttendanceDaySyncsMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *AttendanceDaySyncs
-		)
-		m.oldValue = func(ctx context.Context) (*AttendanceDaySyncs, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().AttendanceDaySyncs.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withAttendanceDaySyncs sets the old AttendanceDaySyncs of the mutation.
-func withAttendanceDaySyncs(node *AttendanceDaySyncs) attendancedaysyncsOption {
-	return func(m *AttendanceDaySyncsMutation) {
-		m.oldValue = func(context.Context) (*AttendanceDaySyncs, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m AttendanceDaySyncsMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m AttendanceDaySyncsMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of AttendanceDaySyncs entities.
-func (m *AttendanceDaySyncsMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *AttendanceDaySyncsMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *AttendanceDaySyncsMutation) IDs(ctx context.Context) ([]string, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []string{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().AttendanceDaySyncs.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *AttendanceDaySyncsMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
-}
-
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *AttendanceDaySyncsMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSyncID returns the old "last_sync_id" field's value of the AttendanceDaySyncs entity.
-// If the AttendanceDaySyncs object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AttendanceDaySyncsMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
-	}
-	return oldValue.LastSyncID, nil
-}
-
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *AttendanceDaySyncsMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
-}
-
-// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *AttendanceDaySyncsMutation) SetTeacherID(id string) {
-	m.teacher = &id
-}
-
-// ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *AttendanceDaySyncsMutation) ClearTeacher() {
-	m.clearedteacher = true
-}
-
-// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *AttendanceDaySyncsMutation) TeacherCleared() bool {
-	return m.clearedteacher
-}
-
-// TeacherID returns the "teacher" edge ID in the mutation.
-func (m *AttendanceDaySyncsMutation) TeacherID() (id string, exists bool) {
-	if m.teacher != nil {
-		return *m.teacher, true
-	}
-	return
-}
-
-// TeacherIDs returns the "teacher" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TeacherID instead. It exists only for internal usage by the builders.
-func (m *AttendanceDaySyncsMutation) TeacherIDs() (ids []string) {
-	if id := m.teacher; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTeacher resets all changes to the "teacher" edge.
-func (m *AttendanceDaySyncsMutation) ResetTeacher() {
-	m.teacher = nil
-	m.clearedteacher = false
-}
-
-// Where appends a list predicates to the AttendanceDaySyncsMutation builder.
-func (m *AttendanceDaySyncsMutation) Where(ps ...predicate.AttendanceDaySyncs) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *AttendanceDaySyncsMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (AttendanceDaySyncs).
-func (m *AttendanceDaySyncsMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *AttendanceDaySyncsMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, attendancedaysyncs.FieldLastSyncID)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *AttendanceDaySyncsMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case attendancedaysyncs.FieldLastSyncID:
-		return m.LastSyncID()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *AttendanceDaySyncsMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case attendancedaysyncs.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
-	}
-	return nil, fmt.Errorf("unknown AttendanceDaySyncs field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AttendanceDaySyncsMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case attendancedaysyncs.FieldLastSyncID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSyncID(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceDaySyncs field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *AttendanceDaySyncsMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *AttendanceDaySyncsMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AttendanceDaySyncsMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown AttendanceDaySyncs numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *AttendanceDaySyncsMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *AttendanceDaySyncsMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *AttendanceDaySyncsMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown AttendanceDaySyncs nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *AttendanceDaySyncsMutation) ResetField(name string) error {
-	switch name {
-	case attendancedaysyncs.FieldLastSyncID:
-		m.ResetLastSyncID()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceDaySyncs field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *AttendanceDaySyncsMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.teacher != nil {
-		edges = append(edges, attendancedaysyncs.EdgeTeacher)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *AttendanceDaySyncsMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case attendancedaysyncs.EdgeTeacher:
-		if id := m.teacher; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *AttendanceDaySyncsMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *AttendanceDaySyncsMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *AttendanceDaySyncsMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedteacher {
-		edges = append(edges, attendancedaysyncs.EdgeTeacher)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *AttendanceDaySyncsMutation) EdgeCleared(name string) bool {
-	switch name {
-	case attendancedaysyncs.EdgeTeacher:
-		return m.clearedteacher
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *AttendanceDaySyncsMutation) ClearEdge(name string) error {
-	switch name {
-	case attendancedaysyncs.EdgeTeacher:
-		m.ClearTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceDaySyncs unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *AttendanceDaySyncsMutation) ResetEdge(name string) error {
-	switch name {
-	case attendancedaysyncs.EdgeTeacher:
-		m.ResetTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceDaySyncs edge %s", name)
-}
-
-// AttendanceSyncMutation represents an operation that mutates the AttendanceSync nodes in the graph.
-type AttendanceSyncMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *string
-	last_sync_id   *string
-	clearedFields  map[string]struct{}
-	teacher        *string
-	clearedteacher bool
-	done           bool
-	oldValue       func(context.Context) (*AttendanceSync, error)
-	predicates     []predicate.AttendanceSync
-}
-
-var _ ent.Mutation = (*AttendanceSyncMutation)(nil)
-
-// attendancesyncOption allows management of the mutation configuration using functional options.
-type attendancesyncOption func(*AttendanceSyncMutation)
-
-// newAttendanceSyncMutation creates new mutation for the AttendanceSync entity.
-func newAttendanceSyncMutation(c config, op Op, opts ...attendancesyncOption) *AttendanceSyncMutation {
-	m := &AttendanceSyncMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeAttendanceSync,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withAttendanceSyncID sets the ID field of the mutation.
-func withAttendanceSyncID(id string) attendancesyncOption {
-	return func(m *AttendanceSyncMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *AttendanceSync
-		)
-		m.oldValue = func(ctx context.Context) (*AttendanceSync, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().AttendanceSync.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withAttendanceSync sets the old AttendanceSync of the mutation.
-func withAttendanceSync(node *AttendanceSync) attendancesyncOption {
-	return func(m *AttendanceSyncMutation) {
-		m.oldValue = func(context.Context) (*AttendanceSync, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m AttendanceSyncMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m AttendanceSyncMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of AttendanceSync entities.
-func (m *AttendanceSyncMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *AttendanceSyncMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *AttendanceSyncMutation) IDs(ctx context.Context) ([]string, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []string{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().AttendanceSync.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *AttendanceSyncMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
-}
-
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *AttendanceSyncMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSyncID returns the old "last_sync_id" field's value of the AttendanceSync entity.
-// If the AttendanceSync object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AttendanceSyncMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
-	}
-	return oldValue.LastSyncID, nil
-}
-
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *AttendanceSyncMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
-}
-
-// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *AttendanceSyncMutation) SetTeacherID(id string) {
-	m.teacher = &id
-}
-
-// ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *AttendanceSyncMutation) ClearTeacher() {
-	m.clearedteacher = true
-}
-
-// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *AttendanceSyncMutation) TeacherCleared() bool {
-	return m.clearedteacher
-}
-
-// TeacherID returns the "teacher" edge ID in the mutation.
-func (m *AttendanceSyncMutation) TeacherID() (id string, exists bool) {
-	if m.teacher != nil {
-		return *m.teacher, true
-	}
-	return
-}
-
-// TeacherIDs returns the "teacher" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TeacherID instead. It exists only for internal usage by the builders.
-func (m *AttendanceSyncMutation) TeacherIDs() (ids []string) {
-	if id := m.teacher; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTeacher resets all changes to the "teacher" edge.
-func (m *AttendanceSyncMutation) ResetTeacher() {
-	m.teacher = nil
-	m.clearedteacher = false
-}
-
-// Where appends a list predicates to the AttendanceSyncMutation builder.
-func (m *AttendanceSyncMutation) Where(ps ...predicate.AttendanceSync) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *AttendanceSyncMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (AttendanceSync).
-func (m *AttendanceSyncMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *AttendanceSyncMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, attendancesync.FieldLastSyncID)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *AttendanceSyncMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case attendancesync.FieldLastSyncID:
-		return m.LastSyncID()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *AttendanceSyncMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case attendancesync.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
-	}
-	return nil, fmt.Errorf("unknown AttendanceSync field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AttendanceSyncMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case attendancesync.FieldLastSyncID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSyncID(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceSync field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *AttendanceSyncMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *AttendanceSyncMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AttendanceSyncMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown AttendanceSync numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *AttendanceSyncMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *AttendanceSyncMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *AttendanceSyncMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown AttendanceSync nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *AttendanceSyncMutation) ResetField(name string) error {
-	switch name {
-	case attendancesync.FieldLastSyncID:
-		m.ResetLastSyncID()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceSync field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *AttendanceSyncMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.teacher != nil {
-		edges = append(edges, attendancesync.EdgeTeacher)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *AttendanceSyncMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case attendancesync.EdgeTeacher:
-		if id := m.teacher; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *AttendanceSyncMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *AttendanceSyncMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *AttendanceSyncMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedteacher {
-		edges = append(edges, attendancesync.EdgeTeacher)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *AttendanceSyncMutation) EdgeCleared(name string) bool {
-	switch name {
-	case attendancesync.EdgeTeacher:
-		return m.clearedteacher
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *AttendanceSyncMutation) ClearEdge(name string) error {
-	switch name {
-	case attendancesync.EdgeTeacher:
-		m.ClearTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceSync unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *AttendanceSyncMutation) ResetEdge(name string) error {
-	switch name {
-	case attendancesync.EdgeTeacher:
-		m.ResetTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown AttendanceSync edge %s", name)
-}
-
 // ClassMutation represents an operation that mutates the Class nodes in the graph.
 type ClassMutation struct {
 	config
@@ -5270,392 +4544,6 @@ func (m *ClassPeriodMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ClassPeriod edge %s", name)
-}
-
-// ClassPeriodSyncMutation represents an operation that mutates the ClassPeriodSync nodes in the graph.
-type ClassPeriodSyncMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *string
-	last_sync_id   *string
-	clearedFields  map[string]struct{}
-	teacher        *string
-	clearedteacher bool
-	done           bool
-	oldValue       func(context.Context) (*ClassPeriodSync, error)
-	predicates     []predicate.ClassPeriodSync
-}
-
-var _ ent.Mutation = (*ClassPeriodSyncMutation)(nil)
-
-// classperiodsyncOption allows management of the mutation configuration using functional options.
-type classperiodsyncOption func(*ClassPeriodSyncMutation)
-
-// newClassPeriodSyncMutation creates new mutation for the ClassPeriodSync entity.
-func newClassPeriodSyncMutation(c config, op Op, opts ...classperiodsyncOption) *ClassPeriodSyncMutation {
-	m := &ClassPeriodSyncMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeClassPeriodSync,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withClassPeriodSyncID sets the ID field of the mutation.
-func withClassPeriodSyncID(id string) classperiodsyncOption {
-	return func(m *ClassPeriodSyncMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *ClassPeriodSync
-		)
-		m.oldValue = func(ctx context.Context) (*ClassPeriodSync, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().ClassPeriodSync.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withClassPeriodSync sets the old ClassPeriodSync of the mutation.
-func withClassPeriodSync(node *ClassPeriodSync) classperiodsyncOption {
-	return func(m *ClassPeriodSyncMutation) {
-		m.oldValue = func(context.Context) (*ClassPeriodSync, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ClassPeriodSyncMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ClassPeriodSyncMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of ClassPeriodSync entities.
-func (m *ClassPeriodSyncMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *ClassPeriodSyncMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *ClassPeriodSyncMutation) IDs(ctx context.Context) ([]string, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []string{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().ClassPeriodSync.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *ClassPeriodSyncMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
-}
-
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *ClassPeriodSyncMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSyncID returns the old "last_sync_id" field's value of the ClassPeriodSync entity.
-// If the ClassPeriodSync object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ClassPeriodSyncMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
-	}
-	return oldValue.LastSyncID, nil
-}
-
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *ClassPeriodSyncMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
-}
-
-// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *ClassPeriodSyncMutation) SetTeacherID(id string) {
-	m.teacher = &id
-}
-
-// ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *ClassPeriodSyncMutation) ClearTeacher() {
-	m.clearedteacher = true
-}
-
-// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *ClassPeriodSyncMutation) TeacherCleared() bool {
-	return m.clearedteacher
-}
-
-// TeacherID returns the "teacher" edge ID in the mutation.
-func (m *ClassPeriodSyncMutation) TeacherID() (id string, exists bool) {
-	if m.teacher != nil {
-		return *m.teacher, true
-	}
-	return
-}
-
-// TeacherIDs returns the "teacher" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TeacherID instead. It exists only for internal usage by the builders.
-func (m *ClassPeriodSyncMutation) TeacherIDs() (ids []string) {
-	if id := m.teacher; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTeacher resets all changes to the "teacher" edge.
-func (m *ClassPeriodSyncMutation) ResetTeacher() {
-	m.teacher = nil
-	m.clearedteacher = false
-}
-
-// Where appends a list predicates to the ClassPeriodSyncMutation builder.
-func (m *ClassPeriodSyncMutation) Where(ps ...predicate.ClassPeriodSync) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *ClassPeriodSyncMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (ClassPeriodSync).
-func (m *ClassPeriodSyncMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *ClassPeriodSyncMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, classperiodsync.FieldLastSyncID)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *ClassPeriodSyncMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case classperiodsync.FieldLastSyncID:
-		return m.LastSyncID()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *ClassPeriodSyncMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case classperiodsync.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
-	}
-	return nil, fmt.Errorf("unknown ClassPeriodSync field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ClassPeriodSyncMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case classperiodsync.FieldLastSyncID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSyncID(v)
-		return nil
-	}
-	return fmt.Errorf("unknown ClassPeriodSync field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *ClassPeriodSyncMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *ClassPeriodSyncMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ClassPeriodSyncMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown ClassPeriodSync numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *ClassPeriodSyncMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *ClassPeriodSyncMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ClassPeriodSyncMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown ClassPeriodSync nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *ClassPeriodSyncMutation) ResetField(name string) error {
-	switch name {
-	case classperiodsync.FieldLastSyncID:
-		m.ResetLastSyncID()
-		return nil
-	}
-	return fmt.Errorf("unknown ClassPeriodSync field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ClassPeriodSyncMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.teacher != nil {
-		edges = append(edges, classperiodsync.EdgeTeacher)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *ClassPeriodSyncMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case classperiodsync.EdgeTeacher:
-		if id := m.teacher; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ClassPeriodSyncMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *ClassPeriodSyncMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ClassPeriodSyncMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedteacher {
-		edges = append(edges, classperiodsync.EdgeTeacher)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *ClassPeriodSyncMutation) EdgeCleared(name string) bool {
-	switch name {
-	case classperiodsync.EdgeTeacher:
-		return m.clearedteacher
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *ClassPeriodSyncMutation) ClearEdge(name string) error {
-	switch name {
-	case classperiodsync.EdgeTeacher:
-		m.ClearTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown ClassPeriodSync unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *ClassPeriodSyncMutation) ResetEdge(name string) error {
-	switch name {
-	case classperiodsync.EdgeTeacher:
-		m.ResetTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown ClassPeriodSync edge %s", name)
 }
 
 // DptoMutation represents an operation that mutates the Dpto nodes in the graph.
@@ -8943,392 +7831,6 @@ func (m *ScoreMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Score edge %s", name)
 }
 
-// ScoreSyncMutation represents an operation that mutates the ScoreSync nodes in the graph.
-type ScoreSyncMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *string
-	last_sync_id   *string
-	clearedFields  map[string]struct{}
-	teacher        *string
-	clearedteacher bool
-	done           bool
-	oldValue       func(context.Context) (*ScoreSync, error)
-	predicates     []predicate.ScoreSync
-}
-
-var _ ent.Mutation = (*ScoreSyncMutation)(nil)
-
-// scoresyncOption allows management of the mutation configuration using functional options.
-type scoresyncOption func(*ScoreSyncMutation)
-
-// newScoreSyncMutation creates new mutation for the ScoreSync entity.
-func newScoreSyncMutation(c config, op Op, opts ...scoresyncOption) *ScoreSyncMutation {
-	m := &ScoreSyncMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeScoreSync,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withScoreSyncID sets the ID field of the mutation.
-func withScoreSyncID(id string) scoresyncOption {
-	return func(m *ScoreSyncMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *ScoreSync
-		)
-		m.oldValue = func(ctx context.Context) (*ScoreSync, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().ScoreSync.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withScoreSync sets the old ScoreSync of the mutation.
-func withScoreSync(node *ScoreSync) scoresyncOption {
-	return func(m *ScoreSyncMutation) {
-		m.oldValue = func(context.Context) (*ScoreSync, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ScoreSyncMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ScoreSyncMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of ScoreSync entities.
-func (m *ScoreSyncMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *ScoreSyncMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *ScoreSyncMutation) IDs(ctx context.Context) ([]string, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []string{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().ScoreSync.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *ScoreSyncMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
-}
-
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *ScoreSyncMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSyncID returns the old "last_sync_id" field's value of the ScoreSync entity.
-// If the ScoreSync object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ScoreSyncMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
-	}
-	return oldValue.LastSyncID, nil
-}
-
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *ScoreSyncMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
-}
-
-// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *ScoreSyncMutation) SetTeacherID(id string) {
-	m.teacher = &id
-}
-
-// ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *ScoreSyncMutation) ClearTeacher() {
-	m.clearedteacher = true
-}
-
-// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *ScoreSyncMutation) TeacherCleared() bool {
-	return m.clearedteacher
-}
-
-// TeacherID returns the "teacher" edge ID in the mutation.
-func (m *ScoreSyncMutation) TeacherID() (id string, exists bool) {
-	if m.teacher != nil {
-		return *m.teacher, true
-	}
-	return
-}
-
-// TeacherIDs returns the "teacher" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TeacherID instead. It exists only for internal usage by the builders.
-func (m *ScoreSyncMutation) TeacherIDs() (ids []string) {
-	if id := m.teacher; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTeacher resets all changes to the "teacher" edge.
-func (m *ScoreSyncMutation) ResetTeacher() {
-	m.teacher = nil
-	m.clearedteacher = false
-}
-
-// Where appends a list predicates to the ScoreSyncMutation builder.
-func (m *ScoreSyncMutation) Where(ps ...predicate.ScoreSync) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *ScoreSyncMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (ScoreSync).
-func (m *ScoreSyncMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *ScoreSyncMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, scoresync.FieldLastSyncID)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *ScoreSyncMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case scoresync.FieldLastSyncID:
-		return m.LastSyncID()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *ScoreSyncMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case scoresync.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
-	}
-	return nil, fmt.Errorf("unknown ScoreSync field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ScoreSyncMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case scoresync.FieldLastSyncID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSyncID(v)
-		return nil
-	}
-	return fmt.Errorf("unknown ScoreSync field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *ScoreSyncMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *ScoreSyncMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ScoreSyncMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown ScoreSync numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *ScoreSyncMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *ScoreSyncMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ScoreSyncMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown ScoreSync nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *ScoreSyncMutation) ResetField(name string) error {
-	switch name {
-	case scoresync.FieldLastSyncID:
-		m.ResetLastSyncID()
-		return nil
-	}
-	return fmt.Errorf("unknown ScoreSync field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ScoreSyncMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.teacher != nil {
-		edges = append(edges, scoresync.EdgeTeacher)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *ScoreSyncMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case scoresync.EdgeTeacher:
-		if id := m.teacher; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ScoreSyncMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *ScoreSyncMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ScoreSyncMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedteacher {
-		edges = append(edges, scoresync.EdgeTeacher)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *ScoreSyncMutation) EdgeCleared(name string) bool {
-	switch name {
-	case scoresync.EdgeTeacher:
-		return m.clearedteacher
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *ScoreSyncMutation) ClearEdge(name string) error {
-	switch name {
-	case scoresync.EdgeTeacher:
-		m.ClearTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown ScoreSync unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *ScoreSyncMutation) ResetEdge(name string) error {
-	switch name {
-	case scoresync.EdgeTeacher:
-		m.ResetTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown ScoreSync edge %s", name)
-}
-
 // StudentMutation represents an operation that mutates the Student nodes in the graph.
 type StudentMutation struct {
 	config
@@ -9989,392 +8491,6 @@ func (m *StudentMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Student edge %s", name)
 }
 
-// StudentSyncMutation represents an operation that mutates the StudentSync nodes in the graph.
-type StudentSyncMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *string
-	last_sync_id   *string
-	clearedFields  map[string]struct{}
-	teacher        *string
-	clearedteacher bool
-	done           bool
-	oldValue       func(context.Context) (*StudentSync, error)
-	predicates     []predicate.StudentSync
-}
-
-var _ ent.Mutation = (*StudentSyncMutation)(nil)
-
-// studentsyncOption allows management of the mutation configuration using functional options.
-type studentsyncOption func(*StudentSyncMutation)
-
-// newStudentSyncMutation creates new mutation for the StudentSync entity.
-func newStudentSyncMutation(c config, op Op, opts ...studentsyncOption) *StudentSyncMutation {
-	m := &StudentSyncMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeStudentSync,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withStudentSyncID sets the ID field of the mutation.
-func withStudentSyncID(id string) studentsyncOption {
-	return func(m *StudentSyncMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *StudentSync
-		)
-		m.oldValue = func(ctx context.Context) (*StudentSync, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().StudentSync.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withStudentSync sets the old StudentSync of the mutation.
-func withStudentSync(node *StudentSync) studentsyncOption {
-	return func(m *StudentSyncMutation) {
-		m.oldValue = func(context.Context) (*StudentSync, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m StudentSyncMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m StudentSyncMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of StudentSync entities.
-func (m *StudentSyncMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *StudentSyncMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *StudentSyncMutation) IDs(ctx context.Context) ([]string, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []string{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().StudentSync.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetLastSyncID sets the "last_sync_id" field.
-func (m *StudentSyncMutation) SetLastSyncID(s string) {
-	m.last_sync_id = &s
-}
-
-// LastSyncID returns the value of the "last_sync_id" field in the mutation.
-func (m *StudentSyncMutation) LastSyncID() (r string, exists bool) {
-	v := m.last_sync_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastSyncID returns the old "last_sync_id" field's value of the StudentSync entity.
-// If the StudentSync object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *StudentSyncMutation) OldLastSyncID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastSyncID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastSyncID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastSyncID: %w", err)
-	}
-	return oldValue.LastSyncID, nil
-}
-
-// ResetLastSyncID resets all changes to the "last_sync_id" field.
-func (m *StudentSyncMutation) ResetLastSyncID() {
-	m.last_sync_id = nil
-}
-
-// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
-func (m *StudentSyncMutation) SetTeacherID(id string) {
-	m.teacher = &id
-}
-
-// ClearTeacher clears the "teacher" edge to the Teacher entity.
-func (m *StudentSyncMutation) ClearTeacher() {
-	m.clearedteacher = true
-}
-
-// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
-func (m *StudentSyncMutation) TeacherCleared() bool {
-	return m.clearedteacher
-}
-
-// TeacherID returns the "teacher" edge ID in the mutation.
-func (m *StudentSyncMutation) TeacherID() (id string, exists bool) {
-	if m.teacher != nil {
-		return *m.teacher, true
-	}
-	return
-}
-
-// TeacherIDs returns the "teacher" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TeacherID instead. It exists only for internal usage by the builders.
-func (m *StudentSyncMutation) TeacherIDs() (ids []string) {
-	if id := m.teacher; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTeacher resets all changes to the "teacher" edge.
-func (m *StudentSyncMutation) ResetTeacher() {
-	m.teacher = nil
-	m.clearedteacher = false
-}
-
-// Where appends a list predicates to the StudentSyncMutation builder.
-func (m *StudentSyncMutation) Where(ps ...predicate.StudentSync) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *StudentSyncMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (StudentSync).
-func (m *StudentSyncMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *StudentSyncMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.last_sync_id != nil {
-		fields = append(fields, studentsync.FieldLastSyncID)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *StudentSyncMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case studentsync.FieldLastSyncID:
-		return m.LastSyncID()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *StudentSyncMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case studentsync.FieldLastSyncID:
-		return m.OldLastSyncID(ctx)
-	}
-	return nil, fmt.Errorf("unknown StudentSync field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *StudentSyncMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case studentsync.FieldLastSyncID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastSyncID(v)
-		return nil
-	}
-	return fmt.Errorf("unknown StudentSync field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *StudentSyncMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *StudentSyncMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *StudentSyncMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown StudentSync numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *StudentSyncMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *StudentSyncMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *StudentSyncMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown StudentSync nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *StudentSyncMutation) ResetField(name string) error {
-	switch name {
-	case studentsync.FieldLastSyncID:
-		m.ResetLastSyncID()
-		return nil
-	}
-	return fmt.Errorf("unknown StudentSync field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *StudentSyncMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.teacher != nil {
-		edges = append(edges, studentsync.EdgeTeacher)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *StudentSyncMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case studentsync.EdgeTeacher:
-		if id := m.teacher; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *StudentSyncMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *StudentSyncMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *StudentSyncMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedteacher {
-		edges = append(edges, studentsync.EdgeTeacher)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *StudentSyncMutation) EdgeCleared(name string) bool {
-	switch name {
-	case studentsync.EdgeTeacher:
-		return m.clearedteacher
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *StudentSyncMutation) ClearEdge(name string) error {
-	switch name {
-	case studentsync.EdgeTeacher:
-		m.ClearTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown StudentSync unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *StudentSyncMutation) ResetEdge(name string) error {
-	switch name {
-	case studentsync.EdgeTeacher:
-		m.ResetTeacher()
-		return nil
-	}
-	return fmt.Errorf("unknown StudentSync edge %s", name)
-}
-
 // SubjectMutation represents an operation that mutates the Subject nodes in the graph.
 type SubjectMutation struct {
 	config
@@ -10785,41 +8901,619 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Subject edge %s", name)
 }
 
+// SubscriptionMutation represents an operation that mutates the Subscription nodes in the graph.
+type SubscriptionMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *string
+	method         *string
+	qtty           *int
+	addqtty        *int
+	date           *time.Time
+	clearedFields  map[string]struct{}
+	teacher        *string
+	clearedteacher bool
+	year           *string
+	clearedyear    bool
+	done           bool
+	oldValue       func(context.Context) (*Subscription, error)
+	predicates     []predicate.Subscription
+}
+
+var _ ent.Mutation = (*SubscriptionMutation)(nil)
+
+// subscriptionOption allows management of the mutation configuration using functional options.
+type subscriptionOption func(*SubscriptionMutation)
+
+// newSubscriptionMutation creates new mutation for the Subscription entity.
+func newSubscriptionMutation(c config, op Op, opts ...subscriptionOption) *SubscriptionMutation {
+	m := &SubscriptionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSubscription,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSubscriptionID sets the ID field of the mutation.
+func withSubscriptionID(id string) subscriptionOption {
+	return func(m *SubscriptionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Subscription
+		)
+		m.oldValue = func(ctx context.Context) (*Subscription, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Subscription.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSubscription sets the old Subscription of the mutation.
+func withSubscription(node *Subscription) subscriptionOption {
+	return func(m *SubscriptionMutation) {
+		m.oldValue = func(context.Context) (*Subscription, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SubscriptionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SubscriptionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Subscription entities.
+func (m *SubscriptionMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SubscriptionMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SubscriptionMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Subscription.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetMethod sets the "method" field.
+func (m *SubscriptionMutation) SetMethod(s string) {
+	m.method = &s
+}
+
+// Method returns the value of the "method" field in the mutation.
+func (m *SubscriptionMutation) Method() (r string, exists bool) {
+	v := m.method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMethod returns the old "method" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMethod: %w", err)
+	}
+	return oldValue.Method, nil
+}
+
+// ResetMethod resets all changes to the "method" field.
+func (m *SubscriptionMutation) ResetMethod() {
+	m.method = nil
+}
+
+// SetQtty sets the "qtty" field.
+func (m *SubscriptionMutation) SetQtty(i int) {
+	m.qtty = &i
+	m.addqtty = nil
+}
+
+// Qtty returns the value of the "qtty" field in the mutation.
+func (m *SubscriptionMutation) Qtty() (r int, exists bool) {
+	v := m.qtty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQtty returns the old "qtty" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldQtty(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQtty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQtty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQtty: %w", err)
+	}
+	return oldValue.Qtty, nil
+}
+
+// AddQtty adds i to the "qtty" field.
+func (m *SubscriptionMutation) AddQtty(i int) {
+	if m.addqtty != nil {
+		*m.addqtty += i
+	} else {
+		m.addqtty = &i
+	}
+}
+
+// AddedQtty returns the value that was added to the "qtty" field in this mutation.
+func (m *SubscriptionMutation) AddedQtty() (r int, exists bool) {
+	v := m.addqtty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQtty resets all changes to the "qtty" field.
+func (m *SubscriptionMutation) ResetQtty() {
+	m.qtty = nil
+	m.addqtty = nil
+}
+
+// SetDate sets the "date" field.
+func (m *SubscriptionMutation) SetDate(t time.Time) {
+	m.date = &t
+}
+
+// Date returns the value of the "date" field in the mutation.
+func (m *SubscriptionMutation) Date() (r time.Time, exists bool) {
+	v := m.date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDate returns the old "date" field's value of the Subscription entity.
+// If the Subscription object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionMutation) OldDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDate: %w", err)
+	}
+	return oldValue.Date, nil
+}
+
+// ResetDate resets all changes to the "date" field.
+func (m *SubscriptionMutation) ResetDate() {
+	m.date = nil
+}
+
+// SetTeacherID sets the "teacher" edge to the Teacher entity by id.
+func (m *SubscriptionMutation) SetTeacherID(id string) {
+	m.teacher = &id
+}
+
+// ClearTeacher clears the "teacher" edge to the Teacher entity.
+func (m *SubscriptionMutation) ClearTeacher() {
+	m.clearedteacher = true
+}
+
+// TeacherCleared reports if the "teacher" edge to the Teacher entity was cleared.
+func (m *SubscriptionMutation) TeacherCleared() bool {
+	return m.clearedteacher
+}
+
+// TeacherID returns the "teacher" edge ID in the mutation.
+func (m *SubscriptionMutation) TeacherID() (id string, exists bool) {
+	if m.teacher != nil {
+		return *m.teacher, true
+	}
+	return
+}
+
+// TeacherIDs returns the "teacher" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TeacherID instead. It exists only for internal usage by the builders.
+func (m *SubscriptionMutation) TeacherIDs() (ids []string) {
+	if id := m.teacher; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTeacher resets all changes to the "teacher" edge.
+func (m *SubscriptionMutation) ResetTeacher() {
+	m.teacher = nil
+	m.clearedteacher = false
+}
+
+// SetYearID sets the "year" edge to the Year entity by id.
+func (m *SubscriptionMutation) SetYearID(id string) {
+	m.year = &id
+}
+
+// ClearYear clears the "year" edge to the Year entity.
+func (m *SubscriptionMutation) ClearYear() {
+	m.clearedyear = true
+}
+
+// YearCleared reports if the "year" edge to the Year entity was cleared.
+func (m *SubscriptionMutation) YearCleared() bool {
+	return m.clearedyear
+}
+
+// YearID returns the "year" edge ID in the mutation.
+func (m *SubscriptionMutation) YearID() (id string, exists bool) {
+	if m.year != nil {
+		return *m.year, true
+	}
+	return
+}
+
+// YearIDs returns the "year" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YearID instead. It exists only for internal usage by the builders.
+func (m *SubscriptionMutation) YearIDs() (ids []string) {
+	if id := m.year; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYear resets all changes to the "year" edge.
+func (m *SubscriptionMutation) ResetYear() {
+	m.year = nil
+	m.clearedyear = false
+}
+
+// Where appends a list predicates to the SubscriptionMutation builder.
+func (m *SubscriptionMutation) Where(ps ...predicate.Subscription) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *SubscriptionMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Subscription).
+func (m *SubscriptionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SubscriptionMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.method != nil {
+		fields = append(fields, subscription.FieldMethod)
+	}
+	if m.qtty != nil {
+		fields = append(fields, subscription.FieldQtty)
+	}
+	if m.date != nil {
+		fields = append(fields, subscription.FieldDate)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SubscriptionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case subscription.FieldMethod:
+		return m.Method()
+	case subscription.FieldQtty:
+		return m.Qtty()
+	case subscription.FieldDate:
+		return m.Date()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SubscriptionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case subscription.FieldMethod:
+		return m.OldMethod(ctx)
+	case subscription.FieldQtty:
+		return m.OldQtty(ctx)
+	case subscription.FieldDate:
+		return m.OldDate(ctx)
+	}
+	return nil, fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubscriptionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case subscription.FieldMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMethod(v)
+		return nil
+	case subscription.FieldQtty:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQtty(v)
+		return nil
+	case subscription.FieldDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDate(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SubscriptionMutation) AddedFields() []string {
+	var fields []string
+	if m.addqtty != nil {
+		fields = append(fields, subscription.FieldQtty)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SubscriptionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case subscription.FieldQtty:
+		return m.AddedQtty()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SubscriptionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case subscription.FieldQtty:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQtty(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SubscriptionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SubscriptionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SubscriptionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Subscription nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SubscriptionMutation) ResetField(name string) error {
+	switch name {
+	case subscription.FieldMethod:
+		m.ResetMethod()
+		return nil
+	case subscription.FieldQtty:
+		m.ResetQtty()
+		return nil
+	case subscription.FieldDate:
+		m.ResetDate()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SubscriptionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.teacher != nil {
+		edges = append(edges, subscription.EdgeTeacher)
+	}
+	if m.year != nil {
+		edges = append(edges, subscription.EdgeYear)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SubscriptionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case subscription.EdgeTeacher:
+		if id := m.teacher; id != nil {
+			return []ent.Value{*id}
+		}
+	case subscription.EdgeYear:
+		if id := m.year; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SubscriptionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SubscriptionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SubscriptionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedteacher {
+		edges = append(edges, subscription.EdgeTeacher)
+	}
+	if m.clearedyear {
+		edges = append(edges, subscription.EdgeYear)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SubscriptionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case subscription.EdgeTeacher:
+		return m.clearedteacher
+	case subscription.EdgeYear:
+		return m.clearedyear
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SubscriptionMutation) ClearEdge(name string) error {
+	switch name {
+	case subscription.EdgeTeacher:
+		m.ClearTeacher()
+		return nil
+	case subscription.EdgeYear:
+		m.ClearYear()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SubscriptionMutation) ResetEdge(name string) error {
+	switch name {
+	case subscription.EdgeTeacher:
+		m.ResetTeacher()
+		return nil
+	case subscription.EdgeYear:
+		m.ResetYear()
+		return nil
+	}
+	return fmt.Errorf("unknown Subscription edge %s", name)
+}
+
 // TeacherMutation represents an operation that mutates the Teacher nodes in the graph.
 type TeacherMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *string
-	name                      *string
-	last_name                 *string
-	email                     *string
-	password                  *string
-	clearedFields             map[string]struct{}
-	classes                   map[string]struct{}
-	removedclasses            map[string]struct{}
-	clearedclasses            bool
-	scoreSyncs                map[string]struct{}
-	removedscoreSyncs         map[string]struct{}
-	clearedscoreSyncs         bool
-	studentSyncs              map[string]struct{}
-	removedstudentSyncs       map[string]struct{}
-	clearedstudentSyncs       bool
-	activitySyncs             map[string]struct{}
-	removedactivitySyncs      map[string]struct{}
-	clearedactivitySyncs      bool
-	attendanceSyncs           map[string]struct{}
-	removedattendanceSyncs    map[string]struct{}
-	clearedattendanceSyncs    bool
-	classPeriodSyncs          map[string]struct{}
-	removedclassPeriodSyncs   map[string]struct{}
-	clearedclassPeriodSyncs   bool
-	attendanceDaySyncs        map[string]struct{}
-	removedattendanceDaySyncs map[string]struct{}
-	clearedattendanceDaySyncs bool
-	done                      bool
-	oldValue                  func(context.Context) (*Teacher, error)
-	predicates                []predicate.Teacher
+	op                   Op
+	typ                  string
+	id                   *string
+	name                 *string
+	last_name            *string
+	email                *string
+	password             *string
+	is_admin             *bool
+	clearedFields        map[string]struct{}
+	classes              map[string]struct{}
+	removedclasses       map[string]struct{}
+	clearedclasses       bool
+	actions              map[string]struct{}
+	removedactions       map[string]struct{}
+	clearedactions       bool
+	subscriptions        map[string]struct{}
+	removedsubscriptions map[string]struct{}
+	clearedsubscriptions bool
+	done                 bool
+	oldValue             func(context.Context) (*Teacher, error)
+	predicates           []predicate.Teacher
 }
 
 var _ ent.Mutation = (*TeacherMutation)(nil)
@@ -11070,6 +9764,42 @@ func (m *TeacherMutation) ResetPassword() {
 	m.password = nil
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (m *TeacherMutation) SetIsAdmin(b bool) {
+	m.is_admin = &b
+}
+
+// IsAdmin returns the value of the "is_admin" field in the mutation.
+func (m *TeacherMutation) IsAdmin() (r bool, exists bool) {
+	v := m.is_admin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsAdmin returns the old "is_admin" field's value of the Teacher entity.
+// If the Teacher object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeacherMutation) OldIsAdmin(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsAdmin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsAdmin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsAdmin: %w", err)
+	}
+	return oldValue.IsAdmin, nil
+}
+
+// ResetIsAdmin resets all changes to the "is_admin" field.
+func (m *TeacherMutation) ResetIsAdmin() {
+	m.is_admin = nil
+}
+
 // AddClassIDs adds the "classes" edge to the Class entity by ids.
 func (m *TeacherMutation) AddClassIDs(ids ...string) {
 	if m.classes == nil {
@@ -11124,328 +9854,112 @@ func (m *TeacherMutation) ResetClasses() {
 	m.removedclasses = nil
 }
 
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by ids.
-func (m *TeacherMutation) AddScoreSyncIDs(ids ...string) {
-	if m.scoreSyncs == nil {
-		m.scoreSyncs = make(map[string]struct{})
+// AddActionIDs adds the "actions" edge to the AdminAction entity by ids.
+func (m *TeacherMutation) AddActionIDs(ids ...string) {
+	if m.actions == nil {
+		m.actions = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.scoreSyncs[ids[i]] = struct{}{}
+		m.actions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearScoreSyncs clears the "scoreSyncs" edge to the ScoreSync entity.
-func (m *TeacherMutation) ClearScoreSyncs() {
-	m.clearedscoreSyncs = true
+// ClearActions clears the "actions" edge to the AdminAction entity.
+func (m *TeacherMutation) ClearActions() {
+	m.clearedactions = true
 }
 
-// ScoreSyncsCleared reports if the "scoreSyncs" edge to the ScoreSync entity was cleared.
-func (m *TeacherMutation) ScoreSyncsCleared() bool {
-	return m.clearedscoreSyncs
+// ActionsCleared reports if the "actions" edge to the AdminAction entity was cleared.
+func (m *TeacherMutation) ActionsCleared() bool {
+	return m.clearedactions
 }
 
-// RemoveScoreSyncIDs removes the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (m *TeacherMutation) RemoveScoreSyncIDs(ids ...string) {
-	if m.removedscoreSyncs == nil {
-		m.removedscoreSyncs = make(map[string]struct{})
+// RemoveActionIDs removes the "actions" edge to the AdminAction entity by IDs.
+func (m *TeacherMutation) RemoveActionIDs(ids ...string) {
+	if m.removedactions == nil {
+		m.removedactions = make(map[string]struct{})
 	}
 	for i := range ids {
-		delete(m.scoreSyncs, ids[i])
-		m.removedscoreSyncs[ids[i]] = struct{}{}
+		delete(m.actions, ids[i])
+		m.removedactions[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedScoreSyncs returns the removed IDs of the "scoreSyncs" edge to the ScoreSync entity.
-func (m *TeacherMutation) RemovedScoreSyncsIDs() (ids []string) {
-	for id := range m.removedscoreSyncs {
+// RemovedActions returns the removed IDs of the "actions" edge to the AdminAction entity.
+func (m *TeacherMutation) RemovedActionsIDs() (ids []string) {
+	for id := range m.removedactions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ScoreSyncsIDs returns the "scoreSyncs" edge IDs in the mutation.
-func (m *TeacherMutation) ScoreSyncsIDs() (ids []string) {
-	for id := range m.scoreSyncs {
+// ActionsIDs returns the "actions" edge IDs in the mutation.
+func (m *TeacherMutation) ActionsIDs() (ids []string) {
+	for id := range m.actions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetScoreSyncs resets all changes to the "scoreSyncs" edge.
-func (m *TeacherMutation) ResetScoreSyncs() {
-	m.scoreSyncs = nil
-	m.clearedscoreSyncs = false
-	m.removedscoreSyncs = nil
+// ResetActions resets all changes to the "actions" edge.
+func (m *TeacherMutation) ResetActions() {
+	m.actions = nil
+	m.clearedactions = false
+	m.removedactions = nil
 }
 
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by ids.
-func (m *TeacherMutation) AddStudentSyncIDs(ids ...string) {
-	if m.studentSyncs == nil {
-		m.studentSyncs = make(map[string]struct{})
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by ids.
+func (m *TeacherMutation) AddSubscriptionIDs(ids ...string) {
+	if m.subscriptions == nil {
+		m.subscriptions = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.studentSyncs[ids[i]] = struct{}{}
+		m.subscriptions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearStudentSyncs clears the "studentSyncs" edge to the StudentSync entity.
-func (m *TeacherMutation) ClearStudentSyncs() {
-	m.clearedstudentSyncs = true
+// ClearSubscriptions clears the "subscriptions" edge to the Subscription entity.
+func (m *TeacherMutation) ClearSubscriptions() {
+	m.clearedsubscriptions = true
 }
 
-// StudentSyncsCleared reports if the "studentSyncs" edge to the StudentSync entity was cleared.
-func (m *TeacherMutation) StudentSyncsCleared() bool {
-	return m.clearedstudentSyncs
+// SubscriptionsCleared reports if the "subscriptions" edge to the Subscription entity was cleared.
+func (m *TeacherMutation) SubscriptionsCleared() bool {
+	return m.clearedsubscriptions
 }
 
-// RemoveStudentSyncIDs removes the "studentSyncs" edge to the StudentSync entity by IDs.
-func (m *TeacherMutation) RemoveStudentSyncIDs(ids ...string) {
-	if m.removedstudentSyncs == nil {
-		m.removedstudentSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.studentSyncs, ids[i])
-		m.removedstudentSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedStudentSyncs returns the removed IDs of the "studentSyncs" edge to the StudentSync entity.
-func (m *TeacherMutation) RemovedStudentSyncsIDs() (ids []string) {
-	for id := range m.removedstudentSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// StudentSyncsIDs returns the "studentSyncs" edge IDs in the mutation.
-func (m *TeacherMutation) StudentSyncsIDs() (ids []string) {
-	for id := range m.studentSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetStudentSyncs resets all changes to the "studentSyncs" edge.
-func (m *TeacherMutation) ResetStudentSyncs() {
-	m.studentSyncs = nil
-	m.clearedstudentSyncs = false
-	m.removedstudentSyncs = nil
-}
-
-// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by ids.
-func (m *TeacherMutation) AddActivitySyncIDs(ids ...string) {
-	if m.activitySyncs == nil {
-		m.activitySyncs = make(map[string]struct{})
+// RemoveSubscriptionIDs removes the "subscriptions" edge to the Subscription entity by IDs.
+func (m *TeacherMutation) RemoveSubscriptionIDs(ids ...string) {
+	if m.removedsubscriptions == nil {
+		m.removedsubscriptions = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.activitySyncs[ids[i]] = struct{}{}
+		delete(m.subscriptions, ids[i])
+		m.removedsubscriptions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearActivitySyncs clears the "activitySyncs" edge to the ActivitySync entity.
-func (m *TeacherMutation) ClearActivitySyncs() {
-	m.clearedactivitySyncs = true
-}
-
-// ActivitySyncsCleared reports if the "activitySyncs" edge to the ActivitySync entity was cleared.
-func (m *TeacherMutation) ActivitySyncsCleared() bool {
-	return m.clearedactivitySyncs
-}
-
-// RemoveActivitySyncIDs removes the "activitySyncs" edge to the ActivitySync entity by IDs.
-func (m *TeacherMutation) RemoveActivitySyncIDs(ids ...string) {
-	if m.removedactivitySyncs == nil {
-		m.removedactivitySyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.activitySyncs, ids[i])
-		m.removedactivitySyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedActivitySyncs returns the removed IDs of the "activitySyncs" edge to the ActivitySync entity.
-func (m *TeacherMutation) RemovedActivitySyncsIDs() (ids []string) {
-	for id := range m.removedactivitySyncs {
+// RemovedSubscriptions returns the removed IDs of the "subscriptions" edge to the Subscription entity.
+func (m *TeacherMutation) RemovedSubscriptionsIDs() (ids []string) {
+	for id := range m.removedsubscriptions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ActivitySyncsIDs returns the "activitySyncs" edge IDs in the mutation.
-func (m *TeacherMutation) ActivitySyncsIDs() (ids []string) {
-	for id := range m.activitySyncs {
+// SubscriptionsIDs returns the "subscriptions" edge IDs in the mutation.
+func (m *TeacherMutation) SubscriptionsIDs() (ids []string) {
+	for id := range m.subscriptions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetActivitySyncs resets all changes to the "activitySyncs" edge.
-func (m *TeacherMutation) ResetActivitySyncs() {
-	m.activitySyncs = nil
-	m.clearedactivitySyncs = false
-	m.removedactivitySyncs = nil
-}
-
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by ids.
-func (m *TeacherMutation) AddAttendanceSyncIDs(ids ...string) {
-	if m.attendanceSyncs == nil {
-		m.attendanceSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.attendanceSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearAttendanceSyncs clears the "attendanceSyncs" edge to the AttendanceSync entity.
-func (m *TeacherMutation) ClearAttendanceSyncs() {
-	m.clearedattendanceSyncs = true
-}
-
-// AttendanceSyncsCleared reports if the "attendanceSyncs" edge to the AttendanceSync entity was cleared.
-func (m *TeacherMutation) AttendanceSyncsCleared() bool {
-	return m.clearedattendanceSyncs
-}
-
-// RemoveAttendanceSyncIDs removes the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (m *TeacherMutation) RemoveAttendanceSyncIDs(ids ...string) {
-	if m.removedattendanceSyncs == nil {
-		m.removedattendanceSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.attendanceSyncs, ids[i])
-		m.removedattendanceSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAttendanceSyncs returns the removed IDs of the "attendanceSyncs" edge to the AttendanceSync entity.
-func (m *TeacherMutation) RemovedAttendanceSyncsIDs() (ids []string) {
-	for id := range m.removedattendanceSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// AttendanceSyncsIDs returns the "attendanceSyncs" edge IDs in the mutation.
-func (m *TeacherMutation) AttendanceSyncsIDs() (ids []string) {
-	for id := range m.attendanceSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetAttendanceSyncs resets all changes to the "attendanceSyncs" edge.
-func (m *TeacherMutation) ResetAttendanceSyncs() {
-	m.attendanceSyncs = nil
-	m.clearedattendanceSyncs = false
-	m.removedattendanceSyncs = nil
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by ids.
-func (m *TeacherMutation) AddClassPeriodSyncIDs(ids ...string) {
-	if m.classPeriodSyncs == nil {
-		m.classPeriodSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.classPeriodSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearClassPeriodSyncs clears the "classPeriodSyncs" edge to the ClassPeriodSync entity.
-func (m *TeacherMutation) ClearClassPeriodSyncs() {
-	m.clearedclassPeriodSyncs = true
-}
-
-// ClassPeriodSyncsCleared reports if the "classPeriodSyncs" edge to the ClassPeriodSync entity was cleared.
-func (m *TeacherMutation) ClassPeriodSyncsCleared() bool {
-	return m.clearedclassPeriodSyncs
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (m *TeacherMutation) RemoveClassPeriodSyncIDs(ids ...string) {
-	if m.removedclassPeriodSyncs == nil {
-		m.removedclassPeriodSyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.classPeriodSyncs, ids[i])
-		m.removedclassPeriodSyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedClassPeriodSyncs returns the removed IDs of the "classPeriodSyncs" edge to the ClassPeriodSync entity.
-func (m *TeacherMutation) RemovedClassPeriodSyncsIDs() (ids []string) {
-	for id := range m.removedclassPeriodSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ClassPeriodSyncsIDs returns the "classPeriodSyncs" edge IDs in the mutation.
-func (m *TeacherMutation) ClassPeriodSyncsIDs() (ids []string) {
-	for id := range m.classPeriodSyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetClassPeriodSyncs resets all changes to the "classPeriodSyncs" edge.
-func (m *TeacherMutation) ResetClassPeriodSyncs() {
-	m.classPeriodSyncs = nil
-	m.clearedclassPeriodSyncs = false
-	m.removedclassPeriodSyncs = nil
-}
-
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by ids.
-func (m *TeacherMutation) AddAttendanceDaySyncIDs(ids ...string) {
-	if m.attendanceDaySyncs == nil {
-		m.attendanceDaySyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.attendanceDaySyncs[ids[i]] = struct{}{}
-	}
-}
-
-// ClearAttendanceDaySyncs clears the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity.
-func (m *TeacherMutation) ClearAttendanceDaySyncs() {
-	m.clearedattendanceDaySyncs = true
-}
-
-// AttendanceDaySyncsCleared reports if the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity was cleared.
-func (m *TeacherMutation) AttendanceDaySyncsCleared() bool {
-	return m.clearedattendanceDaySyncs
-}
-
-// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (m *TeacherMutation) RemoveAttendanceDaySyncIDs(ids ...string) {
-	if m.removedattendanceDaySyncs == nil {
-		m.removedattendanceDaySyncs = make(map[string]struct{})
-	}
-	for i := range ids {
-		delete(m.attendanceDaySyncs, ids[i])
-		m.removedattendanceDaySyncs[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAttendanceDaySyncs returns the removed IDs of the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity.
-func (m *TeacherMutation) RemovedAttendanceDaySyncsIDs() (ids []string) {
-	for id := range m.removedattendanceDaySyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// AttendanceDaySyncsIDs returns the "attendanceDaySyncs" edge IDs in the mutation.
-func (m *TeacherMutation) AttendanceDaySyncsIDs() (ids []string) {
-	for id := range m.attendanceDaySyncs {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetAttendanceDaySyncs resets all changes to the "attendanceDaySyncs" edge.
-func (m *TeacherMutation) ResetAttendanceDaySyncs() {
-	m.attendanceDaySyncs = nil
-	m.clearedattendanceDaySyncs = false
-	m.removedattendanceDaySyncs = nil
+// ResetSubscriptions resets all changes to the "subscriptions" edge.
+func (m *TeacherMutation) ResetSubscriptions() {
+	m.subscriptions = nil
+	m.clearedsubscriptions = false
+	m.removedsubscriptions = nil
 }
 
 // Where appends a list predicates to the TeacherMutation builder.
@@ -11467,7 +9981,7 @@ func (m *TeacherMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TeacherMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.name != nil {
 		fields = append(fields, teacher.FieldName)
 	}
@@ -11479,6 +9993,9 @@ func (m *TeacherMutation) Fields() []string {
 	}
 	if m.password != nil {
 		fields = append(fields, teacher.FieldPassword)
+	}
+	if m.is_admin != nil {
+		fields = append(fields, teacher.FieldIsAdmin)
 	}
 	return fields
 }
@@ -11496,6 +10013,8 @@ func (m *TeacherMutation) Field(name string) (ent.Value, bool) {
 		return m.Email()
 	case teacher.FieldPassword:
 		return m.Password()
+	case teacher.FieldIsAdmin:
+		return m.IsAdmin()
 	}
 	return nil, false
 }
@@ -11513,6 +10032,8 @@ func (m *TeacherMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldEmail(ctx)
 	case teacher.FieldPassword:
 		return m.OldPassword(ctx)
+	case teacher.FieldIsAdmin:
+		return m.OldIsAdmin(ctx)
 	}
 	return nil, fmt.Errorf("unknown Teacher field %s", name)
 }
@@ -11549,6 +10070,13 @@ func (m *TeacherMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPassword(v)
+		return nil
+	case teacher.FieldIsAdmin:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsAdmin(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Teacher field %s", name)
@@ -11611,33 +10139,24 @@ func (m *TeacherMutation) ResetField(name string) error {
 	case teacher.FieldPassword:
 		m.ResetPassword()
 		return nil
+	case teacher.FieldIsAdmin:
+		m.ResetIsAdmin()
+		return nil
 	}
 	return fmt.Errorf("unknown Teacher field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TeacherMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 3)
 	if m.classes != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
-	if m.scoreSyncs != nil {
-		edges = append(edges, teacher.EdgeScoreSyncs)
+	if m.actions != nil {
+		edges = append(edges, teacher.EdgeActions)
 	}
-	if m.studentSyncs != nil {
-		edges = append(edges, teacher.EdgeStudentSyncs)
-	}
-	if m.activitySyncs != nil {
-		edges = append(edges, teacher.EdgeActivitySyncs)
-	}
-	if m.attendanceSyncs != nil {
-		edges = append(edges, teacher.EdgeAttendanceSyncs)
-	}
-	if m.classPeriodSyncs != nil {
-		edges = append(edges, teacher.EdgeClassPeriodSyncs)
-	}
-	if m.attendanceDaySyncs != nil {
-		edges = append(edges, teacher.EdgeAttendanceDaySyncs)
+	if m.subscriptions != nil {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -11652,39 +10171,15 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case teacher.EdgeScoreSyncs:
-		ids := make([]ent.Value, 0, len(m.scoreSyncs))
-		for id := range m.scoreSyncs {
+	case teacher.EdgeActions:
+		ids := make([]ent.Value, 0, len(m.actions))
+		for id := range m.actions {
 			ids = append(ids, id)
 		}
 		return ids
-	case teacher.EdgeStudentSyncs:
-		ids := make([]ent.Value, 0, len(m.studentSyncs))
-		for id := range m.studentSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeActivitySyncs:
-		ids := make([]ent.Value, 0, len(m.activitySyncs))
-		for id := range m.activitySyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeAttendanceSyncs:
-		ids := make([]ent.Value, 0, len(m.attendanceSyncs))
-		for id := range m.attendanceSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeClassPeriodSyncs:
-		ids := make([]ent.Value, 0, len(m.classPeriodSyncs))
-		for id := range m.classPeriodSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeAttendanceDaySyncs:
-		ids := make([]ent.Value, 0, len(m.attendanceDaySyncs))
-		for id := range m.attendanceDaySyncs {
+	case teacher.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.subscriptions))
+		for id := range m.subscriptions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -11694,27 +10189,15 @@ func (m *TeacherMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TeacherMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 3)
 	if m.removedclasses != nil {
 		edges = append(edges, teacher.EdgeClasses)
 	}
-	if m.removedscoreSyncs != nil {
-		edges = append(edges, teacher.EdgeScoreSyncs)
+	if m.removedactions != nil {
+		edges = append(edges, teacher.EdgeActions)
 	}
-	if m.removedstudentSyncs != nil {
-		edges = append(edges, teacher.EdgeStudentSyncs)
-	}
-	if m.removedactivitySyncs != nil {
-		edges = append(edges, teacher.EdgeActivitySyncs)
-	}
-	if m.removedattendanceSyncs != nil {
-		edges = append(edges, teacher.EdgeAttendanceSyncs)
-	}
-	if m.removedclassPeriodSyncs != nil {
-		edges = append(edges, teacher.EdgeClassPeriodSyncs)
-	}
-	if m.removedattendanceDaySyncs != nil {
-		edges = append(edges, teacher.EdgeAttendanceDaySyncs)
+	if m.removedsubscriptions != nil {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -11729,39 +10212,15 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case teacher.EdgeScoreSyncs:
-		ids := make([]ent.Value, 0, len(m.removedscoreSyncs))
-		for id := range m.removedscoreSyncs {
+	case teacher.EdgeActions:
+		ids := make([]ent.Value, 0, len(m.removedactions))
+		for id := range m.removedactions {
 			ids = append(ids, id)
 		}
 		return ids
-	case teacher.EdgeStudentSyncs:
-		ids := make([]ent.Value, 0, len(m.removedstudentSyncs))
-		for id := range m.removedstudentSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeActivitySyncs:
-		ids := make([]ent.Value, 0, len(m.removedactivitySyncs))
-		for id := range m.removedactivitySyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeAttendanceSyncs:
-		ids := make([]ent.Value, 0, len(m.removedattendanceSyncs))
-		for id := range m.removedattendanceSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeClassPeriodSyncs:
-		ids := make([]ent.Value, 0, len(m.removedclassPeriodSyncs))
-		for id := range m.removedclassPeriodSyncs {
-			ids = append(ids, id)
-		}
-		return ids
-	case teacher.EdgeAttendanceDaySyncs:
-		ids := make([]ent.Value, 0, len(m.removedattendanceDaySyncs))
-		for id := range m.removedattendanceDaySyncs {
+	case teacher.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.removedsubscriptions))
+		for id := range m.removedsubscriptions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -11771,27 +10230,15 @@ func (m *TeacherMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TeacherMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 3)
 	if m.clearedclasses {
 		edges = append(edges, teacher.EdgeClasses)
 	}
-	if m.clearedscoreSyncs {
-		edges = append(edges, teacher.EdgeScoreSyncs)
+	if m.clearedactions {
+		edges = append(edges, teacher.EdgeActions)
 	}
-	if m.clearedstudentSyncs {
-		edges = append(edges, teacher.EdgeStudentSyncs)
-	}
-	if m.clearedactivitySyncs {
-		edges = append(edges, teacher.EdgeActivitySyncs)
-	}
-	if m.clearedattendanceSyncs {
-		edges = append(edges, teacher.EdgeAttendanceSyncs)
-	}
-	if m.clearedclassPeriodSyncs {
-		edges = append(edges, teacher.EdgeClassPeriodSyncs)
-	}
-	if m.clearedattendanceDaySyncs {
-		edges = append(edges, teacher.EdgeAttendanceDaySyncs)
+	if m.clearedsubscriptions {
+		edges = append(edges, teacher.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -11802,18 +10249,10 @@ func (m *TeacherMutation) EdgeCleared(name string) bool {
 	switch name {
 	case teacher.EdgeClasses:
 		return m.clearedclasses
-	case teacher.EdgeScoreSyncs:
-		return m.clearedscoreSyncs
-	case teacher.EdgeStudentSyncs:
-		return m.clearedstudentSyncs
-	case teacher.EdgeActivitySyncs:
-		return m.clearedactivitySyncs
-	case teacher.EdgeAttendanceSyncs:
-		return m.clearedattendanceSyncs
-	case teacher.EdgeClassPeriodSyncs:
-		return m.clearedclassPeriodSyncs
-	case teacher.EdgeAttendanceDaySyncs:
-		return m.clearedattendanceDaySyncs
+	case teacher.EdgeActions:
+		return m.clearedactions
+	case teacher.EdgeSubscriptions:
+		return m.clearedsubscriptions
 	}
 	return false
 }
@@ -11833,23 +10272,11 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 	case teacher.EdgeClasses:
 		m.ResetClasses()
 		return nil
-	case teacher.EdgeScoreSyncs:
-		m.ResetScoreSyncs()
+	case teacher.EdgeActions:
+		m.ResetActions()
 		return nil
-	case teacher.EdgeStudentSyncs:
-		m.ResetStudentSyncs()
-		return nil
-	case teacher.EdgeActivitySyncs:
-		m.ResetActivitySyncs()
-		return nil
-	case teacher.EdgeAttendanceSyncs:
-		m.ResetAttendanceSyncs()
-		return nil
-	case teacher.EdgeClassPeriodSyncs:
-		m.ResetClassPeriodSyncs()
-		return nil
-	case teacher.EdgeAttendanceDaySyncs:
-		m.ResetAttendanceDaySyncs()
+	case teacher.EdgeSubscriptions:
+		m.ResetSubscriptions()
 		return nil
 	}
 	return fmt.Errorf("unknown Teacher edge %s", name)
@@ -11858,24 +10285,27 @@ func (m *TeacherMutation) ResetEdge(name string) error {
 // YearMutation represents an operation that mutates the Year nodes in the graph.
 type YearMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *string
-	value          *int
-	addvalue       *int
-	clearedFields  map[string]struct{}
-	classes        map[string]struct{}
-	removedclasses map[string]struct{}
-	clearedclasses bool
-	periods        map[string]struct{}
-	removedperiods map[string]struct{}
-	clearedperiods bool
-	areas          map[string]struct{}
-	removedareas   map[string]struct{}
-	clearedareas   bool
-	done           bool
-	oldValue       func(context.Context) (*Year, error)
-	predicates     []predicate.Year
+	op                   Op
+	typ                  string
+	id                   *string
+	value                *int
+	addvalue             *int
+	clearedFields        map[string]struct{}
+	classes              map[string]struct{}
+	removedclasses       map[string]struct{}
+	clearedclasses       bool
+	periods              map[string]struct{}
+	removedperiods       map[string]struct{}
+	clearedperiods       bool
+	areas                map[string]struct{}
+	removedareas         map[string]struct{}
+	clearedareas         bool
+	subscriptions        map[string]struct{}
+	removedsubscriptions map[string]struct{}
+	clearedsubscriptions bool
+	done                 bool
+	oldValue             func(context.Context) (*Year, error)
+	predicates           []predicate.Year
 }
 
 var _ ent.Mutation = (*YearMutation)(nil)
@@ -12200,6 +10630,60 @@ func (m *YearMutation) ResetAreas() {
 	m.removedareas = nil
 }
 
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by ids.
+func (m *YearMutation) AddSubscriptionIDs(ids ...string) {
+	if m.subscriptions == nil {
+		m.subscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.subscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscriptions clears the "subscriptions" edge to the Subscription entity.
+func (m *YearMutation) ClearSubscriptions() {
+	m.clearedsubscriptions = true
+}
+
+// SubscriptionsCleared reports if the "subscriptions" edge to the Subscription entity was cleared.
+func (m *YearMutation) SubscriptionsCleared() bool {
+	return m.clearedsubscriptions
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to the Subscription entity by IDs.
+func (m *YearMutation) RemoveSubscriptionIDs(ids ...string) {
+	if m.removedsubscriptions == nil {
+		m.removedsubscriptions = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.subscriptions, ids[i])
+		m.removedsubscriptions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscriptions returns the removed IDs of the "subscriptions" edge to the Subscription entity.
+func (m *YearMutation) RemovedSubscriptionsIDs() (ids []string) {
+	for id := range m.removedsubscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscriptionsIDs returns the "subscriptions" edge IDs in the mutation.
+func (m *YearMutation) SubscriptionsIDs() (ids []string) {
+	for id := range m.subscriptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscriptions resets all changes to the "subscriptions" edge.
+func (m *YearMutation) ResetSubscriptions() {
+	m.subscriptions = nil
+	m.clearedsubscriptions = false
+	m.removedsubscriptions = nil
+}
+
 // Where appends a list predicates to the YearMutation builder.
 func (m *YearMutation) Where(ps ...predicate.Year) {
 	m.predicates = append(m.predicates, ps...)
@@ -12333,7 +10817,7 @@ func (m *YearMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *YearMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.classes != nil {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -12342,6 +10826,9 @@ func (m *YearMutation) AddedEdges() []string {
 	}
 	if m.areas != nil {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.subscriptions != nil {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -12368,13 +10855,19 @@ func (m *YearMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case year.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.subscriptions))
+		for id := range m.subscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *YearMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedclasses != nil {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -12383,6 +10876,9 @@ func (m *YearMutation) RemovedEdges() []string {
 	}
 	if m.removedareas != nil {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.removedsubscriptions != nil {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -12409,13 +10905,19 @@ func (m *YearMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case year.EdgeSubscriptions:
+		ids := make([]ent.Value, 0, len(m.removedsubscriptions))
+		for id := range m.removedsubscriptions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *YearMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedclasses {
 		edges = append(edges, year.EdgeClasses)
 	}
@@ -12424,6 +10926,9 @@ func (m *YearMutation) ClearedEdges() []string {
 	}
 	if m.clearedareas {
 		edges = append(edges, year.EdgeAreas)
+	}
+	if m.clearedsubscriptions {
+		edges = append(edges, year.EdgeSubscriptions)
 	}
 	return edges
 }
@@ -12438,6 +10943,8 @@ func (m *YearMutation) EdgeCleared(name string) bool {
 		return m.clearedperiods
 	case year.EdgeAreas:
 		return m.clearedareas
+	case year.EdgeSubscriptions:
+		return m.clearedsubscriptions
 	}
 	return false
 }
@@ -12462,6 +10969,9 @@ func (m *YearMutation) ResetEdge(name string) error {
 		return nil
 	case year.EdgeAreas:
 		m.ResetAreas()
+		return nil
+	case year.EdgeSubscriptions:
+		m.ResetSubscriptions()
 		return nil
 	}
 	return fmt.Errorf("unknown Year edge %s", name)

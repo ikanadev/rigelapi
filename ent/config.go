@@ -24,30 +24,26 @@ type config struct {
 
 // hooks per client, for fast access.
 type hooks struct {
-	Activity           []ent.Hook
-	ActivitySync       []ent.Hook
-	AppError           []ent.Hook
-	Area               []ent.Hook
-	Attendance         []ent.Hook
-	AttendanceDay      []ent.Hook
-	AttendanceDaySyncs []ent.Hook
-	AttendanceSync     []ent.Hook
-	Class              []ent.Hook
-	ClassPeriod        []ent.Hook
-	ClassPeriodSync    []ent.Hook
-	Dpto               []ent.Hook
-	Grade              []ent.Hook
-	Municipio          []ent.Hook
-	Period             []ent.Hook
-	Provincia          []ent.Hook
-	School             []ent.Hook
-	Score              []ent.Hook
-	ScoreSync          []ent.Hook
-	Student            []ent.Hook
-	StudentSync        []ent.Hook
-	Subject            []ent.Hook
-	Teacher            []ent.Hook
-	Year               []ent.Hook
+	Activity      []ent.Hook
+	AdminAction   []ent.Hook
+	AppError      []ent.Hook
+	Area          []ent.Hook
+	Attendance    []ent.Hook
+	AttendanceDay []ent.Hook
+	Class         []ent.Hook
+	ClassPeriod   []ent.Hook
+	Dpto          []ent.Hook
+	Grade         []ent.Hook
+	Municipio     []ent.Hook
+	Period        []ent.Hook
+	Provincia     []ent.Hook
+	School        []ent.Hook
+	Score         []ent.Hook
+	Student       []ent.Hook
+	Subject       []ent.Hook
+	Subscription  []ent.Hook
+	Teacher       []ent.Hook
+	Year          []ent.Hook
 }
 
 // Options applies the options on the config object.

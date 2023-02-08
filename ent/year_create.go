@@ -12,6 +12,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/period"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
@@ -77,6 +78,21 @@ func (yc *YearCreate) AddAreas(a ...*Area) *YearCreate {
 		ids[i] = a[i].ID
 	}
 	return yc.AddAreaIDs(ids...)
+}
+
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (yc *YearCreate) AddSubscriptionIDs(ids ...string) *YearCreate {
+	yc.mutation.AddSubscriptionIDs(ids...)
+	return yc
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (yc *YearCreate) AddSubscriptions(s ...*Subscription) *YearCreate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return yc.AddSubscriptionIDs(ids...)
 }
 
 // Mutation returns the YearMutation object of the builder.
@@ -251,6 +267,25 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: area.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := yc.mutation.SubscriptionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   year.SubscriptionsTable,
+			Columns: []string{year.SubscriptionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: subscription.FieldID,
 				},
 			},
 		}

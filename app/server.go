@@ -69,31 +69,34 @@ func (server Server) Run() error {
 	server.app.Get("/years", handlers.YearlyDataHandler(server.db))
 	server.app.Get("/static", handlers.StaticDataHandler(server.db))
 	server.app.Post("/errors", handlers.SaveAppErrors(server.db))
+	server.app.Get("/stats", handlers.StatsHandler(server.db))
+	server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
 
 	protected := server.app.Group("/auth", authMiddleware(server.config))
 
 	protected.Post("/parsexls", handlers.ParseXLS())
-
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
-
 	protected.Post("/students", handlers.SaveStudent(server.db))
 	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))
-
 	protected.Post("/classperiods", handlers.SaveClassPeriods(server.db))
 	protected.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.db))
-
 	protected.Post("/attendancedays", handlers.SaveAttendanceDays(server.db))
 	protected.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.db))
-
 	protected.Post("/attendances", handlers.SaveAttendances(server.db))
 	protected.Get("/attendances/year/:yearid", handlers.GetAttendances(server.db))
-
 	protected.Post("/activities", handlers.SaveActivities(server.db))
 	protected.Get("/activities/year/:yearid", handlers.GetActivities(server.db))
-
 	protected.Post("/scores", handlers.SaveScores(server.db))
 	protected.Get("/scores/year/:yearid", handlers.GetScores(server.db))
+
+	admin := server.app.Group("/admin", authMiddleware(server.config), adminMiddleware(server.db))
+
+	admin.Get("/teachers", handlers.GetTeachers(server.db))
+	admin.Get("/teacher/:id", handlers.GetTeacher(server.db))
+	admin.Post("/subscription", handlers.AddSubscription(server.db, server.newID))
+	admin.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.db))
+	admin.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.db))
 
 	return server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
 }

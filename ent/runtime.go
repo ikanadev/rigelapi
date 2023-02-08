@@ -2,8 +2,19 @@
 
 package ent
 
+import (
+	"github.com/vmkevv/rigelapi/ent/schema"
+	"github.com/vmkevv/rigelapi/ent/teacher"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	teacherFields := schema.Teacher{}.Fields()
+	_ = teacherFields
+	// teacherDescIsAdmin is the schema descriptor for is_admin field.
+	teacherDescIsAdmin := teacherFields[5].Descriptor()
+	// teacher.DefaultIsAdmin holds the default value on creation for the is_admin field.
+	teacher.DefaultIsAdmin = teacherDescIsAdmin.Default.(bool)
 }

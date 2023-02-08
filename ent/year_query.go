@@ -15,21 +15,23 @@ import (
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/period"
 	"github.com/vmkevv/rigelapi/ent/predicate"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 // YearQuery is the builder for querying Year entities.
 type YearQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
-	predicates  []predicate.Year
-	withClasses *ClassQuery
-	withPeriods *PeriodQuery
-	withAreas   *AreaQuery
+	limit             *int
+	offset            *int
+	unique            *bool
+	order             []OrderFunc
+	fields            []string
+	predicates        []predicate.Year
+	withClasses       *ClassQuery
+	withPeriods       *PeriodQuery
+	withAreas         *AreaQuery
+	withSubscriptions *SubscriptionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +127,28 @@ func (yq *YearQuery) QueryAreas() *AreaQuery {
 			sqlgraph.From(year.Table, year.FieldID, selector),
 			sqlgraph.To(area.Table, area.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, year.AreasTable, year.AreasColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(yq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubscriptions chains the current query on the "subscriptions" edge.
+func (yq *YearQuery) QuerySubscriptions() *SubscriptionQuery {
+	query := &SubscriptionQuery{config: yq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := yq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := yq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(year.Table, year.FieldID, selector),
+			sqlgraph.To(subscription.Table, subscription.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, year.SubscriptionsTable, year.SubscriptionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(yq.driver.Dialect(), step)
 		return fromU, nil
@@ -308,14 +332,15 @@ func (yq *YearQuery) Clone() *YearQuery {
 		return nil
 	}
 	return &YearQuery{
-		config:      yq.config,
-		limit:       yq.limit,
-		offset:      yq.offset,
-		order:       append([]OrderFunc{}, yq.order...),
-		predicates:  append([]predicate.Year{}, yq.predicates...),
-		withClasses: yq.withClasses.Clone(),
-		withPeriods: yq.withPeriods.Clone(),
-		withAreas:   yq.withAreas.Clone(),
+		config:            yq.config,
+		limit:             yq.limit,
+		offset:            yq.offset,
+		order:             append([]OrderFunc{}, yq.order...),
+		predicates:        append([]predicate.Year{}, yq.predicates...),
+		withClasses:       yq.withClasses.Clone(),
+		withPeriods:       yq.withPeriods.Clone(),
+		withAreas:         yq.withAreas.Clone(),
+		withSubscriptions: yq.withSubscriptions.Clone(),
 		// clone intermediate query.
 		sql:    yq.sql.Clone(),
 		path:   yq.path,
@@ -353,6 +378,17 @@ func (yq *YearQuery) WithAreas(opts ...func(*AreaQuery)) *YearQuery {
 		opt(query)
 	}
 	yq.withAreas = query
+	return yq
+}
+
+// WithSubscriptions tells the query-builder to eager-load the nodes that are connected to
+// the "subscriptions" edge. The optional arguments are used to configure the query builder of the edge.
+func (yq *YearQuery) WithSubscriptions(opts ...func(*SubscriptionQuery)) *YearQuery {
+	query := &SubscriptionQuery{config: yq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	yq.withSubscriptions = query
 	return yq
 }
 
@@ -424,10 +460,11 @@ func (yq *YearQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Year, e
 	var (
 		nodes       = []*Year{}
 		_spec       = yq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			yq.withClasses != nil,
 			yq.withPeriods != nil,
 			yq.withAreas != nil,
+			yq.withSubscriptions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -466,6 +503,13 @@ func (yq *YearQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Year, e
 		if err := yq.loadAreas(ctx, query, nodes,
 			func(n *Year) { n.Edges.Areas = []*Area{} },
 			func(n *Year, e *Area) { n.Edges.Areas = append(n.Edges.Areas, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := yq.withSubscriptions; query != nil {
+		if err := yq.loadSubscriptions(ctx, query, nodes,
+			func(n *Year) { n.Edges.Subscriptions = []*Subscription{} },
+			func(n *Year, e *Subscription) { n.Edges.Subscriptions = append(n.Edges.Subscriptions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -560,6 +604,37 @@ func (yq *YearQuery) loadAreas(ctx context.Context, query *AreaQuery, nodes []*Y
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "year_areas" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (yq *YearQuery) loadSubscriptions(ctx context.Context, query *SubscriptionQuery, nodes []*Year, init func(*Year), assign func(*Year, *Subscription)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Year)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Subscription(func(s *sql.Selector) {
+		s.Where(sql.InValues(year.SubscriptionsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.year_subscriptions
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "year_subscriptions" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "year_subscriptions" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

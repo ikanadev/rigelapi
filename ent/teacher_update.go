@@ -10,14 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
 	"github.com/vmkevv/rigelapi/ent/predicate"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
@@ -58,6 +54,20 @@ func (tu *TeacherUpdate) SetPassword(s string) *TeacherUpdate {
 	return tu
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tu *TeacherUpdate) SetIsAdmin(b bool) *TeacherUpdate {
+	tu.mutation.SetIsAdmin(b)
+	return tu
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tu *TeacherUpdate) SetNillableIsAdmin(b *bool) *TeacherUpdate {
+	if b != nil {
+		tu.SetIsAdmin(*b)
+	}
+	return tu
+}
+
 // AddClassIDs adds the "classes" edge to the Class entity by IDs.
 func (tu *TeacherUpdate) AddClassIDs(ids ...string) *TeacherUpdate {
 	tu.mutation.AddClassIDs(ids...)
@@ -73,94 +83,34 @@ func (tu *TeacherUpdate) AddClasses(c ...*Class) *TeacherUpdate {
 	return tu.AddClassIDs(ids...)
 }
 
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (tu *TeacherUpdate) AddScoreSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddScoreSyncIDs(ids...)
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tu *TeacherUpdate) AddActionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddActionIDs(ids...)
 	return tu
 }
 
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (tu *TeacherUpdate) AddScoreSyncs(s ...*ScoreSync) *TeacherUpdate {
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tu *TeacherUpdate) AddActions(a ...*AdminAction) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.AddActionIDs(ids...)
+}
+
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tu *TeacherUpdate) AddSubscriptionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.AddSubscriptionIDs(ids...)
+	return tu
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tu *TeacherUpdate) AddSubscriptions(s ...*Subscription) *TeacherUpdate {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return tu.AddScoreSyncIDs(ids...)
-}
-
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
-func (tu *TeacherUpdate) AddStudentSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddStudentSyncIDs(ids...)
-	return tu
-}
-
-// AddStudentSyncs adds the "studentSyncs" edges to the StudentSync entity.
-func (tu *TeacherUpdate) AddStudentSyncs(s ...*StudentSync) *TeacherUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return tu.AddStudentSyncIDs(ids...)
-}
-
-// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by IDs.
-func (tu *TeacherUpdate) AddActivitySyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddActivitySyncIDs(ids...)
-	return tu
-}
-
-// AddActivitySyncs adds the "activitySyncs" edges to the ActivitySync entity.
-func (tu *TeacherUpdate) AddActivitySyncs(a ...*ActivitySync) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.AddActivitySyncIDs(ids...)
-}
-
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (tu *TeacherUpdate) AddAttendanceSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddAttendanceSyncIDs(ids...)
-	return tu
-}
-
-// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
-func (tu *TeacherUpdate) AddAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.AddAttendanceSyncIDs(ids...)
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (tu *TeacherUpdate) AddClassPeriodSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddClassPeriodSyncIDs(ids...)
-	return tu
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (tu *TeacherUpdate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherUpdate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return tu.AddClassPeriodSyncIDs(ids...)
-}
-
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (tu *TeacherUpdate) AddAttendanceDaySyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.AddAttendanceDaySyncIDs(ids...)
-	return tu
-}
-
-// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (tu *TeacherUpdate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.AddAttendanceDaySyncIDs(ids...)
+	return tu.AddSubscriptionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -189,130 +139,46 @@ func (tu *TeacherUpdate) RemoveClasses(c ...*Class) *TeacherUpdate {
 	return tu.RemoveClassIDs(ids...)
 }
 
-// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
-func (tu *TeacherUpdate) ClearScoreSyncs() *TeacherUpdate {
-	tu.mutation.ClearScoreSyncs()
+// ClearActions clears all "actions" edges to the AdminAction entity.
+func (tu *TeacherUpdate) ClearActions() *TeacherUpdate {
+	tu.mutation.ClearActions()
 	return tu
 }
 
-// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
-func (tu *TeacherUpdate) RemoveScoreSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveScoreSyncIDs(ids...)
+// RemoveActionIDs removes the "actions" edge to AdminAction entities by IDs.
+func (tu *TeacherUpdate) RemoveActionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveActionIDs(ids...)
 	return tu
 }
 
-// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
-func (tu *TeacherUpdate) RemoveScoreSyncs(s ...*ScoreSync) *TeacherUpdate {
+// RemoveActions removes "actions" edges to AdminAction entities.
+func (tu *TeacherUpdate) RemoveActions(a ...*AdminAction) *TeacherUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tu.RemoveActionIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (tu *TeacherUpdate) ClearSubscriptions() *TeacherUpdate {
+	tu.mutation.ClearSubscriptions()
+	return tu
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (tu *TeacherUpdate) RemoveSubscriptionIDs(ids ...string) *TeacherUpdate {
+	tu.mutation.RemoveSubscriptionIDs(ids...)
+	return tu
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (tu *TeacherUpdate) RemoveSubscriptions(s ...*Subscription) *TeacherUpdate {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return tu.RemoveScoreSyncIDs(ids...)
-}
-
-// ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
-func (tu *TeacherUpdate) ClearStudentSyncs() *TeacherUpdate {
-	tu.mutation.ClearStudentSyncs()
-	return tu
-}
-
-// RemoveStudentSyncIDs removes the "studentSyncs" edge to StudentSync entities by IDs.
-func (tu *TeacherUpdate) RemoveStudentSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveStudentSyncIDs(ids...)
-	return tu
-}
-
-// RemoveStudentSyncs removes "studentSyncs" edges to StudentSync entities.
-func (tu *TeacherUpdate) RemoveStudentSyncs(s ...*StudentSync) *TeacherUpdate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return tu.RemoveStudentSyncIDs(ids...)
-}
-
-// ClearActivitySyncs clears all "activitySyncs" edges to the ActivitySync entity.
-func (tu *TeacherUpdate) ClearActivitySyncs() *TeacherUpdate {
-	tu.mutation.ClearActivitySyncs()
-	return tu
-}
-
-// RemoveActivitySyncIDs removes the "activitySyncs" edge to ActivitySync entities by IDs.
-func (tu *TeacherUpdate) RemoveActivitySyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveActivitySyncIDs(ids...)
-	return tu
-}
-
-// RemoveActivitySyncs removes "activitySyncs" edges to ActivitySync entities.
-func (tu *TeacherUpdate) RemoveActivitySyncs(a ...*ActivitySync) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.RemoveActivitySyncIDs(ids...)
-}
-
-// ClearAttendanceSyncs clears all "attendanceSyncs" edges to the AttendanceSync entity.
-func (tu *TeacherUpdate) ClearAttendanceSyncs() *TeacherUpdate {
-	tu.mutation.ClearAttendanceSyncs()
-	return tu
-}
-
-// RemoveAttendanceSyncIDs removes the "attendanceSyncs" edge to AttendanceSync entities by IDs.
-func (tu *TeacherUpdate) RemoveAttendanceSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveAttendanceSyncIDs(ids...)
-	return tu
-}
-
-// RemoveAttendanceSyncs removes "attendanceSyncs" edges to AttendanceSync entities.
-func (tu *TeacherUpdate) RemoveAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.RemoveAttendanceSyncIDs(ids...)
-}
-
-// ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (tu *TeacherUpdate) ClearClassPeriodSyncs() *TeacherUpdate {
-	tu.mutation.ClearClassPeriodSyncs()
-	return tu
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to ClassPeriodSync entities by IDs.
-func (tu *TeacherUpdate) RemoveClassPeriodSyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveClassPeriodSyncIDs(ids...)
-	return tu
-}
-
-// RemoveClassPeriodSyncs removes "classPeriodSyncs" edges to ClassPeriodSync entities.
-func (tu *TeacherUpdate) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherUpdate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return tu.RemoveClassPeriodSyncIDs(ids...)
-}
-
-// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (tu *TeacherUpdate) ClearAttendanceDaySyncs() *TeacherUpdate {
-	tu.mutation.ClearAttendanceDaySyncs()
-	return tu
-}
-
-// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
-func (tu *TeacherUpdate) RemoveAttendanceDaySyncIDs(ids ...string) *TeacherUpdate {
-	tu.mutation.RemoveAttendanceDaySyncIDs(ids...)
-	return tu
-}
-
-// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
-func (tu *TeacherUpdate) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tu.RemoveAttendanceDaySyncIDs(ids...)
+	return tu.RemoveSubscriptionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -415,6 +281,13 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: teacher.FieldPassword,
 		})
 	}
+	if value, ok := tu.mutation.IsAdmin(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+	}
 	if tu.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -469,33 +342,33 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.ScoreSyncsCleared() {
+	if tu.mutation.ActionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !tu.mutation.ScoreSyncsCleared() {
+	if nodes := tu.mutation.RemovedActionsIDs(); len(nodes) > 0 && !tu.mutation.ActionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -504,71 +377,17 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.ActionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tu.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.RemovedStudentSyncsIDs(); len(nodes) > 0 && !tu.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.StudentSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -577,33 +396,33 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.ActivitySyncsCleared() {
+	if tu.mutation.SubscriptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedActivitySyncsIDs(); len(nodes) > 0 && !tu.mutation.ActivitySyncsCleared() {
+	if nodes := tu.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !tu.mutation.SubscriptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
@@ -612,179 +431,17 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.ActivitySyncsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.SubscriptionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tu.mutation.AttendanceSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.RemovedAttendanceSyncsIDs(); len(nodes) > 0 && !tu.mutation.AttendanceSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tu.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.RemovedClassPeriodSyncsIDs(); len(nodes) > 0 && !tu.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tu.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !tu.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
@@ -836,6 +493,20 @@ func (tuo *TeacherUpdateOne) SetPassword(s string) *TeacherUpdateOne {
 	return tuo
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tuo *TeacherUpdateOne) SetIsAdmin(b bool) *TeacherUpdateOne {
+	tuo.mutation.SetIsAdmin(b)
+	return tuo
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tuo *TeacherUpdateOne) SetNillableIsAdmin(b *bool) *TeacherUpdateOne {
+	if b != nil {
+		tuo.SetIsAdmin(*b)
+	}
+	return tuo
+}
+
 // AddClassIDs adds the "classes" edge to the Class entity by IDs.
 func (tuo *TeacherUpdateOne) AddClassIDs(ids ...string) *TeacherUpdateOne {
 	tuo.mutation.AddClassIDs(ids...)
@@ -851,94 +522,34 @@ func (tuo *TeacherUpdateOne) AddClasses(c ...*Class) *TeacherUpdateOne {
 	return tuo.AddClassIDs(ids...)
 }
 
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (tuo *TeacherUpdateOne) AddScoreSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddScoreSyncIDs(ids...)
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tuo *TeacherUpdateOne) AddActionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddActionIDs(ids...)
 	return tuo
 }
 
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (tuo *TeacherUpdateOne) AddScoreSyncs(s ...*ScoreSync) *TeacherUpdateOne {
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tuo *TeacherUpdateOne) AddActions(a ...*AdminAction) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.AddActionIDs(ids...)
+}
+
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tuo *TeacherUpdateOne) AddSubscriptionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.AddSubscriptionIDs(ids...)
+	return tuo
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tuo *TeacherUpdateOne) AddSubscriptions(s ...*Subscription) *TeacherUpdateOne {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return tuo.AddScoreSyncIDs(ids...)
-}
-
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
-func (tuo *TeacherUpdateOne) AddStudentSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddStudentSyncIDs(ids...)
-	return tuo
-}
-
-// AddStudentSyncs adds the "studentSyncs" edges to the StudentSync entity.
-func (tuo *TeacherUpdateOne) AddStudentSyncs(s ...*StudentSync) *TeacherUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return tuo.AddStudentSyncIDs(ids...)
-}
-
-// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by IDs.
-func (tuo *TeacherUpdateOne) AddActivitySyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddActivitySyncIDs(ids...)
-	return tuo
-}
-
-// AddActivitySyncs adds the "activitySyncs" edges to the ActivitySync entity.
-func (tuo *TeacherUpdateOne) AddActivitySyncs(a ...*ActivitySync) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.AddActivitySyncIDs(ids...)
-}
-
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (tuo *TeacherUpdateOne) AddAttendanceSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddAttendanceSyncIDs(ids...)
-	return tuo
-}
-
-// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
-func (tuo *TeacherUpdateOne) AddAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.AddAttendanceSyncIDs(ids...)
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (tuo *TeacherUpdateOne) AddClassPeriodSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddClassPeriodSyncIDs(ids...)
-	return tuo
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (tuo *TeacherUpdateOne) AddClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherUpdateOne {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return tuo.AddClassPeriodSyncIDs(ids...)
-}
-
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (tuo *TeacherUpdateOne) AddAttendanceDaySyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.AddAttendanceDaySyncIDs(ids...)
-	return tuo
-}
-
-// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (tuo *TeacherUpdateOne) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.AddAttendanceDaySyncIDs(ids...)
+	return tuo.AddSubscriptionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -967,130 +578,46 @@ func (tuo *TeacherUpdateOne) RemoveClasses(c ...*Class) *TeacherUpdateOne {
 	return tuo.RemoveClassIDs(ids...)
 }
 
-// ClearScoreSyncs clears all "scoreSyncs" edges to the ScoreSync entity.
-func (tuo *TeacherUpdateOne) ClearScoreSyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearScoreSyncs()
+// ClearActions clears all "actions" edges to the AdminAction entity.
+func (tuo *TeacherUpdateOne) ClearActions() *TeacherUpdateOne {
+	tuo.mutation.ClearActions()
 	return tuo
 }
 
-// RemoveScoreSyncIDs removes the "scoreSyncs" edge to ScoreSync entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveScoreSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveScoreSyncIDs(ids...)
+// RemoveActionIDs removes the "actions" edge to AdminAction entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveActionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveActionIDs(ids...)
 	return tuo
 }
 
-// RemoveScoreSyncs removes "scoreSyncs" edges to ScoreSync entities.
-func (tuo *TeacherUpdateOne) RemoveScoreSyncs(s ...*ScoreSync) *TeacherUpdateOne {
+// RemoveActions removes "actions" edges to AdminAction entities.
+func (tuo *TeacherUpdateOne) RemoveActions(a ...*AdminAction) *TeacherUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tuo.RemoveActionIDs(ids...)
+}
+
+// ClearSubscriptions clears all "subscriptions" edges to the Subscription entity.
+func (tuo *TeacherUpdateOne) ClearSubscriptions() *TeacherUpdateOne {
+	tuo.mutation.ClearSubscriptions()
+	return tuo
+}
+
+// RemoveSubscriptionIDs removes the "subscriptions" edge to Subscription entities by IDs.
+func (tuo *TeacherUpdateOne) RemoveSubscriptionIDs(ids ...string) *TeacherUpdateOne {
+	tuo.mutation.RemoveSubscriptionIDs(ids...)
+	return tuo
+}
+
+// RemoveSubscriptions removes "subscriptions" edges to Subscription entities.
+func (tuo *TeacherUpdateOne) RemoveSubscriptions(s ...*Subscription) *TeacherUpdateOne {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return tuo.RemoveScoreSyncIDs(ids...)
-}
-
-// ClearStudentSyncs clears all "studentSyncs" edges to the StudentSync entity.
-func (tuo *TeacherUpdateOne) ClearStudentSyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearStudentSyncs()
-	return tuo
-}
-
-// RemoveStudentSyncIDs removes the "studentSyncs" edge to StudentSync entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveStudentSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveStudentSyncIDs(ids...)
-	return tuo
-}
-
-// RemoveStudentSyncs removes "studentSyncs" edges to StudentSync entities.
-func (tuo *TeacherUpdateOne) RemoveStudentSyncs(s ...*StudentSync) *TeacherUpdateOne {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return tuo.RemoveStudentSyncIDs(ids...)
-}
-
-// ClearActivitySyncs clears all "activitySyncs" edges to the ActivitySync entity.
-func (tuo *TeacherUpdateOne) ClearActivitySyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearActivitySyncs()
-	return tuo
-}
-
-// RemoveActivitySyncIDs removes the "activitySyncs" edge to ActivitySync entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveActivitySyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveActivitySyncIDs(ids...)
-	return tuo
-}
-
-// RemoveActivitySyncs removes "activitySyncs" edges to ActivitySync entities.
-func (tuo *TeacherUpdateOne) RemoveActivitySyncs(a ...*ActivitySync) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.RemoveActivitySyncIDs(ids...)
-}
-
-// ClearAttendanceSyncs clears all "attendanceSyncs" edges to the AttendanceSync entity.
-func (tuo *TeacherUpdateOne) ClearAttendanceSyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearAttendanceSyncs()
-	return tuo
-}
-
-// RemoveAttendanceSyncIDs removes the "attendanceSyncs" edge to AttendanceSync entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveAttendanceSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveAttendanceSyncIDs(ids...)
-	return tuo
-}
-
-// RemoveAttendanceSyncs removes "attendanceSyncs" edges to AttendanceSync entities.
-func (tuo *TeacherUpdateOne) RemoveAttendanceSyncs(a ...*AttendanceSync) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.RemoveAttendanceSyncIDs(ids...)
-}
-
-// ClearClassPeriodSyncs clears all "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (tuo *TeacherUpdateOne) ClearClassPeriodSyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearClassPeriodSyncs()
-	return tuo
-}
-
-// RemoveClassPeriodSyncIDs removes the "classPeriodSyncs" edge to ClassPeriodSync entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveClassPeriodSyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveClassPeriodSyncIDs(ids...)
-	return tuo
-}
-
-// RemoveClassPeriodSyncs removes "classPeriodSyncs" edges to ClassPeriodSync entities.
-func (tuo *TeacherUpdateOne) RemoveClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherUpdateOne {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return tuo.RemoveClassPeriodSyncIDs(ids...)
-}
-
-// ClearAttendanceDaySyncs clears all "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (tuo *TeacherUpdateOne) ClearAttendanceDaySyncs() *TeacherUpdateOne {
-	tuo.mutation.ClearAttendanceDaySyncs()
-	return tuo
-}
-
-// RemoveAttendanceDaySyncIDs removes the "attendanceDaySyncs" edge to AttendanceDaySyncs entities by IDs.
-func (tuo *TeacherUpdateOne) RemoveAttendanceDaySyncIDs(ids ...string) *TeacherUpdateOne {
-	tuo.mutation.RemoveAttendanceDaySyncIDs(ids...)
-	return tuo
-}
-
-// RemoveAttendanceDaySyncs removes "attendanceDaySyncs" edges to AttendanceDaySyncs entities.
-func (tuo *TeacherUpdateOne) RemoveAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherUpdateOne {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tuo.RemoveAttendanceDaySyncIDs(ids...)
+	return tuo.RemoveSubscriptionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1223,6 +750,13 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Column: teacher.FieldPassword,
 		})
 	}
+	if value, ok := tuo.mutation.IsAdmin(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+	}
 	if tuo.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1277,33 +811,33 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.ScoreSyncsCleared() {
+	if tuo.mutation.ActionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedScoreSyncsIDs(); len(nodes) > 0 && !tuo.mutation.ScoreSyncsCleared() {
+	if nodes := tuo.mutation.RemovedActionsIDs(); len(nodes) > 0 && !tuo.mutation.ActionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -1312,71 +846,17 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.ActionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tuo.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.RemovedStudentSyncsIDs(); len(nodes) > 0 && !tuo.mutation.StudentSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.StudentSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: studentsync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -1385,33 +865,33 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.ActivitySyncsCleared() {
+	if tuo.mutation.SubscriptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedActivitySyncsIDs(); len(nodes) > 0 && !tuo.mutation.ActivitySyncsCleared() {
+	if nodes := tuo.mutation.RemovedSubscriptionsIDs(); len(nodes) > 0 && !tuo.mutation.SubscriptionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
@@ -1420,179 +900,17 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.ActivitySyncsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.SubscriptionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: activitysync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tuo.mutation.AttendanceSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.RemovedAttendanceSyncsIDs(); len(nodes) > 0 && !tuo.mutation.AttendanceSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tuo.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.RemovedClassPeriodSyncsIDs(); len(nodes) > 0 && !tuo.mutation.ClassPeriodSyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tuo.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.RemovedAttendanceDaySyncsIDs(); len(nodes) > 0 && !tuo.mutation.AttendanceDaySyncsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}

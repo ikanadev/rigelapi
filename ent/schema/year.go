@@ -25,5 +25,6 @@ func (Year) Edges() []ent.Edge {
 		edge.To("classes", Class.Type),
 		edge.To("periods", Period.Type),
 		edge.To("areas", Area.Type),
+		edge.To("subscriptions", Subscription.Type),
 	}
 }

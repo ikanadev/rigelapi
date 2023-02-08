@@ -9,13 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/vmkevv/rigelapi/ent/activitysync"
-	"github.com/vmkevv/rigelapi/ent/attendancedaysyncs"
-	"github.com/vmkevv/rigelapi/ent/attendancesync"
+	"github.com/vmkevv/rigelapi/ent/adminaction"
 	"github.com/vmkevv/rigelapi/ent/class"
-	"github.com/vmkevv/rigelapi/ent/classperiodsync"
-	"github.com/vmkevv/rigelapi/ent/scoresync"
-	"github.com/vmkevv/rigelapi/ent/studentsync"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
@@ -50,6 +46,20 @@ func (tc *TeacherCreate) SetPassword(s string) *TeacherCreate {
 	return tc
 }
 
+// SetIsAdmin sets the "is_admin" field.
+func (tc *TeacherCreate) SetIsAdmin(b bool) *TeacherCreate {
+	tc.mutation.SetIsAdmin(b)
+	return tc
+}
+
+// SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
+func (tc *TeacherCreate) SetNillableIsAdmin(b *bool) *TeacherCreate {
+	if b != nil {
+		tc.SetIsAdmin(*b)
+	}
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TeacherCreate) SetID(s string) *TeacherCreate {
 	tc.mutation.SetID(s)
@@ -71,94 +81,34 @@ func (tc *TeacherCreate) AddClasses(c ...*Class) *TeacherCreate {
 	return tc.AddClassIDs(ids...)
 }
 
-// AddScoreSyncIDs adds the "scoreSyncs" edge to the ScoreSync entity by IDs.
-func (tc *TeacherCreate) AddScoreSyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddScoreSyncIDs(ids...)
+// AddActionIDs adds the "actions" edge to the AdminAction entity by IDs.
+func (tc *TeacherCreate) AddActionIDs(ids ...string) *TeacherCreate {
+	tc.mutation.AddActionIDs(ids...)
 	return tc
 }
 
-// AddScoreSyncs adds the "scoreSyncs" edges to the ScoreSync entity.
-func (tc *TeacherCreate) AddScoreSyncs(s ...*ScoreSync) *TeacherCreate {
+// AddActions adds the "actions" edges to the AdminAction entity.
+func (tc *TeacherCreate) AddActions(a ...*AdminAction) *TeacherCreate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return tc.AddActionIDs(ids...)
+}
+
+// AddSubscriptionIDs adds the "subscriptions" edge to the Subscription entity by IDs.
+func (tc *TeacherCreate) AddSubscriptionIDs(ids ...string) *TeacherCreate {
+	tc.mutation.AddSubscriptionIDs(ids...)
+	return tc
+}
+
+// AddSubscriptions adds the "subscriptions" edges to the Subscription entity.
+func (tc *TeacherCreate) AddSubscriptions(s ...*Subscription) *TeacherCreate {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return tc.AddScoreSyncIDs(ids...)
-}
-
-// AddStudentSyncIDs adds the "studentSyncs" edge to the StudentSync entity by IDs.
-func (tc *TeacherCreate) AddStudentSyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddStudentSyncIDs(ids...)
-	return tc
-}
-
-// AddStudentSyncs adds the "studentSyncs" edges to the StudentSync entity.
-func (tc *TeacherCreate) AddStudentSyncs(s ...*StudentSync) *TeacherCreate {
-	ids := make([]string, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return tc.AddStudentSyncIDs(ids...)
-}
-
-// AddActivitySyncIDs adds the "activitySyncs" edge to the ActivitySync entity by IDs.
-func (tc *TeacherCreate) AddActivitySyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddActivitySyncIDs(ids...)
-	return tc
-}
-
-// AddActivitySyncs adds the "activitySyncs" edges to the ActivitySync entity.
-func (tc *TeacherCreate) AddActivitySyncs(a ...*ActivitySync) *TeacherCreate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tc.AddActivitySyncIDs(ids...)
-}
-
-// AddAttendanceSyncIDs adds the "attendanceSyncs" edge to the AttendanceSync entity by IDs.
-func (tc *TeacherCreate) AddAttendanceSyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddAttendanceSyncIDs(ids...)
-	return tc
-}
-
-// AddAttendanceSyncs adds the "attendanceSyncs" edges to the AttendanceSync entity.
-func (tc *TeacherCreate) AddAttendanceSyncs(a ...*AttendanceSync) *TeacherCreate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tc.AddAttendanceSyncIDs(ids...)
-}
-
-// AddClassPeriodSyncIDs adds the "classPeriodSyncs" edge to the ClassPeriodSync entity by IDs.
-func (tc *TeacherCreate) AddClassPeriodSyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddClassPeriodSyncIDs(ids...)
-	return tc
-}
-
-// AddClassPeriodSyncs adds the "classPeriodSyncs" edges to the ClassPeriodSync entity.
-func (tc *TeacherCreate) AddClassPeriodSyncs(c ...*ClassPeriodSync) *TeacherCreate {
-	ids := make([]string, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return tc.AddClassPeriodSyncIDs(ids...)
-}
-
-// AddAttendanceDaySyncIDs adds the "attendanceDaySyncs" edge to the AttendanceDaySyncs entity by IDs.
-func (tc *TeacherCreate) AddAttendanceDaySyncIDs(ids ...string) *TeacherCreate {
-	tc.mutation.AddAttendanceDaySyncIDs(ids...)
-	return tc
-}
-
-// AddAttendanceDaySyncs adds the "attendanceDaySyncs" edges to the AttendanceDaySyncs entity.
-func (tc *TeacherCreate) AddAttendanceDaySyncs(a ...*AttendanceDaySyncs) *TeacherCreate {
-	ids := make([]string, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return tc.AddAttendanceDaySyncIDs(ids...)
+	return tc.AddSubscriptionIDs(ids...)
 }
 
 // Mutation returns the TeacherMutation object of the builder.
@@ -172,6 +122,7 @@ func (tc *TeacherCreate) Save(ctx context.Context) (*Teacher, error) {
 		err  error
 		node *Teacher
 	)
+	tc.defaults()
 	if len(tc.hooks) == 0 {
 		if err = tc.check(); err != nil {
 			return nil, err
@@ -235,6 +186,14 @@ func (tc *TeacherCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (tc *TeacherCreate) defaults() {
+	if _, ok := tc.mutation.IsAdmin(); !ok {
+		v := teacher.DefaultIsAdmin
+		tc.mutation.SetIsAdmin(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (tc *TeacherCreate) check() error {
 	if _, ok := tc.mutation.Name(); !ok {
@@ -248,6 +207,9 @@ func (tc *TeacherCreate) check() error {
 	}
 	if _, ok := tc.mutation.Password(); !ok {
 		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "Teacher.password"`)}
+	}
+	if _, ok := tc.mutation.IsAdmin(); !ok {
+		return &ValidationError{Name: "is_admin", err: errors.New(`ent: missing required field "Teacher.is_admin"`)}
 	}
 	return nil
 }
@@ -317,6 +279,14 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
+	if value, ok := tc.mutation.IsAdmin(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: teacher.FieldIsAdmin,
+		})
+		_node.IsAdmin = value
+	}
 	if nodes := tc.mutation.ClassesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -336,17 +306,17 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.ScoreSyncsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.ActionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.ScoreSyncsTable,
-			Columns: []string{teacher.ScoreSyncsColumn},
+			Table:   teacher.ActionsTable,
+			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: scoresync.FieldID,
+					Column: adminaction.FieldID,
 				},
 			},
 		}
@@ -355,93 +325,17 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.StudentSyncsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.SubscriptionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   teacher.StudentSyncsTable,
-			Columns: []string{teacher.StudentSyncsColumn},
+			Table:   teacher.SubscriptionsTable,
+			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: studentsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.ActivitySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ActivitySyncsTable,
-			Columns: []string{teacher.ActivitySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activitysync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.AttendanceSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceSyncsTable,
-			Columns: []string{teacher.AttendanceSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancesync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.ClassPeriodSyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.ClassPeriodSyncsTable,
-			Columns: []string{teacher.ClassPeriodSyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiodsync.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.AttendanceDaySyncsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   teacher.AttendanceDaySyncsTable,
-			Columns: []string{teacher.AttendanceDaySyncsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendancedaysyncs.FieldID,
+					Column: subscription.FieldID,
 				},
 			},
 		}
@@ -467,6 +361,7 @@ func (tcb *TeacherCreateBulk) Save(ctx context.Context) ([]*Teacher, error) {
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TeacherMutation)
 				if !ok {

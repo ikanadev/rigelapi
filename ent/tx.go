@@ -14,8 +14,8 @@ type Tx struct {
 	config
 	// Activity is the client for interacting with the Activity builders.
 	Activity *ActivityClient
-	// ActivitySync is the client for interacting with the ActivitySync builders.
-	ActivitySync *ActivitySyncClient
+	// AdminAction is the client for interacting with the AdminAction builders.
+	AdminAction *AdminActionClient
 	// AppError is the client for interacting with the AppError builders.
 	AppError *AppErrorClient
 	// Area is the client for interacting with the Area builders.
@@ -24,16 +24,10 @@ type Tx struct {
 	Attendance *AttendanceClient
 	// AttendanceDay is the client for interacting with the AttendanceDay builders.
 	AttendanceDay *AttendanceDayClient
-	// AttendanceDaySyncs is the client for interacting with the AttendanceDaySyncs builders.
-	AttendanceDaySyncs *AttendanceDaySyncsClient
-	// AttendanceSync is the client for interacting with the AttendanceSync builders.
-	AttendanceSync *AttendanceSyncClient
 	// Class is the client for interacting with the Class builders.
 	Class *ClassClient
 	// ClassPeriod is the client for interacting with the ClassPeriod builders.
 	ClassPeriod *ClassPeriodClient
-	// ClassPeriodSync is the client for interacting with the ClassPeriodSync builders.
-	ClassPeriodSync *ClassPeriodSyncClient
 	// Dpto is the client for interacting with the Dpto builders.
 	Dpto *DptoClient
 	// Grade is the client for interacting with the Grade builders.
@@ -48,14 +42,12 @@ type Tx struct {
 	School *SchoolClient
 	// Score is the client for interacting with the Score builders.
 	Score *ScoreClient
-	// ScoreSync is the client for interacting with the ScoreSync builders.
-	ScoreSync *ScoreSyncClient
 	// Student is the client for interacting with the Student builders.
 	Student *StudentClient
-	// StudentSync is the client for interacting with the StudentSync builders.
-	StudentSync *StudentSyncClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
+	// Subscription is the client for interacting with the Subscription builders.
+	Subscription *SubscriptionClient
 	// Teacher is the client for interacting with the Teacher builders.
 	Teacher *TeacherClient
 	// Year is the client for interacting with the Year builders.
@@ -196,16 +188,13 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
-	tx.ActivitySync = NewActivitySyncClient(tx.config)
+	tx.AdminAction = NewAdminActionClient(tx.config)
 	tx.AppError = NewAppErrorClient(tx.config)
 	tx.Area = NewAreaClient(tx.config)
 	tx.Attendance = NewAttendanceClient(tx.config)
 	tx.AttendanceDay = NewAttendanceDayClient(tx.config)
-	tx.AttendanceDaySyncs = NewAttendanceDaySyncsClient(tx.config)
-	tx.AttendanceSync = NewAttendanceSyncClient(tx.config)
 	tx.Class = NewClassClient(tx.config)
 	tx.ClassPeriod = NewClassPeriodClient(tx.config)
-	tx.ClassPeriodSync = NewClassPeriodSyncClient(tx.config)
 	tx.Dpto = NewDptoClient(tx.config)
 	tx.Grade = NewGradeClient(tx.config)
 	tx.Municipio = NewMunicipioClient(tx.config)
@@ -213,10 +202,9 @@ func (tx *Tx) init() {
 	tx.Provincia = NewProvinciaClient(tx.config)
 	tx.School = NewSchoolClient(tx.config)
 	tx.Score = NewScoreClient(tx.config)
-	tx.ScoreSync = NewScoreSyncClient(tx.config)
 	tx.Student = NewStudentClient(tx.config)
-	tx.StudentSync = NewStudentSyncClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
+	tx.Subscription = NewSubscriptionClient(tx.config)
 	tx.Teacher = NewTeacherClient(tx.config)
 	tx.Year = NewYearClient(tx.config)
 }

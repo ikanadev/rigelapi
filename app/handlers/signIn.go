@@ -50,6 +50,7 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 				teacher.Name,
 				teacher.LastName,
 				teacher.Email,
+				teacher.IsAdmin,
 			},
 			JWT: tokenStr,
 		})

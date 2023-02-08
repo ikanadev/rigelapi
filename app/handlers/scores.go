@@ -11,7 +11,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
-type Score struct {
+type ScoreRes struct {
 	ID         string `json:"id"`
 	StudentId  string `json:"student_id"`
 	ActivityId string `json:"activity_id"`
@@ -21,7 +21,7 @@ type Score struct {
 func SaveScores(db *ent.Client) func(*fiber.Ctx) error {
 	type ScoreReq struct {
 		SyncReqBase
-		Data Score `json:"data"`
+		Data ScoreRes `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
 		scores := []ScoreReq{}
@@ -35,7 +35,7 @@ func SaveScores(db *ent.Client) func(*fiber.Ctx) error {
 		}
 
 		toAdd := []*ent.ScoreCreate{}
-		toUpdate := []Score{}
+		toUpdate := []ScoreRes{}
 		for _, score := range scores {
 			switch score.Type {
 			case Insert:
@@ -97,9 +97,9 @@ func GetScores(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		scores := make([]Score, len(serverScores))
+		scores := make([]ScoreRes, len(serverScores))
 		for index, score := range serverScores {
-			scores[index] = Score{
+			scores[index] = ScoreRes{
 				ID:         score.ID,
 				Points:     score.Points,
 				StudentId:  score.Edges.Student.ID,

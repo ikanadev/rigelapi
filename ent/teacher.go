@@ -23,6 +23,8 @@ type Teacher struct {
 	Email string `json:"email,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"password,omitempty"`
+	// IsAdmin holds the value of the "is_admin" field.
+	IsAdmin bool `json:"is_admin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeacherQuery when eager-loading is set.
 	Edges TeacherEdges `json:"edges"`
@@ -32,21 +34,13 @@ type Teacher struct {
 type TeacherEdges struct {
 	// Classes holds the value of the classes edge.
 	Classes []*Class `json:"classes,omitempty"`
-	// ScoreSyncs holds the value of the scoreSyncs edge.
-	ScoreSyncs []*ScoreSync `json:"scoreSyncs,omitempty"`
-	// StudentSyncs holds the value of the studentSyncs edge.
-	StudentSyncs []*StudentSync `json:"studentSyncs,omitempty"`
-	// ActivitySyncs holds the value of the activitySyncs edge.
-	ActivitySyncs []*ActivitySync `json:"activitySyncs,omitempty"`
-	// AttendanceSyncs holds the value of the attendanceSyncs edge.
-	AttendanceSyncs []*AttendanceSync `json:"attendanceSyncs,omitempty"`
-	// ClassPeriodSyncs holds the value of the classPeriodSyncs edge.
-	ClassPeriodSyncs []*ClassPeriodSync `json:"classPeriodSyncs,omitempty"`
-	// AttendanceDaySyncs holds the value of the attendanceDaySyncs edge.
-	AttendanceDaySyncs []*AttendanceDaySyncs `json:"attendanceDaySyncs,omitempty"`
+	// Actions holds the value of the actions edge.
+	Actions []*AdminAction `json:"actions,omitempty"`
+	// Subscriptions holds the value of the subscriptions edge.
+	Subscriptions []*Subscription `json:"subscriptions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [3]bool
 }
 
 // ClassesOrErr returns the Classes value or an error if the edge
@@ -58,58 +52,22 @@ func (e TeacherEdges) ClassesOrErr() ([]*Class, error) {
 	return nil, &NotLoadedError{edge: "classes"}
 }
 
-// ScoreSyncsOrErr returns the ScoreSyncs value or an error if the edge
+// ActionsOrErr returns the Actions value or an error if the edge
 // was not loaded in eager-loading.
-func (e TeacherEdges) ScoreSyncsOrErr() ([]*ScoreSync, error) {
+func (e TeacherEdges) ActionsOrErr() ([]*AdminAction, error) {
 	if e.loadedTypes[1] {
-		return e.ScoreSyncs, nil
+		return e.Actions, nil
 	}
-	return nil, &NotLoadedError{edge: "scoreSyncs"}
+	return nil, &NotLoadedError{edge: "actions"}
 }
 
-// StudentSyncsOrErr returns the StudentSyncs value or an error if the edge
+// SubscriptionsOrErr returns the Subscriptions value or an error if the edge
 // was not loaded in eager-loading.
-func (e TeacherEdges) StudentSyncsOrErr() ([]*StudentSync, error) {
+func (e TeacherEdges) SubscriptionsOrErr() ([]*Subscription, error) {
 	if e.loadedTypes[2] {
-		return e.StudentSyncs, nil
+		return e.Subscriptions, nil
 	}
-	return nil, &NotLoadedError{edge: "studentSyncs"}
-}
-
-// ActivitySyncsOrErr returns the ActivitySyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e TeacherEdges) ActivitySyncsOrErr() ([]*ActivitySync, error) {
-	if e.loadedTypes[3] {
-		return e.ActivitySyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "activitySyncs"}
-}
-
-// AttendanceSyncsOrErr returns the AttendanceSyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e TeacherEdges) AttendanceSyncsOrErr() ([]*AttendanceSync, error) {
-	if e.loadedTypes[4] {
-		return e.AttendanceSyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "attendanceSyncs"}
-}
-
-// ClassPeriodSyncsOrErr returns the ClassPeriodSyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e TeacherEdges) ClassPeriodSyncsOrErr() ([]*ClassPeriodSync, error) {
-	if e.loadedTypes[5] {
-		return e.ClassPeriodSyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "classPeriodSyncs"}
-}
-
-// AttendanceDaySyncsOrErr returns the AttendanceDaySyncs value or an error if the edge
-// was not loaded in eager-loading.
-func (e TeacherEdges) AttendanceDaySyncsOrErr() ([]*AttendanceDaySyncs, error) {
-	if e.loadedTypes[6] {
-		return e.AttendanceDaySyncs, nil
-	}
-	return nil, &NotLoadedError{edge: "attendanceDaySyncs"}
+	return nil, &NotLoadedError{edge: "subscriptions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -117,6 +75,8 @@ func (*Teacher) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case teacher.FieldIsAdmin:
+			values[i] = new(sql.NullBool)
 		case teacher.FieldID, teacher.FieldName, teacher.FieldLastName, teacher.FieldEmail, teacher.FieldPassword:
 			values[i] = new(sql.NullString)
 		default:
@@ -164,6 +124,12 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				t.Password = value.String
 			}
+		case teacher.FieldIsAdmin:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
+			} else if value.Valid {
+				t.IsAdmin = value.Bool
+			}
 		}
 	}
 	return nil
@@ -174,34 +140,14 @@ func (t *Teacher) QueryClasses() *ClassQuery {
 	return (&TeacherClient{config: t.config}).QueryClasses(t)
 }
 
-// QueryScoreSyncs queries the "scoreSyncs" edge of the Teacher entity.
-func (t *Teacher) QueryScoreSyncs() *ScoreSyncQuery {
-	return (&TeacherClient{config: t.config}).QueryScoreSyncs(t)
+// QueryActions queries the "actions" edge of the Teacher entity.
+func (t *Teacher) QueryActions() *AdminActionQuery {
+	return (&TeacherClient{config: t.config}).QueryActions(t)
 }
 
-// QueryStudentSyncs queries the "studentSyncs" edge of the Teacher entity.
-func (t *Teacher) QueryStudentSyncs() *StudentSyncQuery {
-	return (&TeacherClient{config: t.config}).QueryStudentSyncs(t)
-}
-
-// QueryActivitySyncs queries the "activitySyncs" edge of the Teacher entity.
-func (t *Teacher) QueryActivitySyncs() *ActivitySyncQuery {
-	return (&TeacherClient{config: t.config}).QueryActivitySyncs(t)
-}
-
-// QueryAttendanceSyncs queries the "attendanceSyncs" edge of the Teacher entity.
-func (t *Teacher) QueryAttendanceSyncs() *AttendanceSyncQuery {
-	return (&TeacherClient{config: t.config}).QueryAttendanceSyncs(t)
-}
-
-// QueryClassPeriodSyncs queries the "classPeriodSyncs" edge of the Teacher entity.
-func (t *Teacher) QueryClassPeriodSyncs() *ClassPeriodSyncQuery {
-	return (&TeacherClient{config: t.config}).QueryClassPeriodSyncs(t)
-}
-
-// QueryAttendanceDaySyncs queries the "attendanceDaySyncs" edge of the Teacher entity.
-func (t *Teacher) QueryAttendanceDaySyncs() *AttendanceDaySyncsQuery {
-	return (&TeacherClient{config: t.config}).QueryAttendanceDaySyncs(t)
+// QuerySubscriptions queries the "subscriptions" edge of the Teacher entity.
+func (t *Teacher) QuerySubscriptions() *SubscriptionQuery {
+	return (&TeacherClient{config: t.config}).QuerySubscriptions(t)
 }
 
 // Update returns a builder for updating this Teacher.
@@ -238,6 +184,9 @@ func (t *Teacher) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("password=")
 	builder.WriteString(t.Password)
+	builder.WriteString(", ")
+	builder.WriteString("is_admin=")
+	builder.WriteString(fmt.Sprintf("%v", t.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
 }
