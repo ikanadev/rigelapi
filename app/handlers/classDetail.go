@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"math"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -21,6 +23,11 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		Grade        Grade   `json:"grade"`
 		Year         Year    `json:"year"`
 	}
+	type PeriodScores struct {
+		Score int `json:"score"`
+		// the map key is area_id
+		AreaScores map[string]int `json:"area_scores"`
+	}
 	type StudentData struct {
 		ID        string `json:"id"`
 		Name      string `json:"name"`
@@ -30,16 +37,12 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		// the map key is activity_id
 		ScoresMap map[string]Score `json:"scores_map"`
 		// the map key is class_period_id
-		PeriodScores map[string]struct {
-			Points int `json:"points"`
-			// the map key is area_id
-			AreaScores map[string]int `json:"area_scores"`
-		} `json:"scores"`
+		PeriodScores map[string]PeriodScores `json:"scores"`
 		// the map key is attendance_day_id
 		AttendancesMap       map[string]Attendance `json:"attendances_map"`
 		YearTotalAttendances AttendanceTotals      `json:"year_total_attendances"`
 		// the map key is period_id
-		PeriodTotalAttendances map[string]AttendanceTotals `json:"period_total_attendances"`
+		ClassPeriodTotalAttendances map[string]AttendanceTotals `json:"period_total_attendances"`
 	}
 	type AreaWithActivities struct {
 		Area
@@ -56,15 +59,8 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 	}
 	type Resp struct {
 		ClassData    ClassData         `json:"class_data"`
-		Areas        []Area            `json:"areas"` // TODO: check if this is needed
 		Students     []StudentData     `json:"students"`
 		ClassPeriods []ClassPeriodData `json:"class_periods"`
-	}
-	type RespX struct {
-		Resp         Resp               `json:"resp"`
-		Class        *ent.Class         `json:"class"`
-		ClassPeriods []*ent.ClassPeriod `json:"class_periods"`
-		Students     []*ent.Student     `json:"students"`
 	}
 	return func(c *fiber.Ctx) error {
 		classID := c.Params("classid")
@@ -211,9 +207,9 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 
 			// student attendances data
 			attendancesMap := make(map[string]Attendance, len(student.Edges.Attendances))
-			periodTotalAttendances := make(map[string]AttendanceTotals, len(classPeriods))
+			classPeriodTotalAttendances := make(map[string]AttendanceTotals, len(classPeriods))
 			for _, cp := range classPeriods {
-				periodTotalAttendances[cp.ID] = AttendanceTotals{
+				classPeriodTotalAttendances[cp.ID] = AttendanceTotals{
 					attendance.ValuePresente: 0,
 					attendance.ValueFalta:    0,
 					attendance.ValueAtraso:   0,
@@ -227,7 +223,7 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				attendance.ValueLicencia: 0,
 			}
 			for _, att := range student.Edges.Attendances {
-				periodTotalAttendances[att.Edges.AttendanceDay.Edges.ClassPeriod.ID][att.Value] += 1
+				classPeriodTotalAttendances[att.Edges.AttendanceDay.Edges.ClassPeriod.ID][att.Value] += 1
 				yearTotalAttendances[att.Value] += 1
 				attendancesMap[att.Edges.AttendanceDay.ID] = Attendance{
 					ID:    att.ID,
@@ -235,18 +231,70 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 				}
 			}
 			studentData.AttendancesMap = attendancesMap
-			studentData.PeriodTotalAttendances = periodTotalAttendances
+			studentData.ClassPeriodTotalAttendances = classPeriodTotalAttendances
 			studentData.YearTotalAttendances = yearTotalAttendances
 
+			// student scores data
+			scoresMap := make(map[string]Score, len(student.Edges.Scores))
+			for _, score := range student.Edges.Scores {
+				scoresMap[score.Edges.Activity.ID] = Score{
+					ID:     score.ID,
+					Points: score.Points,
+				}
+			}
+			studentData.ScoresMap = scoresMap
+			// student period scores
+			periodScores := make(map[string]PeriodScores, len(resp.ClassPeriods))
+			yearScoreSum := 0
+			for _, cp := range resp.ClassPeriods {
+				periodScore := 0
+				areaScores := make(map[string]int, len(cp.Areas))
+				for _, area := range cp.Areas {
+					sum := 0
+					if len(area.Activities) == 0 {
+						areaScores[area.ID] = 0
+						continue
+					}
+					for _, act := range area.Activities {
+						score, ok := studentData.ScoresMap[act.ID]
+						if ok {
+							sum += score.Points
+						}
+					}
+					areaScore := int(math.Round(float64(sum*area.Points) / float64(len(area.Activities)*100)))
+					areaScores[area.ID] = areaScore
+					periodScore += areaScore
+				}
+				yearScoreSum += periodScore
+				periodScores[cp.ID] = PeriodScores{
+					Score:      periodScore,
+					AreaScores: areaScores,
+				}
+			}
+			studentData.PeriodScores = periodScores
+			studentData.YearScore = int(
+				math.Round(
+					float64(yearScoreSum) / float64(len(resp.ClassPeriods)),
+				),
+			)
 			studentsData[i] = studentData
 		}
-		resp.Students = studentsData
 
-		return c.JSON(RespX{
-			Resp:         resp,
-			Class:        class,
-			ClassPeriods: classPeriods,
-			Students:     students,
-		})
+		resp.Students = studentsData
+		return c.JSON(resp)
+
+		// return this struct to check the content for debugging purposes
+		/*
+			type RespDebug struct {
+				Class        *ent.Class         `json:"class"`
+				ClassPeriods []*ent.ClassPeriod `json:"class_periods"`
+				Students     []*ent.Student     `json:"students"`
+			}
+			return c.JSON(RespDebug{
+				Class:        class,
+				ClassPeriods: classPeriods,
+				Students:     students,
+			})
+		*/
 	}
 }
