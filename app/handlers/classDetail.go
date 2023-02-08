@@ -7,6 +7,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/student"
 )
 
 func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
@@ -97,15 +98,14 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 		}
 
 		students, err := class.QueryStudents().
+			Order(ent.Asc(student.FieldLastName)).
 			WithAttendances(func(aq *ent.AttendanceQuery) {
 				aq.WithAttendanceDay(func(adq *ent.AttendanceDayQuery) {
 					adq.WithClassPeriod()
 				})
 			}).
 			WithScores(func(sq *ent.ScoreQuery) {
-				sq.WithActivity(func(aq *ent.ActivityQuery) {
-					aq.WithArea()
-				})
+				sq.WithActivity()
 			}).
 			All(c.Context())
 		if err != nil {
