@@ -12,7 +12,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
-type Activity struct {
+type ActivityRes struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	ClassPeriodId string `json:"class_period_id"`
@@ -40,9 +40,9 @@ func GetActivities(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		activities := make([]Activity, len(serverActivities))
+		activities := make([]ActivityRes, len(serverActivities))
 		for index, act := range serverActivities {
-			activities[index] = Activity{
+			activities[index] = ActivityRes{
 				ID:            act.ID,
 				Name:          act.Name,
 				Date:          act.Date.UnixMilli(),
@@ -57,7 +57,7 @@ func GetActivities(db *ent.Client) func(*fiber.Ctx) error {
 func SaveActivities(db *ent.Client) func(*fiber.Ctx) error {
 	type ActivityReq struct {
 		SyncReqBase
-		Data Activity `json:"data"`
+		Data ActivityRes `json:"data"`
 	}
 	return func(c *fiber.Ctx) error {
 		acts := []ActivityReq{}
@@ -71,7 +71,7 @@ func SaveActivities(db *ent.Client) func(*fiber.Ctx) error {
 		}
 
 		toAdd := []*ent.ActivityCreate{}
-		toUpdate := []Activity{}
+		toUpdate := []ActivityRes{}
 		for _, act := range acts {
 			switch act.Type {
 			case Insert:
