@@ -58,7 +58,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server 
 
 func (server Server) Run() error {
 	server.app.Use(cors.New())
-	server.app.Use(logUserAgent())
+	// server.app.Use(logUserAgent())
 
 	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))

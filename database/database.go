@@ -12,7 +12,6 @@ import (
 
 func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 	dbConfig := config.DB
-	// client, err := ent.Open("postgres", "host=127.0.0.1 port=5432 user=taylor dbname=enttest password=postgres")
 	log.Println("Connecting to postgres...")
 	client, err := ent.Open(
 		"postgres",
