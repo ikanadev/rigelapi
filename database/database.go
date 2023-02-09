@@ -17,12 +17,13 @@ func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 	client, err := ent.Open(
 		"postgres",
 		fmt.Sprintf(
-			"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
+			"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 			dbConfig.Host,
 			dbConfig.Port,
 			dbConfig.User,
 			dbConfig.Name,
 			dbConfig.Password,
+			dbConfig.SslMode,
 		),
 	)
 	if err != nil {
@@ -34,9 +35,6 @@ func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 		return nil, err
 	}
 	log.Println("populating static data...")
-	if err := PopulateStaticJsonData(client, ctx); err != nil {
-		return nil, err
-	}
 	if err := PopulateStaticData(client, ctx); err != nil {
 		return nil, err
 	}
