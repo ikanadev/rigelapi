@@ -98,5 +98,5 @@ func (server Server) Run() error {
 	admin.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.db))
 	admin.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.db))
 
-	return server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
+	return server.app.Listen(fmt.Sprintf("0.0.0.0:%s", server.config.App.Port))
 }
