@@ -30,7 +30,7 @@ func GetConfig() Config {
 		},
 		App: appData{
 			JWTKey: "ImsKLIZXipqsHJKo_e3z",
-			Port:   "4000",
+			Port:   os.Getenv("APP_PORT"),
 		},
 	}
 }
