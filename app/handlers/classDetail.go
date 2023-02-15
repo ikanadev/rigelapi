@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/student"
 )
@@ -88,7 +89,9 @@ func ClassDetailsHandler(db *ent.Client) func(*fiber.Ctx) error {
 
 		classPeriods, err := class.QueryClassPeriods().
 			WithPeriod().
-			WithAttendanceDays().
+			WithAttendanceDays(func(adq *ent.AttendanceDayQuery) {
+				adq.Order(ent.Asc(attendanceday.FieldDay))
+			}).
 			WithActivities(func(aq *ent.ActivityQuery) {
 				aq.WithArea()
 			}).
