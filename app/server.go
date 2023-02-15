@@ -58,7 +58,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server 
 
 func (server Server) Run() error {
 	server.app.Use(cors.New())
-	server.app.Use(logUserAgent())
+	// server.app.Use(logUserAgent())
 
 	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
@@ -98,5 +98,5 @@ func (server Server) Run() error {
 	admin.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.db))
 	admin.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.db))
 
-	return server.app.Listen(fmt.Sprintf(":%s", server.config.App.Port))
+	return server.app.Listen(fmt.Sprintf("0.0.0.0:%s", server.config.App.Port))
 }

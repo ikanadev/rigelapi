@@ -8,6 +8,7 @@ type dbData struct {
 	Port     string
 	User     string
 	Password string
+	SslMode  string
 }
 type appData struct {
 	JWTKey string
@@ -27,10 +28,11 @@ func GetConfig() Config {
 			Port:     os.Getenv("DB_PORT"),
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
+			SslMode:  os.Getenv("DB_SSL_MODE"),
 		},
 		App: appData{
 			JWTKey: "ImsKLIZXipqsHJKo_e3z",
-			Port:   "4000",
+			Port:   os.Getenv("APP_PORT"),
 		},
 	}
 }
