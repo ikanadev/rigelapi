@@ -76,6 +76,7 @@ func populateGrades(client *ent.Client, ctx context.Context) error {
 func populateYears(client *ent.Client, ctx context.Context) error {
 	yearsMap := map[string]int{
 		"1": 2022,
+		"2": 2023,
 	}
 	dbYears, err := client.Year.Query().All(ctx)
 	if err != nil {
@@ -111,6 +112,11 @@ func populateAreas(client *ent.Client, ctx context.Context) error {
 		{"3", "Hacer", 35, "1"},
 		{"4", "Decidir", 10, "1"},
 		{"5", "Autoevaluación", 10, "1"},
+		{"6", "Ser", 10, "2"},
+		{"7", "Saber", 35, "2"},
+		{"8", "Hacer", 35, "2"},
+		{"9", "Decidir", 10, "2"},
+		{"10", "Autoevaluación", 10, "2"},
 	}
 	dbAreas, err := client.Area.Query().All(ctx)
 	if err != nil {
@@ -143,6 +149,9 @@ func populatePeriods(client *ent.Client, ctx context.Context) error {
 		{"1", "1er Trimestre", "1"},
 		{"2", "2do Trimestre", "1"},
 		{"3", "3er Trimestre", "1"},
+		{"4", "1er Trimestre", "2"},
+		{"5", "2do Trimestre", "3"},
+		{"6", "3er Trimestre", "4"},
 	}
 	dbPeriods, err := client.Period.Query().All(ctx)
 	if err != nil {
