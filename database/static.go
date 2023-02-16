@@ -9,7 +9,7 @@ import (
 func populateSubjects(client *ent.Client, ctx context.Context) error {
 	subjectsMap := map[string]string{
 		"1":  "BIOLOGÍA - GEOGRAFÍA",
-		"2":  "FÍSICA - QUÍMICA",
+		"2":  "FÍSICA",
 		"3":  "LENGUA CASTELLANA Y ORIGINARIA",
 		"4":  "LENGUA EXTRANJERA",
 		"5":  "CIENCIAS SOCIALES",
@@ -19,7 +19,8 @@ func populateSubjects(client *ent.Client, ctx context.Context) error {
 		"9":  "COSMOVISIONES, FILOSOFÍA Y PSICOLOGÍA",
 		"10": "VALORES, ESPIRITUALIDAD Y RELIGIONES",
 		"11": "MATEMÁTICA",
-		"12": "TÉCNICA Y TECNOLOGÍA",
+		"12": "TÉCNICA TECNOLÓGICA GENERAL",
+		"13": "QUÍMICA",
 	}
 	dbSubjects, err := client.Subject.Query().All(ctx)
 	if err != nil {
