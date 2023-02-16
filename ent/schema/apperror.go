@@ -13,12 +13,12 @@ type AppError struct {
 // Fields of the AppError.
 func (AppError) Fields() []ent.Field {
 	return []ent.Field{
-    field.String("id"),
-    field.String("user_id"),
-    field.String("cause"),
-    field.String("error_msg"),
-    field.String("error_stack"),
-  }
+		field.String("id"),
+		field.String("user_id"),
+		field.String("cause"),
+		field.String("error_msg"),
+		field.String("error_stack"),
+	}
 }
 
 // Edges of the AppError.

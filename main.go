@@ -25,7 +25,7 @@ func main() {
 	logger := log.New(file, "", log.LstdFlags)
 
 	server := app.NewServer(entClient, config, logger)
-  err = server.Run()
+	err = server.Run()
 	if err != nil {
 		log.Fatalf("Error starting fiber: %v", err)
 	}
