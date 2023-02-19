@@ -150,8 +150,8 @@ func populatePeriods(client *ent.Client, ctx context.Context) error {
 		{"2", "2do Trimestre", "1"},
 		{"3", "3er Trimestre", "1"},
 		{"4", "1er Trimestre", "2"},
-		{"5", "2do Trimestre", "3"},
-		{"6", "3er Trimestre", "4"},
+		{"5", "2do Trimestre", "2"},
+		{"6", "3er Trimestre", "2"},
 	}
 	dbPeriods, err := client.Period.Query().All(ctx)
 	if err != nil {
