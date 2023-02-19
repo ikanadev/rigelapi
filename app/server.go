@@ -74,6 +74,7 @@ func (server Server) Run() error {
 
 	protected := server.app.Group("/auth", authMiddleware(server.config))
 
+	protected.Get("/profile", handlers.GetProfile(server.db))
 	protected.Post("/parsexls", handlers.ParseXLS())
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
