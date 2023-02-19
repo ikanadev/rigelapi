@@ -7,6 +7,11 @@ import (
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
+type TeacherWithSubs struct {
+	Teacher
+	Subscriptions []Subscription `json:"subscriptions"`
+}
+
 func GetTeachers(db *ent.Client) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		teachers, err := db.Teacher.Query().All(c.Context())
@@ -44,23 +49,59 @@ func GetTeacher(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		resp := resp{
-			Teacher{
+		resp := TeacherWithSubs{
+			Teacher: Teacher{
 				ID:       teacherID,
 				Name:     teacher.Name,
 				LastName: teacher.LastName,
 				Email:    teacher.Email,
 				IsAdmin:  teacher.IsAdmin,
 			},
-			[]Subscription{},
+			Subscriptions: make([]Subscription, len(teacher.Edges.Subscriptions)),
 		}
-		for _, subs := range teacher.Edges.Subscriptions {
-			resp.Subscriptions = append(resp.Subscriptions, Subscription{
+		for i, subs := range teacher.Edges.Subscriptions {
+			resp.Subscriptions[i] = Subscription{
 				ID:     subs.ID,
 				Method: subs.Method,
 				Qtty:   subs.Qtty,
 				Date:   subs.Date.UnixMilli(),
-			})
+			}
+		}
+		return c.JSON(resp)
+	}
+}
+
+// Get teacher profile and subs by token provided in headers
+func GetProfile(db *ent.Client) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		teacherID := c.Locals("id").(string)
+		teacher, err := db.Teacher.
+			Query().
+			Where(teacher.ID(teacherID)).
+			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.Order(ent.Asc(subscription.FieldDate))
+			}).
+			First(c.Context())
+		if err != nil {
+			return err
+		}
+		resp := TeacherWithSubs{
+			Teacher: Teacher{
+				ID:       teacherID,
+				Name:     teacher.Name,
+				LastName: teacher.LastName,
+				Email:    teacher.Email,
+				IsAdmin:  teacher.IsAdmin,
+			},
+			Subscriptions: make([]Subscription, len(teacher.Edges.Subscriptions)),
+		}
+		for i, subs := range teacher.Edges.Subscriptions {
+			resp.Subscriptions[i] = Subscription{
+				ID:     subs.ID,
+				Method: subs.Method,
+				Qtty:   subs.Qtty,
+				Date:   subs.Date.UnixMilli(),
+			}
 		}
 		return c.JSON(resp)
 	}
