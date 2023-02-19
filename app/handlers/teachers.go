@@ -7,9 +7,13 @@ import (
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
 
+type SubWithYear struct {
+	Subscription
+	Year Year `json:"year"`
+}
 type TeacherWithSubs struct {
 	Teacher
-	Subscriptions []Subscription `json:"subscriptions"`
+	Subscriptions []SubWithYear `json:"subscriptions"`
 }
 
 func GetTeachers(db *ent.Client) func(*fiber.Ctx) error {
@@ -43,6 +47,7 @@ func GetTeacher(db *ent.Client) func(*fiber.Ctx) error {
 			Query().
 			Where(teacher.ID(teacherID)).
 			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.WithYear()
 				sq.Order(ent.Asc(subscription.FieldDate))
 			}).
 			First(c.Context())
@@ -57,14 +62,20 @@ func GetTeacher(db *ent.Client) func(*fiber.Ctx) error {
 				Email:    teacher.Email,
 				IsAdmin:  teacher.IsAdmin,
 			},
-			Subscriptions: make([]Subscription, len(teacher.Edges.Subscriptions)),
+			Subscriptions: make([]SubWithYear, len(teacher.Edges.Subscriptions)),
 		}
 		for i, subs := range teacher.Edges.Subscriptions {
-			resp.Subscriptions[i] = Subscription{
-				ID:     subs.ID,
-				Method: subs.Method,
-				Qtty:   subs.Qtty,
-				Date:   subs.Date.UnixMilli(),
+			resp.Subscriptions[i] = SubWithYear{
+				Subscription: Subscription{
+					ID:     subs.ID,
+					Method: subs.Method,
+					Qtty:   subs.Qtty,
+					Date:   subs.Date.UnixMilli(),
+				},
+				Year: Year{
+					ID:    subs.Edges.Year.ID,
+					Value: subs.Edges.Year.Value,
+				},
 			}
 		}
 		return c.JSON(resp)
@@ -93,14 +104,20 @@ func GetProfile(db *ent.Client) func(*fiber.Ctx) error {
 				Email:    teacher.Email,
 				IsAdmin:  teacher.IsAdmin,
 			},
-			Subscriptions: make([]Subscription, len(teacher.Edges.Subscriptions)),
+			Subscriptions: make([]SubWithYear, len(teacher.Edges.Subscriptions)),
 		}
 		for i, subs := range teacher.Edges.Subscriptions {
-			resp.Subscriptions[i] = Subscription{
-				ID:     subs.ID,
-				Method: subs.Method,
-				Qtty:   subs.Qtty,
-				Date:   subs.Date.UnixMilli(),
+			resp.Subscriptions[i] = SubWithYear{
+				Subscription: Subscription{
+					ID:     subs.ID,
+					Method: subs.Method,
+					Qtty:   subs.Qtty,
+					Date:   subs.Date.UnixMilli(),
+				},
+				Year: Year{
+					ID:    subs.Edges.Year.ID,
+					Value: subs.Edges.Year.Value,
+				},
 			}
 		}
 		return c.JSON(resp)
