@@ -61,29 +61,29 @@ func rollback(tx *ent.Tx, err error) error {
 
 /* Build teacher profile response */
 func buildTeacherProfile(teacher *ent.Teacher) TeacherWithSubs {
-		resp := TeacherWithSubs{
-			Teacher: Teacher{
-				ID:       teacher.ID,
-				Name:     teacher.Name,
-				LastName: teacher.LastName,
-				Email:    teacher.Email,
-				IsAdmin:  teacher.IsAdmin,
+	resp := TeacherWithSubs{
+		Teacher: Teacher{
+			ID:       teacher.ID,
+			Name:     teacher.Name,
+			LastName: teacher.LastName,
+			Email:    teacher.Email,
+			IsAdmin:  teacher.IsAdmin,
+		},
+		Subscriptions: make([]SubWithYear, len(teacher.Edges.Subscriptions)),
+	}
+	for i, subs := range teacher.Edges.Subscriptions {
+		resp.Subscriptions[i] = SubWithYear{
+			Subscription: Subscription{
+				ID:     subs.ID,
+				Method: subs.Method,
+				Qtty:   subs.Qtty,
+				Date:   subs.Date.UnixMilli(),
 			},
-			Subscriptions: make([]SubWithYear, len(teacher.Edges.Subscriptions)),
+			Year: Year{
+				ID:    subs.Edges.Year.ID,
+				Value: subs.Edges.Year.Value,
+			},
 		}
-		for i, subs := range teacher.Edges.Subscriptions {
-			resp.Subscriptions[i] = SubWithYear{
-				Subscription: Subscription{
-					ID:     subs.ID,
-					Method: subs.Method,
-					Qtty:   subs.Qtty,
-					Date:   subs.Date.UnixMilli(),
-				},
-				Year: Year{
-					ID:    subs.Edges.Year.ID,
-					Value: subs.Edges.Year.Value,
-				},
-			}
-		}
-    return resp
-  }
+	}
+	return resp
+}

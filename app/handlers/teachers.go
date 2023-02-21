@@ -41,7 +41,7 @@ func GetTeacher(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-    resp := buildTeacherProfile(teacher)
+		resp := buildTeacherProfile(teacher)
 		return c.JSON(resp)
 	}
 }
@@ -61,7 +61,7 @@ func GetProfile(db *ent.Client) func(*fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-    resp := buildTeacherProfile(teacher)
+		resp := buildTeacherProfile(teacher)
 		return c.JSON(resp)
 	}
 }
