@@ -28,40 +28,40 @@ func GetTeachers(db *ent.Client) func(*fiber.Ctx) error {
 }
 
 func GetTeacher(db *ent.Client) func(*fiber.Ctx) error {
-	type resp struct {
-		Teacher
-		Subscriptions []Subscription `json:"subscriptions"`
-	}
 	return func(c *fiber.Ctx) error {
 		teacherID := c.Params("id")
 		teacher, err := db.Teacher.
 			Query().
 			Where(teacher.ID(teacherID)).
 			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.WithYear()
 				sq.Order(ent.Asc(subscription.FieldDate))
 			}).
 			First(c.Context())
 		if err != nil {
 			return err
 		}
-		resp := resp{
-			Teacher{
-				ID:       teacherID,
-				Name:     teacher.Name,
-				LastName: teacher.LastName,
-				Email:    teacher.Email,
-				IsAdmin:  teacher.IsAdmin,
-			},
-			[]Subscription{},
+		resp := buildTeacherProfile(teacher)
+		return c.JSON(resp)
+	}
+}
+
+// Get teacher profile and subs by token provided in headers
+func GetProfile(db *ent.Client) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		teacherID := c.Locals("id").(string)
+		teacher, err := db.Teacher.
+			Query().
+			Where(teacher.ID(teacherID)).
+			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.WithYear()
+				sq.Order(ent.Asc(subscription.FieldDate))
+			}).
+			First(c.Context())
+		if err != nil {
+			return err
 		}
-		for _, subs := range teacher.Edges.Subscriptions {
-			resp.Subscriptions = append(resp.Subscriptions, Subscription{
-				ID:     subs.ID,
-				Method: subs.Method,
-				Qtty:   subs.Qtty,
-				Date:   subs.Date.UnixMilli(),
-			})
-		}
+		resp := buildTeacherProfile(teacher)
 		return c.JSON(resp)
 	}
 }

@@ -9,6 +9,14 @@ type Teacher struct {
 	Email    string `json:"email"`
 	IsAdmin  bool   `json:"is_admin"`
 }
+type SubWithYear struct {
+	Subscription
+	Year Year `json:"year"`
+}
+type TeacherWithSubs struct {
+	Teacher
+	Subscriptions []SubWithYear `json:"subscriptions"`
+}
 
 type School struct {
 	ID   string `json:"id"`

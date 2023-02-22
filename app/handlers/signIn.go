@@ -5,6 +5,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,8 +16,8 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 		Password string `json:"password"`
 	}
 	type res struct {
-		Teacher Teacher `json:"teacher"`
-		JWT     string  `json:"jwt"`
+		Teacher TeacherWithSubs `json:"teacher"`
+		JWT     string          `json:"jwt"`
 	}
 	return func(c *fiber.Ctx) error {
 		var reqData req
@@ -24,7 +25,13 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 		if err != nil {
 			return err
 		}
-		teacher, err := db.Teacher.Query().Where(teacher.EmailEQ(reqData.Email)).First(c.Context())
+		teacher, err := db.Teacher.Query().
+			Where(teacher.EmailEQ(reqData.Email)).
+			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.WithYear()
+				sq.Order(ent.Asc(subscription.FieldDate))
+			}).
+			First(c.Context())
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return NewClientErr(fiber.StatusBadRequest, "Credenciales incorrectas.")
@@ -44,15 +51,10 @@ func SignInHandler(db *ent.Client, config config.Config) func(*fiber.Ctx) error 
 		if err != nil {
 			return err
 		}
+		profile := buildTeacherProfile(teacher)
 		return c.JSON(res{
-			Teacher: Teacher{
-				teacher.ID,
-				teacher.Name,
-				teacher.LastName,
-				teacher.Email,
-				teacher.IsAdmin,
-			},
-			JWT: tokenStr,
+			Teacher: profile,
+			JWT:     tokenStr,
 		})
 	}
 }

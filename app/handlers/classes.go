@@ -77,6 +77,33 @@ func NewClassHandler(db *ent.Client, newID func() string) func(*fiber.Ctx) error
 		if err != nil {
 			return err
 		}
+
+		teacherDb, err := db.Teacher.Query().
+			WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+				sq.WithYear()
+			}).
+			WithClasses(func(cq *ent.ClassQuery) {
+				cq.Where(class.HasYearWith(year.IDEQ(reqData.YearID)))
+			}).
+			Where(teacher.IDEQ(teacherID)).
+			First(c.Context())
+		if err != nil {
+			return err
+		}
+		limit := 4
+		for _, sub := range teacherDb.Edges.Subscriptions {
+			// if teacher has Subscription for this year, set the limit to 20
+			if sub.Edges.Year.ID == reqData.YearID {
+				limit = 20
+			}
+		}
+		if len(teacherDb.Edges.Classes) >= limit {
+			return NewClientErr(
+				fiber.StatusMethodNotAllowed,
+				"Lo sentimos, ha alcanzado el límite máximo de materias creadas.",
+			)
+		}
+
 		_, err = db.Class.
 			Create().
 			SetID(newID()).
