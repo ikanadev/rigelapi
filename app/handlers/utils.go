@@ -17,6 +17,7 @@ type ClientErr struct {
 func (c ClientErr) Error() string {
 	return c.Message
 }
+
 func NewClientErr(code int, msg string) ClientErr {
 	return ClientErr{code, msg}
 }
