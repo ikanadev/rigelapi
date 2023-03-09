@@ -57,7 +57,7 @@ func SaveScores(db *ent.Client) func(*fiber.Ctx) error {
 			}
 		}
 
-		_, err = tx.Score.CreateBulk(toAdd...).Save(c.Context())
+		err = tx.Score.CreateBulk(toAdd...).OnConflictColumns(score.FieldID).Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}

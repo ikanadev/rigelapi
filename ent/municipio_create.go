@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/municipio"
@@ -19,6 +21,7 @@ type MunicipioCreate struct {
 	config
 	mutation *MunicipioMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -178,6 +181,7 @@ func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = mc.conflict
 	if id, ok := mc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -232,10 +236,172 @@ func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Municipio.Create().
+//		SetName(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MunicipioUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (mc *MunicipioCreate) OnConflict(opts ...sql.ConflictOption) *MunicipioUpsertOne {
+	mc.conflict = opts
+	return &MunicipioUpsertOne{
+		create: mc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (mc *MunicipioCreate) OnConflictColumns(columns ...string) *MunicipioUpsertOne {
+	mc.conflict = append(mc.conflict, sql.ConflictColumns(columns...))
+	return &MunicipioUpsertOne{
+		create: mc,
+	}
+}
+
+type (
+	// MunicipioUpsertOne is the builder for "upsert"-ing
+	//  one Municipio node.
+	MunicipioUpsertOne struct {
+		create *MunicipioCreate
+	}
+
+	// MunicipioUpsert is the "OnConflict" setter.
+	MunicipioUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *MunicipioUpsert) SetName(v string) *MunicipioUpsert {
+	u.Set(municipio.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MunicipioUpsert) UpdateName() *MunicipioUpsert {
+	u.SetExcluded(municipio.FieldName)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(municipio.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *MunicipioUpsertOne) UpdateNewValues() *MunicipioUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(municipio.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *MunicipioUpsertOne) Ignore() *MunicipioUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *MunicipioUpsertOne) DoNothing() *MunicipioUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the MunicipioCreate.OnConflict
+// documentation for more info.
+func (u *MunicipioUpsertOne) Update(set func(*MunicipioUpsert)) *MunicipioUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&MunicipioUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *MunicipioUpsertOne) SetName(v string) *MunicipioUpsertOne {
+	return u.Update(func(s *MunicipioUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MunicipioUpsertOne) UpdateName() *MunicipioUpsertOne {
+	return u.Update(func(s *MunicipioUpsert) {
+		s.UpdateName()
+	})
+}
+
+// Exec executes the query.
+func (u *MunicipioUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for MunicipioCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *MunicipioUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *MunicipioUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: MunicipioUpsertOne.ID is not supported by MySQL driver. Use MunicipioUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *MunicipioUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // MunicipioCreateBulk is the builder for creating many Municipio entities in bulk.
 type MunicipioCreateBulk struct {
 	config
 	builders []*MunicipioCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Municipio entities in the database.
@@ -261,6 +427,7 @@ func (mcb *MunicipioCreateBulk) Save(ctx context.Context) ([]*Municipio, error) 
 					_, err = mutators[i+1].Mutate(root, mcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = mcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, mcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -307,6 +474,132 @@ func (mcb *MunicipioCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (mcb *MunicipioCreateBulk) ExecX(ctx context.Context) {
 	if err := mcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Municipio.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MunicipioUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (mcb *MunicipioCreateBulk) OnConflict(opts ...sql.ConflictOption) *MunicipioUpsertBulk {
+	mcb.conflict = opts
+	return &MunicipioUpsertBulk{
+		create: mcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (mcb *MunicipioCreateBulk) OnConflictColumns(columns ...string) *MunicipioUpsertBulk {
+	mcb.conflict = append(mcb.conflict, sql.ConflictColumns(columns...))
+	return &MunicipioUpsertBulk{
+		create: mcb,
+	}
+}
+
+// MunicipioUpsertBulk is the builder for "upsert"-ing
+// a bulk of Municipio nodes.
+type MunicipioUpsertBulk struct {
+	create *MunicipioCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(municipio.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *MunicipioUpsertBulk) UpdateNewValues() *MunicipioUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(municipio.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Municipio.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *MunicipioUpsertBulk) Ignore() *MunicipioUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *MunicipioUpsertBulk) DoNothing() *MunicipioUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the MunicipioCreateBulk.OnConflict
+// documentation for more info.
+func (u *MunicipioUpsertBulk) Update(set func(*MunicipioUpsert)) *MunicipioUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&MunicipioUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *MunicipioUpsertBulk) SetName(v string) *MunicipioUpsertBulk {
+	return u.Update(func(s *MunicipioUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MunicipioUpsertBulk) UpdateName() *MunicipioUpsertBulk {
+	return u.Update(func(s *MunicipioUpsert) {
+		s.UpdateName()
+	})
+}
+
+// Exec executes the query.
+func (u *MunicipioUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the MunicipioCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for MunicipioCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *MunicipioUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -19,6 +21,7 @@ type AttendanceCreate struct {
 	config
 	mutation *AttendanceMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetValue sets the "value" field.
@@ -187,6 +190,7 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = ac.conflict
 	if id, ok := ac.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -242,10 +246,172 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Attendance.Create().
+//		SetValue(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AttendanceUpsert) {
+//			SetValue(v+v).
+//		}).
+//		Exec(ctx)
+func (ac *AttendanceCreate) OnConflict(opts ...sql.ConflictOption) *AttendanceUpsertOne {
+	ac.conflict = opts
+	return &AttendanceUpsertOne{
+		create: ac,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ac *AttendanceCreate) OnConflictColumns(columns ...string) *AttendanceUpsertOne {
+	ac.conflict = append(ac.conflict, sql.ConflictColumns(columns...))
+	return &AttendanceUpsertOne{
+		create: ac,
+	}
+}
+
+type (
+	// AttendanceUpsertOne is the builder for "upsert"-ing
+	//  one Attendance node.
+	AttendanceUpsertOne struct {
+		create *AttendanceCreate
+	}
+
+	// AttendanceUpsert is the "OnConflict" setter.
+	AttendanceUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetValue sets the "value" field.
+func (u *AttendanceUpsert) SetValue(v attendance.Value) *AttendanceUpsert {
+	u.Set(attendance.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *AttendanceUpsert) UpdateValue() *AttendanceUpsert {
+	u.SetExcluded(attendance.FieldValue)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(attendance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AttendanceUpsertOne) UpdateNewValues() *AttendanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(attendance.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AttendanceUpsertOne) Ignore() *AttendanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AttendanceUpsertOne) DoNothing() *AttendanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AttendanceCreate.OnConflict
+// documentation for more info.
+func (u *AttendanceUpsertOne) Update(set func(*AttendanceUpsert)) *AttendanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AttendanceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *AttendanceUpsertOne) SetValue(v attendance.Value) *AttendanceUpsertOne {
+	return u.Update(func(s *AttendanceUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *AttendanceUpsertOne) UpdateValue() *AttendanceUpsertOne {
+	return u.Update(func(s *AttendanceUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// Exec executes the query.
+func (u *AttendanceUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AttendanceCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AttendanceUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AttendanceUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AttendanceUpsertOne.ID is not supported by MySQL driver. Use AttendanceUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AttendanceUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AttendanceCreateBulk is the builder for creating many Attendance entities in bulk.
 type AttendanceCreateBulk struct {
 	config
 	builders []*AttendanceCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Attendance entities in the database.
@@ -271,6 +437,7 @@ func (acb *AttendanceCreateBulk) Save(ctx context.Context) ([]*Attendance, error
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = acb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, acb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -317,6 +484,132 @@ func (acb *AttendanceCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (acb *AttendanceCreateBulk) ExecX(ctx context.Context) {
 	if err := acb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Attendance.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AttendanceUpsert) {
+//			SetValue(v+v).
+//		}).
+//		Exec(ctx)
+func (acb *AttendanceCreateBulk) OnConflict(opts ...sql.ConflictOption) *AttendanceUpsertBulk {
+	acb.conflict = opts
+	return &AttendanceUpsertBulk{
+		create: acb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (acb *AttendanceCreateBulk) OnConflictColumns(columns ...string) *AttendanceUpsertBulk {
+	acb.conflict = append(acb.conflict, sql.ConflictColumns(columns...))
+	return &AttendanceUpsertBulk{
+		create: acb,
+	}
+}
+
+// AttendanceUpsertBulk is the builder for "upsert"-ing
+// a bulk of Attendance nodes.
+type AttendanceUpsertBulk struct {
+	create *AttendanceCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(attendance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AttendanceUpsertBulk) UpdateNewValues() *AttendanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(attendance.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Attendance.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AttendanceUpsertBulk) Ignore() *AttendanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AttendanceUpsertBulk) DoNothing() *AttendanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AttendanceCreateBulk.OnConflict
+// documentation for more info.
+func (u *AttendanceUpsertBulk) Update(set func(*AttendanceUpsert)) *AttendanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AttendanceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *AttendanceUpsertBulk) SetValue(v attendance.Value) *AttendanceUpsertBulk {
+	return u.Update(func(s *AttendanceUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *AttendanceUpsertBulk) UpdateValue() *AttendanceUpsertBulk {
+	return u.Update(func(s *AttendanceUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// Exec executes the query.
+func (u *AttendanceUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AttendanceCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AttendanceCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AttendanceUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
@@ -19,6 +21,7 @@ type ScoreCreate struct {
 	config
 	mutation *ScoreMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetPoints sets the "points" field.
@@ -182,6 +185,7 @@ func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -237,10 +241,185 @@ func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Score.Create().
+//		SetPoints(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ScoreUpsert) {
+//			SetPoints(v+v).
+//		}).
+//		Exec(ctx)
+func (sc *ScoreCreate) OnConflict(opts ...sql.ConflictOption) *ScoreUpsertOne {
+	sc.conflict = opts
+	return &ScoreUpsertOne{
+		create: sc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (sc *ScoreCreate) OnConflictColumns(columns ...string) *ScoreUpsertOne {
+	sc.conflict = append(sc.conflict, sql.ConflictColumns(columns...))
+	return &ScoreUpsertOne{
+		create: sc,
+	}
+}
+
+type (
+	// ScoreUpsertOne is the builder for "upsert"-ing
+	//  one Score node.
+	ScoreUpsertOne struct {
+		create *ScoreCreate
+	}
+
+	// ScoreUpsert is the "OnConflict" setter.
+	ScoreUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetPoints sets the "points" field.
+func (u *ScoreUpsert) SetPoints(v int) *ScoreUpsert {
+	u.Set(score.FieldPoints, v)
+	return u
+}
+
+// UpdatePoints sets the "points" field to the value that was provided on create.
+func (u *ScoreUpsert) UpdatePoints() *ScoreUpsert {
+	u.SetExcluded(score.FieldPoints)
+	return u
+}
+
+// AddPoints adds v to the "points" field.
+func (u *ScoreUpsert) AddPoints(v int) *ScoreUpsert {
+	u.Add(score.FieldPoints, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(score.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ScoreUpsertOne) UpdateNewValues() *ScoreUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(score.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ScoreUpsertOne) Ignore() *ScoreUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ScoreUpsertOne) DoNothing() *ScoreUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ScoreCreate.OnConflict
+// documentation for more info.
+func (u *ScoreUpsertOne) Update(set func(*ScoreUpsert)) *ScoreUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ScoreUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPoints sets the "points" field.
+func (u *ScoreUpsertOne) SetPoints(v int) *ScoreUpsertOne {
+	return u.Update(func(s *ScoreUpsert) {
+		s.SetPoints(v)
+	})
+}
+
+// AddPoints adds v to the "points" field.
+func (u *ScoreUpsertOne) AddPoints(v int) *ScoreUpsertOne {
+	return u.Update(func(s *ScoreUpsert) {
+		s.AddPoints(v)
+	})
+}
+
+// UpdatePoints sets the "points" field to the value that was provided on create.
+func (u *ScoreUpsertOne) UpdatePoints() *ScoreUpsertOne {
+	return u.Update(func(s *ScoreUpsert) {
+		s.UpdatePoints()
+	})
+}
+
+// Exec executes the query.
+func (u *ScoreUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ScoreCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ScoreUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ScoreUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ScoreUpsertOne.ID is not supported by MySQL driver. Use ScoreUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ScoreUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ScoreCreateBulk is the builder for creating many Score entities in bulk.
 type ScoreCreateBulk struct {
 	config
 	builders []*ScoreCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Score entities in the database.
@@ -266,6 +445,7 @@ func (scb *ScoreCreateBulk) Save(ctx context.Context) ([]*Score, error) {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = scb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -312,6 +492,139 @@ func (scb *ScoreCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (scb *ScoreCreateBulk) ExecX(ctx context.Context) {
 	if err := scb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Score.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ScoreUpsert) {
+//			SetPoints(v+v).
+//		}).
+//		Exec(ctx)
+func (scb *ScoreCreateBulk) OnConflict(opts ...sql.ConflictOption) *ScoreUpsertBulk {
+	scb.conflict = opts
+	return &ScoreUpsertBulk{
+		create: scb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (scb *ScoreCreateBulk) OnConflictColumns(columns ...string) *ScoreUpsertBulk {
+	scb.conflict = append(scb.conflict, sql.ConflictColumns(columns...))
+	return &ScoreUpsertBulk{
+		create: scb,
+	}
+}
+
+// ScoreUpsertBulk is the builder for "upsert"-ing
+// a bulk of Score nodes.
+type ScoreUpsertBulk struct {
+	create *ScoreCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(score.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ScoreUpsertBulk) UpdateNewValues() *ScoreUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(score.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Score.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ScoreUpsertBulk) Ignore() *ScoreUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ScoreUpsertBulk) DoNothing() *ScoreUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ScoreCreateBulk.OnConflict
+// documentation for more info.
+func (u *ScoreUpsertBulk) Update(set func(*ScoreUpsert)) *ScoreUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ScoreUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPoints sets the "points" field.
+func (u *ScoreUpsertBulk) SetPoints(v int) *ScoreUpsertBulk {
+	return u.Update(func(s *ScoreUpsert) {
+		s.SetPoints(v)
+	})
+}
+
+// AddPoints adds v to the "points" field.
+func (u *ScoreUpsertBulk) AddPoints(v int) *ScoreUpsertBulk {
+	return u.Update(func(s *ScoreUpsert) {
+		s.AddPoints(v)
+	})
+}
+
+// UpdatePoints sets the "points" field to the value that was provided on create.
+func (u *ScoreUpsertBulk) UpdatePoints() *ScoreUpsertBulk {
+	return u.Update(func(s *ScoreUpsert) {
+		s.UpdatePoints()
+	})
+}
+
+// Exec executes the query.
+func (u *ScoreUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ScoreCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ScoreCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ScoreUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -20,6 +22,7 @@ type StudentCreate struct {
 	config
 	mutation *StudentMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -212,6 +215,7 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -301,10 +305,224 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Student.Create().
+//		SetName(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StudentUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (sc *StudentCreate) OnConflict(opts ...sql.ConflictOption) *StudentUpsertOne {
+	sc.conflict = opts
+	return &StudentUpsertOne{
+		create: sc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (sc *StudentCreate) OnConflictColumns(columns ...string) *StudentUpsertOne {
+	sc.conflict = append(sc.conflict, sql.ConflictColumns(columns...))
+	return &StudentUpsertOne{
+		create: sc,
+	}
+}
+
+type (
+	// StudentUpsertOne is the builder for "upsert"-ing
+	//  one Student node.
+	StudentUpsertOne struct {
+		create *StudentCreate
+	}
+
+	// StudentUpsert is the "OnConflict" setter.
+	StudentUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *StudentUpsert) SetName(v string) *StudentUpsert {
+	u.Set(student.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *StudentUpsert) UpdateName() *StudentUpsert {
+	u.SetExcluded(student.FieldName)
+	return u
+}
+
+// SetLastName sets the "last_name" field.
+func (u *StudentUpsert) SetLastName(v string) *StudentUpsert {
+	u.Set(student.FieldLastName, v)
+	return u
+}
+
+// UpdateLastName sets the "last_name" field to the value that was provided on create.
+func (u *StudentUpsert) UpdateLastName() *StudentUpsert {
+	u.SetExcluded(student.FieldLastName)
+	return u
+}
+
+// SetCi sets the "ci" field.
+func (u *StudentUpsert) SetCi(v string) *StudentUpsert {
+	u.Set(student.FieldCi, v)
+	return u
+}
+
+// UpdateCi sets the "ci" field to the value that was provided on create.
+func (u *StudentUpsert) UpdateCi() *StudentUpsert {
+	u.SetExcluded(student.FieldCi)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(student.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StudentUpsertOne) UpdateNewValues() *StudentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(student.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *StudentUpsertOne) Ignore() *StudentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StudentUpsertOne) DoNothing() *StudentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StudentCreate.OnConflict
+// documentation for more info.
+func (u *StudentUpsertOne) Update(set func(*StudentUpsert)) *StudentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StudentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *StudentUpsertOne) SetName(v string) *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *StudentUpsertOne) UpdateName() *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetLastName sets the "last_name" field.
+func (u *StudentUpsertOne) SetLastName(v string) *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetLastName(v)
+	})
+}
+
+// UpdateLastName sets the "last_name" field to the value that was provided on create.
+func (u *StudentUpsertOne) UpdateLastName() *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateLastName()
+	})
+}
+
+// SetCi sets the "ci" field.
+func (u *StudentUpsertOne) SetCi(v string) *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetCi(v)
+	})
+}
+
+// UpdateCi sets the "ci" field to the value that was provided on create.
+func (u *StudentUpsertOne) UpdateCi() *StudentUpsertOne {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateCi()
+	})
+}
+
+// Exec executes the query.
+func (u *StudentUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StudentCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StudentUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *StudentUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: StudentUpsertOne.ID is not supported by MySQL driver. Use StudentUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *StudentUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // StudentCreateBulk is the builder for creating many Student entities in bulk.
 type StudentCreateBulk struct {
 	config
 	builders []*StudentCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Student entities in the database.
@@ -330,6 +548,7 @@ func (scb *StudentCreateBulk) Save(ctx context.Context) ([]*Student, error) {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = scb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -376,6 +595,160 @@ func (scb *StudentCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (scb *StudentCreateBulk) ExecX(ctx context.Context) {
 	if err := scb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Student.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StudentUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (scb *StudentCreateBulk) OnConflict(opts ...sql.ConflictOption) *StudentUpsertBulk {
+	scb.conflict = opts
+	return &StudentUpsertBulk{
+		create: scb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (scb *StudentCreateBulk) OnConflictColumns(columns ...string) *StudentUpsertBulk {
+	scb.conflict = append(scb.conflict, sql.ConflictColumns(columns...))
+	return &StudentUpsertBulk{
+		create: scb,
+	}
+}
+
+// StudentUpsertBulk is the builder for "upsert"-ing
+// a bulk of Student nodes.
+type StudentUpsertBulk struct {
+	create *StudentCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(student.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StudentUpsertBulk) UpdateNewValues() *StudentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(student.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Student.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *StudentUpsertBulk) Ignore() *StudentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StudentUpsertBulk) DoNothing() *StudentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StudentCreateBulk.OnConflict
+// documentation for more info.
+func (u *StudentUpsertBulk) Update(set func(*StudentUpsert)) *StudentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StudentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *StudentUpsertBulk) SetName(v string) *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *StudentUpsertBulk) UpdateName() *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetLastName sets the "last_name" field.
+func (u *StudentUpsertBulk) SetLastName(v string) *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetLastName(v)
+	})
+}
+
+// UpdateLastName sets the "last_name" field to the value that was provided on create.
+func (u *StudentUpsertBulk) UpdateLastName() *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateLastName()
+	})
+}
+
+// SetCi sets the "ci" field.
+func (u *StudentUpsertBulk) SetCi(v string) *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.SetCi(v)
+	})
+}
+
+// UpdateCi sets the "ci" field to the value that was provided on create.
+func (u *StudentUpsertBulk) UpdateCi() *StudentUpsertBulk {
+	return u.Update(func(s *StudentUpsert) {
+		s.UpdateCi()
+	})
+}
+
+// Exec executes the query.
+func (u *StudentUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the StudentCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StudentCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StudentUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

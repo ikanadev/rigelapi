@@ -94,7 +94,7 @@ func SaveActivities(db *ent.Client) func(*fiber.Ctx) error {
 			}
 		}
 
-		_, err = tx.Activity.CreateBulk(toAdd...).Save(c.Context())
+		err = tx.Activity.CreateBulk(toAdd...).OnConflictColumns(activity.FieldID).Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}

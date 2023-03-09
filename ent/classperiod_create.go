@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/activity"
@@ -22,6 +24,7 @@ type ClassPeriodCreate struct {
 	config
 	mutation *ClassPeriodMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetStart sets the "start" field.
@@ -233,6 +236,7 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 			},
 		}
 	)
+	_spec.OnConflict = cpc.conflict
 	if id, ok := cpc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -342,10 +346,224 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ClassPeriod.Create().
+//		SetStart(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ClassPeriodUpsert) {
+//			SetStart(v+v).
+//		}).
+//		Exec(ctx)
+func (cpc *ClassPeriodCreate) OnConflict(opts ...sql.ConflictOption) *ClassPeriodUpsertOne {
+	cpc.conflict = opts
+	return &ClassPeriodUpsertOne{
+		create: cpc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cpc *ClassPeriodCreate) OnConflictColumns(columns ...string) *ClassPeriodUpsertOne {
+	cpc.conflict = append(cpc.conflict, sql.ConflictColumns(columns...))
+	return &ClassPeriodUpsertOne{
+		create: cpc,
+	}
+}
+
+type (
+	// ClassPeriodUpsertOne is the builder for "upsert"-ing
+	//  one ClassPeriod node.
+	ClassPeriodUpsertOne struct {
+		create *ClassPeriodCreate
+	}
+
+	// ClassPeriodUpsert is the "OnConflict" setter.
+	ClassPeriodUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetStart sets the "start" field.
+func (u *ClassPeriodUpsert) SetStart(v time.Time) *ClassPeriodUpsert {
+	u.Set(classperiod.FieldStart, v)
+	return u
+}
+
+// UpdateStart sets the "start" field to the value that was provided on create.
+func (u *ClassPeriodUpsert) UpdateStart() *ClassPeriodUpsert {
+	u.SetExcluded(classperiod.FieldStart)
+	return u
+}
+
+// SetEnd sets the "end" field.
+func (u *ClassPeriodUpsert) SetEnd(v time.Time) *ClassPeriodUpsert {
+	u.Set(classperiod.FieldEnd, v)
+	return u
+}
+
+// UpdateEnd sets the "end" field to the value that was provided on create.
+func (u *ClassPeriodUpsert) UpdateEnd() *ClassPeriodUpsert {
+	u.SetExcluded(classperiod.FieldEnd)
+	return u
+}
+
+// SetFinished sets the "finished" field.
+func (u *ClassPeriodUpsert) SetFinished(v bool) *ClassPeriodUpsert {
+	u.Set(classperiod.FieldFinished, v)
+	return u
+}
+
+// UpdateFinished sets the "finished" field to the value that was provided on create.
+func (u *ClassPeriodUpsert) UpdateFinished() *ClassPeriodUpsert {
+	u.SetExcluded(classperiod.FieldFinished)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(classperiod.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ClassPeriodUpsertOne) UpdateNewValues() *ClassPeriodUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(classperiod.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ClassPeriodUpsertOne) Ignore() *ClassPeriodUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ClassPeriodUpsertOne) DoNothing() *ClassPeriodUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ClassPeriodCreate.OnConflict
+// documentation for more info.
+func (u *ClassPeriodUpsertOne) Update(set func(*ClassPeriodUpsert)) *ClassPeriodUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ClassPeriodUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetStart sets the "start" field.
+func (u *ClassPeriodUpsertOne) SetStart(v time.Time) *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetStart(v)
+	})
+}
+
+// UpdateStart sets the "start" field to the value that was provided on create.
+func (u *ClassPeriodUpsertOne) UpdateStart() *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateStart()
+	})
+}
+
+// SetEnd sets the "end" field.
+func (u *ClassPeriodUpsertOne) SetEnd(v time.Time) *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetEnd(v)
+	})
+}
+
+// UpdateEnd sets the "end" field to the value that was provided on create.
+func (u *ClassPeriodUpsertOne) UpdateEnd() *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateEnd()
+	})
+}
+
+// SetFinished sets the "finished" field.
+func (u *ClassPeriodUpsertOne) SetFinished(v bool) *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetFinished(v)
+	})
+}
+
+// UpdateFinished sets the "finished" field to the value that was provided on create.
+func (u *ClassPeriodUpsertOne) UpdateFinished() *ClassPeriodUpsertOne {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateFinished()
+	})
+}
+
+// Exec executes the query.
+func (u *ClassPeriodUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ClassPeriodCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ClassPeriodUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ClassPeriodUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ClassPeriodUpsertOne.ID is not supported by MySQL driver. Use ClassPeriodUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ClassPeriodUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ClassPeriodCreateBulk is the builder for creating many ClassPeriod entities in bulk.
 type ClassPeriodCreateBulk struct {
 	config
 	builders []*ClassPeriodCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ClassPeriod entities in the database.
@@ -371,6 +589,7 @@ func (cpcb *ClassPeriodCreateBulk) Save(ctx context.Context) ([]*ClassPeriod, er
 					_, err = mutators[i+1].Mutate(root, cpcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = cpcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, cpcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -417,6 +636,160 @@ func (cpcb *ClassPeriodCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (cpcb *ClassPeriodCreateBulk) ExecX(ctx context.Context) {
 	if err := cpcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ClassPeriod.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ClassPeriodUpsert) {
+//			SetStart(v+v).
+//		}).
+//		Exec(ctx)
+func (cpcb *ClassPeriodCreateBulk) OnConflict(opts ...sql.ConflictOption) *ClassPeriodUpsertBulk {
+	cpcb.conflict = opts
+	return &ClassPeriodUpsertBulk{
+		create: cpcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cpcb *ClassPeriodCreateBulk) OnConflictColumns(columns ...string) *ClassPeriodUpsertBulk {
+	cpcb.conflict = append(cpcb.conflict, sql.ConflictColumns(columns...))
+	return &ClassPeriodUpsertBulk{
+		create: cpcb,
+	}
+}
+
+// ClassPeriodUpsertBulk is the builder for "upsert"-ing
+// a bulk of ClassPeriod nodes.
+type ClassPeriodUpsertBulk struct {
+	create *ClassPeriodCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(classperiod.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ClassPeriodUpsertBulk) UpdateNewValues() *ClassPeriodUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(classperiod.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ClassPeriod.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ClassPeriodUpsertBulk) Ignore() *ClassPeriodUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ClassPeriodUpsertBulk) DoNothing() *ClassPeriodUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ClassPeriodCreateBulk.OnConflict
+// documentation for more info.
+func (u *ClassPeriodUpsertBulk) Update(set func(*ClassPeriodUpsert)) *ClassPeriodUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ClassPeriodUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetStart sets the "start" field.
+func (u *ClassPeriodUpsertBulk) SetStart(v time.Time) *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetStart(v)
+	})
+}
+
+// UpdateStart sets the "start" field to the value that was provided on create.
+func (u *ClassPeriodUpsertBulk) UpdateStart() *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateStart()
+	})
+}
+
+// SetEnd sets the "end" field.
+func (u *ClassPeriodUpsertBulk) SetEnd(v time.Time) *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetEnd(v)
+	})
+}
+
+// UpdateEnd sets the "end" field to the value that was provided on create.
+func (u *ClassPeriodUpsertBulk) UpdateEnd() *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateEnd()
+	})
+}
+
+// SetFinished sets the "finished" field.
+func (u *ClassPeriodUpsertBulk) SetFinished(v bool) *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.SetFinished(v)
+	})
+}
+
+// UpdateFinished sets the "finished" field to the value that was provided on create.
+func (u *ClassPeriodUpsertBulk) UpdateFinished() *ClassPeriodUpsertBulk {
+	return u.Update(func(s *ClassPeriodUpsert) {
+		s.UpdateFinished()
+	})
+}
+
+// Exec executes the query.
+func (u *ClassPeriodUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ClassPeriodCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ClassPeriodCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ClassPeriodUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

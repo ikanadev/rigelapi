@@ -50,6 +50,7 @@ func readDeps() []string {
 	}
 	return sql
 }
+
 func readProvs() []string {
 	content, err := ioutil.ReadFile("provincias.json")
 	if err != nil {
@@ -70,6 +71,7 @@ func readProvs() []string {
 	}
 	return sql
 }
+
 func readMuns() []string {
 	content, err := ioutil.ReadFile("municipios.json")
 	if err != nil {
@@ -90,6 +92,7 @@ func readMuns() []string {
 	}
 	return sql
 }
+
 func readSchools() []string {
 	content, err := ioutil.ReadFile("colegios.json")
 	if err != nil {
@@ -142,5 +145,4 @@ func main() {
 	}
 
 	writter.Flush()
-
 }
