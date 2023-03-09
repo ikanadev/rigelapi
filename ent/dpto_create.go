@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/dpto"
@@ -18,6 +20,7 @@ type DptoCreate struct {
 	config
 	mutation *DptoMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -158,6 +161,7 @@ func (dc *DptoCreate) createSpec() (*Dpto, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = dc.conflict
 	if id, ok := dc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -192,10 +196,172 @@ func (dc *DptoCreate) createSpec() (*Dpto, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Dpto.Create().
+//		SetName(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DptoUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (dc *DptoCreate) OnConflict(opts ...sql.ConflictOption) *DptoUpsertOne {
+	dc.conflict = opts
+	return &DptoUpsertOne{
+		create: dc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (dc *DptoCreate) OnConflictColumns(columns ...string) *DptoUpsertOne {
+	dc.conflict = append(dc.conflict, sql.ConflictColumns(columns...))
+	return &DptoUpsertOne{
+		create: dc,
+	}
+}
+
+type (
+	// DptoUpsertOne is the builder for "upsert"-ing
+	//  one Dpto node.
+	DptoUpsertOne struct {
+		create *DptoCreate
+	}
+
+	// DptoUpsert is the "OnConflict" setter.
+	DptoUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *DptoUpsert) SetName(v string) *DptoUpsert {
+	u.Set(dpto.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DptoUpsert) UpdateName() *DptoUpsert {
+	u.SetExcluded(dpto.FieldName)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(dpto.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DptoUpsertOne) UpdateNewValues() *DptoUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(dpto.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DptoUpsertOne) Ignore() *DptoUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DptoUpsertOne) DoNothing() *DptoUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DptoCreate.OnConflict
+// documentation for more info.
+func (u *DptoUpsertOne) Update(set func(*DptoUpsert)) *DptoUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DptoUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *DptoUpsertOne) SetName(v string) *DptoUpsertOne {
+	return u.Update(func(s *DptoUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DptoUpsertOne) UpdateName() *DptoUpsertOne {
+	return u.Update(func(s *DptoUpsert) {
+		s.UpdateName()
+	})
+}
+
+// Exec executes the query.
+func (u *DptoUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DptoCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DptoUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DptoUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: DptoUpsertOne.ID is not supported by MySQL driver. Use DptoUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DptoUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DptoCreateBulk is the builder for creating many Dpto entities in bulk.
 type DptoCreateBulk struct {
 	config
 	builders []*DptoCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Dpto entities in the database.
@@ -221,6 +387,7 @@ func (dcb *DptoCreateBulk) Save(ctx context.Context) ([]*Dpto, error) {
 					_, err = mutators[i+1].Mutate(root, dcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = dcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, dcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -267,6 +434,132 @@ func (dcb *DptoCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (dcb *DptoCreateBulk) ExecX(ctx context.Context) {
 	if err := dcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Dpto.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DptoUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (dcb *DptoCreateBulk) OnConflict(opts ...sql.ConflictOption) *DptoUpsertBulk {
+	dcb.conflict = opts
+	return &DptoUpsertBulk{
+		create: dcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (dcb *DptoCreateBulk) OnConflictColumns(columns ...string) *DptoUpsertBulk {
+	dcb.conflict = append(dcb.conflict, sql.ConflictColumns(columns...))
+	return &DptoUpsertBulk{
+		create: dcb,
+	}
+}
+
+// DptoUpsertBulk is the builder for "upsert"-ing
+// a bulk of Dpto nodes.
+type DptoUpsertBulk struct {
+	create *DptoCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(dpto.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DptoUpsertBulk) UpdateNewValues() *DptoUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(dpto.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Dpto.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DptoUpsertBulk) Ignore() *DptoUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DptoUpsertBulk) DoNothing() *DptoUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DptoCreateBulk.OnConflict
+// documentation for more info.
+func (u *DptoUpsertBulk) Update(set func(*DptoUpsert)) *DptoUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DptoUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *DptoUpsertBulk) SetName(v string) *DptoUpsertBulk {
+	return u.Update(func(s *DptoUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DptoUpsertBulk) UpdateName() *DptoUpsertBulk {
+	return u.Update(func(s *DptoUpsert) {
+		s.UpdateName()
+	})
+}
+
+// Exec executes the query.
+func (u *DptoUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the DptoCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DptoCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DptoUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
