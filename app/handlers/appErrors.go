@@ -30,7 +30,7 @@ func SaveAppErrors(db *ent.Client) func(*fiber.Ctx) error {
 				SetErrorMsg(appErr.ErrorMsg).
 				SetErrorStack(appErr.ErrorStack)
 		}
-		_, err = db.AppError.CreateBulk(toAdd...).Save(c.Context())
+		err = db.AppError.CreateBulk(toAdd...).OnConflict().Ignore().Exec(c.Context())
 		if err != nil {
 			return err
 		}

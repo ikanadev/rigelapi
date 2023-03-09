@@ -93,7 +93,7 @@ func SaveStudent(db *ent.Client) func(*fiber.Ctx) error {
 				}
 			}
 		}
-		_, err = tx.Student.CreateBulk(toAdd...).Save(c.Context())
+		err = tx.Student.CreateBulk(toAdd...).OnConflict().Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}

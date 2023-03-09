@@ -83,7 +83,7 @@ func SaveAttendanceDays(db *ent.Client) func(*fiber.Ctx) error {
 			}
 		}
 
-		_, err = tx.AttendanceDay.CreateBulk(toAdd...).Save(c.Context())
+		err = tx.AttendanceDay.CreateBulk(toAdd...).OnConflict().Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}
