@@ -58,7 +58,7 @@ func SaveAttendances(db *ent.Client) func(*fiber.Ctx) error {
 			}
 		}
 
-		err = tx.Attendance.CreateBulk(toAdd...).OnConflict().Ignore().Exec(c.Context())
+		err = tx.Attendance.CreateBulk(toAdd...).OnConflictColumns(attendance.FieldID).Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}
