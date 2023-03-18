@@ -21,6 +21,7 @@ func populateSubjects(client *ent.Client, ctx context.Context) error {
 		"11": "MATEMÁTICA",
 		"12": "TÉCNICA TECNOLÓGICA GENERAL",
 		"13": "QUÍMICA",
+		"14": "TÉCNICA TECNOLÓGICA ESPECIALIZADA",
 	}
 	dbSubjects, err := client.Subject.Query().All(ctx)
 	if err != nil {
