@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/area"
@@ -21,6 +23,7 @@ type YearCreate struct {
 	config
 	mutation *YearMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetValue sets the "value" field.
@@ -206,6 +209,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = yc.conflict
 	if id, ok := yc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -297,10 +301,185 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Year.Create().
+//		SetValue(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.YearUpsert) {
+//			SetValue(v+v).
+//		}).
+//		Exec(ctx)
+func (yc *YearCreate) OnConflict(opts ...sql.ConflictOption) *YearUpsertOne {
+	yc.conflict = opts
+	return &YearUpsertOne{
+		create: yc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (yc *YearCreate) OnConflictColumns(columns ...string) *YearUpsertOne {
+	yc.conflict = append(yc.conflict, sql.ConflictColumns(columns...))
+	return &YearUpsertOne{
+		create: yc,
+	}
+}
+
+type (
+	// YearUpsertOne is the builder for "upsert"-ing
+	//  one Year node.
+	YearUpsertOne struct {
+		create *YearCreate
+	}
+
+	// YearUpsert is the "OnConflict" setter.
+	YearUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetValue sets the "value" field.
+func (u *YearUpsert) SetValue(v int) *YearUpsert {
+	u.Set(year.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *YearUpsert) UpdateValue() *YearUpsert {
+	u.SetExcluded(year.FieldValue)
+	return u
+}
+
+// AddValue adds v to the "value" field.
+func (u *YearUpsert) AddValue(v int) *YearUpsert {
+	u.Add(year.FieldValue, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(year.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *YearUpsertOne) UpdateNewValues() *YearUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(year.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *YearUpsertOne) Ignore() *YearUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *YearUpsertOne) DoNothing() *YearUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the YearCreate.OnConflict
+// documentation for more info.
+func (u *YearUpsertOne) Update(set func(*YearUpsert)) *YearUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&YearUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *YearUpsertOne) SetValue(v int) *YearUpsertOne {
+	return u.Update(func(s *YearUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// AddValue adds v to the "value" field.
+func (u *YearUpsertOne) AddValue(v int) *YearUpsertOne {
+	return u.Update(func(s *YearUpsert) {
+		s.AddValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *YearUpsertOne) UpdateValue() *YearUpsertOne {
+	return u.Update(func(s *YearUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// Exec executes the query.
+func (u *YearUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for YearCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *YearUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *YearUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: YearUpsertOne.ID is not supported by MySQL driver. Use YearUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *YearUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // YearCreateBulk is the builder for creating many Year entities in bulk.
 type YearCreateBulk struct {
 	config
 	builders []*YearCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Year entities in the database.
@@ -326,6 +505,7 @@ func (ycb *YearCreateBulk) Save(ctx context.Context) ([]*Year, error) {
 					_, err = mutators[i+1].Mutate(root, ycb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = ycb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, ycb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -372,6 +552,139 @@ func (ycb *YearCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (ycb *YearCreateBulk) ExecX(ctx context.Context) {
 	if err := ycb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Year.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.YearUpsert) {
+//			SetValue(v+v).
+//		}).
+//		Exec(ctx)
+func (ycb *YearCreateBulk) OnConflict(opts ...sql.ConflictOption) *YearUpsertBulk {
+	ycb.conflict = opts
+	return &YearUpsertBulk{
+		create: ycb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ycb *YearCreateBulk) OnConflictColumns(columns ...string) *YearUpsertBulk {
+	ycb.conflict = append(ycb.conflict, sql.ConflictColumns(columns...))
+	return &YearUpsertBulk{
+		create: ycb,
+	}
+}
+
+// YearUpsertBulk is the builder for "upsert"-ing
+// a bulk of Year nodes.
+type YearUpsertBulk struct {
+	create *YearCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(year.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *YearUpsertBulk) UpdateNewValues() *YearUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(year.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Year.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *YearUpsertBulk) Ignore() *YearUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *YearUpsertBulk) DoNothing() *YearUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the YearCreateBulk.OnConflict
+// documentation for more info.
+func (u *YearUpsertBulk) Update(set func(*YearUpsert)) *YearUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&YearUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *YearUpsertBulk) SetValue(v int) *YearUpsertBulk {
+	return u.Update(func(s *YearUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// AddValue adds v to the "value" field.
+func (u *YearUpsertBulk) AddValue(v int) *YearUpsertBulk {
+	return u.Update(func(s *YearUpsert) {
+		s.AddValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *YearUpsertBulk) UpdateValue() *YearUpsertBulk {
+	return u.Update(func(s *YearUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// Exec executes the query.
+func (u *YearUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the YearCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for YearCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *YearUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

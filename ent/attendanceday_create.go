@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -20,6 +22,7 @@ type AttendanceDayCreate struct {
 	config
 	mutation *AttendanceDayMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetDay sets the "day" field.
@@ -179,6 +182,7 @@ func (adc *AttendanceDayCreate) createSpec() (*AttendanceDay, *sqlgraph.CreateSp
 			},
 		}
 	)
+	_spec.OnConflict = adc.conflict
 	if id, ok := adc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -233,10 +237,172 @@ func (adc *AttendanceDayCreate) createSpec() (*AttendanceDay, *sqlgraph.CreateSp
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AttendanceDay.Create().
+//		SetDay(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AttendanceDayUpsert) {
+//			SetDay(v+v).
+//		}).
+//		Exec(ctx)
+func (adc *AttendanceDayCreate) OnConflict(opts ...sql.ConflictOption) *AttendanceDayUpsertOne {
+	adc.conflict = opts
+	return &AttendanceDayUpsertOne{
+		create: adc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (adc *AttendanceDayCreate) OnConflictColumns(columns ...string) *AttendanceDayUpsertOne {
+	adc.conflict = append(adc.conflict, sql.ConflictColumns(columns...))
+	return &AttendanceDayUpsertOne{
+		create: adc,
+	}
+}
+
+type (
+	// AttendanceDayUpsertOne is the builder for "upsert"-ing
+	//  one AttendanceDay node.
+	AttendanceDayUpsertOne struct {
+		create *AttendanceDayCreate
+	}
+
+	// AttendanceDayUpsert is the "OnConflict" setter.
+	AttendanceDayUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDay sets the "day" field.
+func (u *AttendanceDayUpsert) SetDay(v time.Time) *AttendanceDayUpsert {
+	u.Set(attendanceday.FieldDay, v)
+	return u
+}
+
+// UpdateDay sets the "day" field to the value that was provided on create.
+func (u *AttendanceDayUpsert) UpdateDay() *AttendanceDayUpsert {
+	u.SetExcluded(attendanceday.FieldDay)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(attendanceday.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AttendanceDayUpsertOne) UpdateNewValues() *AttendanceDayUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(attendanceday.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AttendanceDayUpsertOne) Ignore() *AttendanceDayUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AttendanceDayUpsertOne) DoNothing() *AttendanceDayUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AttendanceDayCreate.OnConflict
+// documentation for more info.
+func (u *AttendanceDayUpsertOne) Update(set func(*AttendanceDayUpsert)) *AttendanceDayUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AttendanceDayUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDay sets the "day" field.
+func (u *AttendanceDayUpsertOne) SetDay(v time.Time) *AttendanceDayUpsertOne {
+	return u.Update(func(s *AttendanceDayUpsert) {
+		s.SetDay(v)
+	})
+}
+
+// UpdateDay sets the "day" field to the value that was provided on create.
+func (u *AttendanceDayUpsertOne) UpdateDay() *AttendanceDayUpsertOne {
+	return u.Update(func(s *AttendanceDayUpsert) {
+		s.UpdateDay()
+	})
+}
+
+// Exec executes the query.
+func (u *AttendanceDayUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AttendanceDayCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AttendanceDayUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AttendanceDayUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AttendanceDayUpsertOne.ID is not supported by MySQL driver. Use AttendanceDayUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AttendanceDayUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AttendanceDayCreateBulk is the builder for creating many AttendanceDay entities in bulk.
 type AttendanceDayCreateBulk struct {
 	config
 	builders []*AttendanceDayCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AttendanceDay entities in the database.
@@ -262,6 +428,7 @@ func (adcb *AttendanceDayCreateBulk) Save(ctx context.Context) ([]*AttendanceDay
 					_, err = mutators[i+1].Mutate(root, adcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = adcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, adcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -308,6 +475,132 @@ func (adcb *AttendanceDayCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (adcb *AttendanceDayCreateBulk) ExecX(ctx context.Context) {
 	if err := adcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AttendanceDay.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AttendanceDayUpsert) {
+//			SetDay(v+v).
+//		}).
+//		Exec(ctx)
+func (adcb *AttendanceDayCreateBulk) OnConflict(opts ...sql.ConflictOption) *AttendanceDayUpsertBulk {
+	adcb.conflict = opts
+	return &AttendanceDayUpsertBulk{
+		create: adcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (adcb *AttendanceDayCreateBulk) OnConflictColumns(columns ...string) *AttendanceDayUpsertBulk {
+	adcb.conflict = append(adcb.conflict, sql.ConflictColumns(columns...))
+	return &AttendanceDayUpsertBulk{
+		create: adcb,
+	}
+}
+
+// AttendanceDayUpsertBulk is the builder for "upsert"-ing
+// a bulk of AttendanceDay nodes.
+type AttendanceDayUpsertBulk struct {
+	create *AttendanceDayCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(attendanceday.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AttendanceDayUpsertBulk) UpdateNewValues() *AttendanceDayUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(attendanceday.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AttendanceDay.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AttendanceDayUpsertBulk) Ignore() *AttendanceDayUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AttendanceDayUpsertBulk) DoNothing() *AttendanceDayUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AttendanceDayCreateBulk.OnConflict
+// documentation for more info.
+func (u *AttendanceDayUpsertBulk) Update(set func(*AttendanceDayUpsert)) *AttendanceDayUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AttendanceDayUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDay sets the "day" field.
+func (u *AttendanceDayUpsertBulk) SetDay(v time.Time) *AttendanceDayUpsertBulk {
+	return u.Update(func(s *AttendanceDayUpsert) {
+		s.SetDay(v)
+	})
+}
+
+// UpdateDay sets the "day" field to the value that was provided on create.
+func (u *AttendanceDayUpsertBulk) UpdateDay() *AttendanceDayUpsertBulk {
+	return u.Update(func(s *AttendanceDayUpsert) {
+		s.UpdateDay()
+	})
+}
+
+// Exec executes the query.
+func (u *AttendanceDayUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AttendanceDayCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AttendanceDayCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AttendanceDayUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

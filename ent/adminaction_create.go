@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/vmkevv/rigelapi/ent/adminaction"
@@ -18,6 +20,7 @@ type AdminActionCreate struct {
 	config
 	mutation *AdminActionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetAction sets the "action" field.
@@ -171,6 +174,7 @@ func (aac *AdminActionCreate) createSpec() (*AdminAction, *sqlgraph.CreateSpec) 
 			},
 		}
 	)
+	_spec.OnConflict = aac.conflict
 	if id, ok := aac.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -214,10 +218,198 @@ func (aac *AdminActionCreate) createSpec() (*AdminAction, *sqlgraph.CreateSpec) 
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AdminAction.Create().
+//		SetAction(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AdminActionUpsert) {
+//			SetAction(v+v).
+//		}).
+//		Exec(ctx)
+func (aac *AdminActionCreate) OnConflict(opts ...sql.ConflictOption) *AdminActionUpsertOne {
+	aac.conflict = opts
+	return &AdminActionUpsertOne{
+		create: aac,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (aac *AdminActionCreate) OnConflictColumns(columns ...string) *AdminActionUpsertOne {
+	aac.conflict = append(aac.conflict, sql.ConflictColumns(columns...))
+	return &AdminActionUpsertOne{
+		create: aac,
+	}
+}
+
+type (
+	// AdminActionUpsertOne is the builder for "upsert"-ing
+	//  one AdminAction node.
+	AdminActionUpsertOne struct {
+		create *AdminActionCreate
+	}
+
+	// AdminActionUpsert is the "OnConflict" setter.
+	AdminActionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAction sets the "action" field.
+func (u *AdminActionUpsert) SetAction(v string) *AdminActionUpsert {
+	u.Set(adminaction.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AdminActionUpsert) UpdateAction() *AdminActionUpsert {
+	u.SetExcluded(adminaction.FieldAction)
+	return u
+}
+
+// SetInfo sets the "info" field.
+func (u *AdminActionUpsert) SetInfo(v string) *AdminActionUpsert {
+	u.Set(adminaction.FieldInfo, v)
+	return u
+}
+
+// UpdateInfo sets the "info" field to the value that was provided on create.
+func (u *AdminActionUpsert) UpdateInfo() *AdminActionUpsert {
+	u.SetExcluded(adminaction.FieldInfo)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(adminaction.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AdminActionUpsertOne) UpdateNewValues() *AdminActionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(adminaction.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AdminActionUpsertOne) Ignore() *AdminActionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AdminActionUpsertOne) DoNothing() *AdminActionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AdminActionCreate.OnConflict
+// documentation for more info.
+func (u *AdminActionUpsertOne) Update(set func(*AdminActionUpsert)) *AdminActionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AdminActionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *AdminActionUpsertOne) SetAction(v string) *AdminActionUpsertOne {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AdminActionUpsertOne) UpdateAction() *AdminActionUpsertOne {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetInfo sets the "info" field.
+func (u *AdminActionUpsertOne) SetInfo(v string) *AdminActionUpsertOne {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.SetInfo(v)
+	})
+}
+
+// UpdateInfo sets the "info" field to the value that was provided on create.
+func (u *AdminActionUpsertOne) UpdateInfo() *AdminActionUpsertOne {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.UpdateInfo()
+	})
+}
+
+// Exec executes the query.
+func (u *AdminActionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AdminActionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AdminActionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AdminActionUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AdminActionUpsertOne.ID is not supported by MySQL driver. Use AdminActionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AdminActionUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AdminActionCreateBulk is the builder for creating many AdminAction entities in bulk.
 type AdminActionCreateBulk struct {
 	config
 	builders []*AdminActionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AdminAction entities in the database.
@@ -243,6 +435,7 @@ func (aacb *AdminActionCreateBulk) Save(ctx context.Context) ([]*AdminAction, er
 					_, err = mutators[i+1].Mutate(root, aacb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = aacb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, aacb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -289,6 +482,146 @@ func (aacb *AdminActionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (aacb *AdminActionCreateBulk) ExecX(ctx context.Context) {
 	if err := aacb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AdminAction.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AdminActionUpsert) {
+//			SetAction(v+v).
+//		}).
+//		Exec(ctx)
+func (aacb *AdminActionCreateBulk) OnConflict(opts ...sql.ConflictOption) *AdminActionUpsertBulk {
+	aacb.conflict = opts
+	return &AdminActionUpsertBulk{
+		create: aacb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (aacb *AdminActionCreateBulk) OnConflictColumns(columns ...string) *AdminActionUpsertBulk {
+	aacb.conflict = append(aacb.conflict, sql.ConflictColumns(columns...))
+	return &AdminActionUpsertBulk{
+		create: aacb,
+	}
+}
+
+// AdminActionUpsertBulk is the builder for "upsert"-ing
+// a bulk of AdminAction nodes.
+type AdminActionUpsertBulk struct {
+	create *AdminActionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(adminaction.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AdminActionUpsertBulk) UpdateNewValues() *AdminActionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(adminaction.FieldID)
+				return
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AdminAction.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AdminActionUpsertBulk) Ignore() *AdminActionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AdminActionUpsertBulk) DoNothing() *AdminActionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AdminActionCreateBulk.OnConflict
+// documentation for more info.
+func (u *AdminActionUpsertBulk) Update(set func(*AdminActionUpsert)) *AdminActionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AdminActionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *AdminActionUpsertBulk) SetAction(v string) *AdminActionUpsertBulk {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AdminActionUpsertBulk) UpdateAction() *AdminActionUpsertBulk {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetInfo sets the "info" field.
+func (u *AdminActionUpsertBulk) SetInfo(v string) *AdminActionUpsertBulk {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.SetInfo(v)
+	})
+}
+
+// UpdateInfo sets the "info" field to the value that was provided on create.
+func (u *AdminActionUpsertBulk) UpdateInfo() *AdminActionUpsertBulk {
+	return u.Update(func(s *AdminActionUpsert) {
+		s.UpdateInfo()
+	})
+}
+
+// Exec executes the query.
+func (u *AdminActionUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AdminActionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AdminActionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AdminActionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -101,7 +101,7 @@ func SaveClassPeriods(db *ent.Client) func(*fiber.Ctx) error {
 			}
 		}
 
-		_, err = tx.ClassPeriod.CreateBulk(toAdd...).Save(c.Context())
+		err = tx.ClassPeriod.CreateBulk(toAdd...).OnConflictColumns(classperiod.FieldID).Ignore().Exec(c.Context())
 		if err != nil {
 			return rollback(tx, err)
 		}

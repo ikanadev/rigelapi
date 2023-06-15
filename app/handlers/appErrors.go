@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/apperror"
 )
 
 type AppError struct {
@@ -30,7 +31,7 @@ func SaveAppErrors(db *ent.Client) func(*fiber.Ctx) error {
 				SetErrorMsg(appErr.ErrorMsg).
 				SetErrorStack(appErr.ErrorStack)
 		}
-		_, err = db.AppError.CreateBulk(toAdd...).Save(c.Context())
+		err = db.AppError.CreateBulk(toAdd...).OnConflictColumns(apperror.FieldID).Ignore().Exec(c.Context())
 		if err != nil {
 			return err
 		}
