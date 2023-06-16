@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app/auth"
+	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/app/location"
 	"github.com/vmkevv/rigelapi/config"
@@ -68,13 +69,14 @@ func (server Server) Run() error {
 
 	auth.Start(server.app, server.db, server.dbCtx, server.config, server.newID)
 	location.Start(server.app, server.db, server.dbCtx)
+	extra.Start(server.app, server.db, server.dbCtx)
 	// server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	// server.app.Get("/deps", handlers.DepsHandler(server.db))
 	// server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
 	// server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
 	// server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
-	server.app.Get("/years", handlers.YearlyDataHandler(server.db))
+	// server.app.Get("/years", handlers.YearlyDataHandler(server.db))
 	server.app.Get("/static", handlers.StaticDataHandler(server.db))
 	server.app.Post("/errors", handlers.SaveAppErrors(server.db))
 	server.app.Get("/stats", handlers.StatsHandler(server.db))

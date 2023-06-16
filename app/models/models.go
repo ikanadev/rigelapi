@@ -66,6 +66,12 @@ type Year struct {
 	Value int    `json:"value"`
 }
 
+type YearData struct {
+	Year
+	Periods []Period `json:"periods"`
+	Areas   []Area   `json:"areas"`
+}
+
 type Class struct {
 	ID       string `json:"id"`
 	Parallel string `json:"parallel"`
