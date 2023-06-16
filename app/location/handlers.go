@@ -13,6 +13,7 @@ func NewLocationHandler(app *fiber.App, repo LocationRepository) LocationHandler
 
 func (lh *LocationHandler) handle() {
 	lh.app.Get("/deps", lh.handleGetDeps)
+	lh.app.Get("/provs/dep/:depid", lh.handleGetProvs)
 }
 
 func (lh *LocationHandler) handleGetDeps(ctx *fiber.Ctx) error {
@@ -21,4 +22,13 @@ func (lh *LocationHandler) handleGetDeps(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.JSON(deps)
+}
+
+func (lh *LocationHandler) handleGetProvs(ctx *fiber.Ctx) error {
+	depId := ctx.Params("depid")
+	provs, err := lh.repo.GetProvs(depId)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(provs)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/dpto"
+	"github.com/vmkevv/rigelapi/ent/provincia"
 )
 
 type LocationEntRepo struct {
@@ -30,4 +31,19 @@ func (ler LocationEntRepo) GetDeps() ([]models.Dpto, error) {
 		deps[i] = models.Dpto{ID: dep.ID, Name: dep.Name}
 	}
 	return deps, nil
+}
+
+func (ler LocationEntRepo) GetProvs(depID string) ([]models.Provincia, error) {
+	entProvs, err := ler.ent.Provincia.Query().
+		Where(provincia.HasDepartamentoWith(dpto.ID(depID))).
+		Order(ent.Asc(provincia.FieldName)).
+		All(ler.ctx)
+	if err != nil {
+		return nil, err
+	}
+	provs := make([]models.Provincia, len(entProvs))
+	for i, prov := range entProvs {
+		provs[i] = models.Provincia{ID: prov.ID, Name: prov.Name}
+	}
+	return provs, nil
 }
