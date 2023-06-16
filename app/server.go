@@ -77,7 +77,7 @@ func (server Server) Run() error {
 	// server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
 	// server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
 	// server.app.Get("/years", handlers.YearlyDataHandler(server.db))
-	server.app.Get("/static", handlers.StaticDataHandler(server.db))
+	// server.app.Get("/static", handlers.StaticDataHandler(server.db))
 	server.app.Post("/errors", handlers.SaveAppErrors(server.db))
 	server.app.Get("/stats", handlers.StatsHandler(server.db))
 	server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
