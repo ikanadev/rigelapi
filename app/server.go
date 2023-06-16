@@ -72,7 +72,7 @@ func (server Server) Run() error {
 	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	// server.app.Get("/deps", handlers.DepsHandler(server.db))
 	// server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
-	server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
+	// server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
 	server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
 	server.app.Get("/years", handlers.YearlyDataHandler(server.db))
 	server.app.Get("/static", handlers.StaticDataHandler(server.db))

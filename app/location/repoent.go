@@ -6,6 +6,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/dpto"
+	"github.com/vmkevv/rigelapi/ent/municipio"
 	"github.com/vmkevv/rigelapi/ent/provincia"
 )
 
@@ -46,4 +47,19 @@ func (ler LocationEntRepo) GetProvs(depID string) ([]models.Provincia, error) {
 		provs[i] = models.Provincia{ID: prov.ID, Name: prov.Name}
 	}
 	return provs, nil
+}
+
+func (ler LocationEntRepo) GetMuns(provID string) ([]models.Municipio, error) {
+	entMuns, err := ler.ent.Municipio.Query().
+		Where(municipio.HasProvinciaWith(provincia.ID(provID))).
+		Order(ent.Asc(municipio.FieldName)).
+		All(ler.ctx)
+	if err != nil {
+		return nil, err
+	}
+	muns := make([]models.Municipio, len(entMuns))
+	for i, mun := range entMuns {
+		muns[i] = models.Municipio{ID: mun.ID, Name: mun.Name}
+	}
+	return muns, nil
 }
