@@ -8,7 +8,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 )
 
-func Start(app *fiber.App, ent *ent.Client, ctx context.Context, config config.Config, genID func() string) {
+func Start(app fiber.Router, ent *ent.Client, ctx context.Context, config config.Config, genID func() string) {
 	entRepo := NewAuthEntRepo(ent, ctx, config, genID)
 	handlers := NewAuthHandler(app, entRepo, config)
 	handlers.handle()

@@ -7,7 +7,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 )
 
-func Start(app *fiber.App, ent *ent.Client, ctx context.Context) {
+func Start(app fiber.Router, ent *ent.Client, ctx context.Context) {
 	entRepo := NewLocationEntRepo(ent, ctx)
 	handlers := NewLocationHandler(app, entRepo)
 	handlers.handle()

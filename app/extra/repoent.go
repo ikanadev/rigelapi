@@ -6,6 +6,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/apperror"
+	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/subject"
 )
 
@@ -95,4 +96,27 @@ func (eer ExtraEntRepo) SaveAppErrors(appErrors []models.AppError) error {
 		Ignore().
 		Exec(eer.ctx)
 	return err
+}
+
+func (eer ExtraEntRepo) GetTeachersCount() (int, error) {
+	teachers, err := eer.ent.Teacher.Query().Count(eer.ctx)
+	return teachers, err
+}
+
+func (eer ExtraEntRepo) GetClassesCount() (int, error) {
+	classes, err := eer.ent.Class.Query().Count(eer.ctx)
+	return classes, err
+}
+
+func (eer ExtraEntRepo) GetSchoolsCount() (int, error) {
+	schools, err := eer.ent.Class.Query().
+		Unique(true).
+		Select(class.SchoolColumn).
+		Strings(eer.ctx)
+	return len(schools), err
+}
+
+func (eer ExtraEntRepo) GetActivitiesCount() (int, error) {
+	acts, err := eer.ent.Activity.Query().Count(eer.ctx)
+	return acts, err
 }

@@ -79,7 +79,7 @@ func (server Server) Run() error {
 	// server.app.Get("/years", handlers.YearlyDataHandler(server.db))
 	// server.app.Get("/static", handlers.StaticDataHandler(server.db))
 	// server.app.Post("/errors", handlers.SaveAppErrors(server.db))
-	server.app.Get("/stats", handlers.StatsHandler(server.db))
+	// server.app.Get("/stats", handlers.StatsHandler(server.db))
 	server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
 
 	protected := server.app.Group("/auth", authMiddleware(server.config))

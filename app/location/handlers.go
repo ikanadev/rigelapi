@@ -3,11 +3,11 @@ package location
 import "github.com/gofiber/fiber/v2"
 
 type LocationHandler struct {
-	app  *fiber.App
+	app  fiber.Router
 	repo LocationRepository
 }
 
-func NewLocationHandler(app *fiber.App, repo LocationRepository) LocationHandler {
+func NewLocationHandler(app fiber.Router, repo LocationRepository) LocationHandler {
 	return LocationHandler{app, repo}
 }
 

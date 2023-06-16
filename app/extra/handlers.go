@@ -6,11 +6,11 @@ import (
 )
 
 type ExtraHandler struct {
-	app  *fiber.App
+	app  fiber.Router
 	repo ExtraRepository
 }
 
-func NewExtraHandler(app *fiber.App, repo ExtraRepository) ExtraHandler {
+func NewExtraHandler(app fiber.Router, repo ExtraRepository) ExtraHandler {
 	return ExtraHandler{app, repo}
 }
 
@@ -18,6 +18,7 @@ func (eh *ExtraHandler) handle() {
 	eh.app.Get("/years", eh.handleYearsData)
 	eh.app.Get("/static", eh.handleStaticData)
 	eh.app.Post("/errors", eh.handleSaveAppErrors)
+	eh.app.Get("/stats", eh.handleStats)
 }
 
 func (eh *ExtraHandler) handleYearsData(ctx *fiber.Ctx) error {
@@ -53,7 +54,44 @@ func (eh *ExtraHandler) handleSaveAppErrors(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
+func (eh *ExtraHandler) handleStats(ctx *fiber.Ctx) error {
+	teachers, err := eh.repo.GetTeachersCount()
+	if err != nil {
+		return err
+	}
+	classes, err := eh.repo.GetClassesCount()
+	if err != nil {
+		return err
+	}
+	schools, err := eh.repo.GetClassesCount()
+	if err != nil {
+		return err
+	}
+	acts, err := eh.repo.GetActivitiesCount()
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(StatsRes{
+		Stats: Stats{
+			Teachers:   teachers,
+			Classes:    classes,
+			Schools:    schools,
+			Activities: acts,
+		},
+	})
+}
+
 type StaticDataRes struct {
 	Grades   []models.Grade   `json:"grades"`
 	Subjects []models.Subject `json:"subjects"`
+}
+
+type Stats struct {
+	Teachers   int `json:"teachers"`
+	Classes    int `json:"classes"`
+	Schools    int `json:"schools"`
+	Activities int `json:"activities"`
+}
+type StatsRes struct {
+	Stats Stats `json:"stats"`
 }
