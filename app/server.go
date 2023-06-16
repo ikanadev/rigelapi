@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app/auth"
 	"github.com/vmkevv/rigelapi/app/handlers"
+	"github.com/vmkevv/rigelapi/app/location"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/utils"
@@ -66,9 +67,10 @@ func (server Server) Run() error {
 	// server.app.Use(logUserAgent())
 
 	auth.Start(server.app, server.db, server.dbCtx, server.config, server.newID)
+	location.Start(server.app, server.db, server.dbCtx)
 	// server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
-	server.app.Get("/deps", handlers.DepsHandler(server.db))
+	// server.app.Get("/deps", handlers.DepsHandler(server.db))
 	server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
 	server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
 	server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
