@@ -6,4 +6,5 @@ type LocationRepository interface {
 	GetDeps() ([]models.Dpto, error)
 	GetProvs(depID string) ([]models.Provincia, error)
 	GetMuns(provID string) ([]models.Municipio, error)
+	GetSchools(munID string) ([]models.School, error)
 }

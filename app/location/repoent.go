@@ -8,6 +8,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent/dpto"
 	"github.com/vmkevv/rigelapi/ent/municipio"
 	"github.com/vmkevv/rigelapi/ent/provincia"
+	"github.com/vmkevv/rigelapi/ent/school"
 )
 
 type LocationEntRepo struct {
@@ -62,4 +63,24 @@ func (ler LocationEntRepo) GetMuns(provID string) ([]models.Municipio, error) {
 		muns[i] = models.Municipio{ID: mun.ID, Name: mun.Name}
 	}
 	return muns, nil
+}
+
+func (ler LocationEntRepo) GetSchools(munID string) ([]models.School, error) {
+	entSchools, err := ler.ent.School.Query().
+		Where(school.HasMunicipioWith(municipio.ID(munID))).
+		Order(ent.Asc(school.FieldName)).
+		All(ler.ctx)
+	if err != nil {
+		return nil, err
+	}
+	schools := make([]models.School, len(entSchools))
+	for i, school := range entSchools {
+		schools[i] = models.School{
+			ID:   school.ID,
+			Name: school.Name,
+			Lat:  school.Lat,
+			Lon:  school.Lon,
+		}
+	}
+	return schools, nil
 }

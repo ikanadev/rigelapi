@@ -15,6 +15,7 @@ func (lh *LocationHandler) handle() {
 	lh.app.Get("/deps", lh.handleGetDeps)
 	lh.app.Get("/provs/dep/:depid", lh.handleGetProvs)
 	lh.app.Get("/muns/prov/:provid", lh.handleGetMuns)
+	lh.app.Get("/schools/mun/:munid", lh.handleGetSchools)
 }
 
 func (lh *LocationHandler) handleGetDeps(ctx *fiber.Ctx) error {
@@ -41,4 +42,13 @@ func (lh *LocationHandler) handleGetMuns(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.JSON(muns)
+}
+
+func (lh *LocationHandler) handleGetSchools(ctx *fiber.Ctx) error {
+	munID := ctx.Params("munid")
+	schools, err := lh.repo.GetSchools(munID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(schools)
 }
