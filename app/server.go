@@ -1,11 +1,13 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/vmkevv/rigelapi/app/auth"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
@@ -17,12 +19,13 @@ type Server struct {
 	config config.Config
 	app    *fiber.App
 	newID  func() string
+	dbCtx  context.Context
 }
 type errMsg struct {
 	Message string `json:"message"`
 }
 
-func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server {
+func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx context.Context) Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -32,6 +35,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server 
 				msg = err.Error()
 			}
 			if code == fiber.StatusInternalServerError {
+				log.Println(err.Error())
 				userId, _ := c.Locals("id").(string)
 				// Method;IP;BaseURL;Path;Protocol\n",
 				logger.Printf(
@@ -53,6 +57,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger) Server 
 		config,
 		app,
 		utils.NanoIDGenerator(),
+		dbCtx,
 	}
 }
 
@@ -60,8 +65,9 @@ func (server Server) Run() error {
 	server.app.Use(cors.New())
 	// server.app.Use(logUserAgent())
 
-	server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
-	server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
+	auth.Start(server.app, server.db, server.dbCtx, server.config, server.newID)
+	// server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
+	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	server.app.Get("/deps", handlers.DepsHandler(server.db))
 	server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
 	server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
