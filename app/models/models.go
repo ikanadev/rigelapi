@@ -2,6 +2,14 @@ package models
 
 import "github.com/vmkevv/rigelapi/ent/attendance"
 
+type AppError struct {
+	ID         string `json:"id"`
+	UserID     string `json:"user_id"`
+	Cause      string `json:"cause"`
+	ErrorMsg   string `json:"error_msg"`
+	ErrorStack string `json:"error_stack"`
+}
+
 type Teacher struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`

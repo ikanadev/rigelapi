@@ -5,6 +5,7 @@ import (
 
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/apperror"
 	"github.com/vmkevv/rigelapi/ent/subject"
 )
 
@@ -77,4 +78,21 @@ func (eer ExtraEntRepo) GetSubjects() ([]models.Subject, error) {
 		subjects[i] = models.Subject{ID: subject.ID, Name: subject.Name}
 	}
 	return subjects, nil
+}
+
+func (eer ExtraEntRepo) SaveAppErrors(appErrors []models.AppError) error {
+	toAdd := make([]*ent.AppErrorCreate, len(appErrors))
+	for i, appError := range appErrors {
+		toAdd[i] = eer.ent.AppError.Create().
+			SetID(appError.ID).
+			SetUserID(appError.UserID).
+			SetCause(appError.Cause).
+			SetErrorMsg(appError.ErrorMsg).
+			SetErrorStack(appError.ErrorStack)
+	}
+	err := eer.ent.AppError.CreateBulk(toAdd...).
+		OnConflictColumns(apperror.FieldID).
+		Ignore().
+		Exec(eer.ctx)
+	return err
 }

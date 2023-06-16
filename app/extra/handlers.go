@@ -17,6 +17,7 @@ func NewExtraHandler(app *fiber.App, repo ExtraRepository) ExtraHandler {
 func (eh *ExtraHandler) handle() {
 	eh.app.Get("/years", eh.handleYearsData)
 	eh.app.Get("/static", eh.handleStaticData)
+	eh.app.Post("/errors", eh.handleSaveAppErrors)
 }
 
 func (eh *ExtraHandler) handleYearsData(ctx *fiber.Ctx) error {
@@ -37,6 +38,19 @@ func (eh *ExtraHandler) handleStaticData(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.JSON(StaticDataRes{grades, subjects})
+}
+
+func (eh *ExtraHandler) handleSaveAppErrors(ctx *fiber.Ctx) error {
+	appErrs := []models.AppError{}
+	err := ctx.BodyParser(&appErrs)
+	if err != nil {
+		return err
+	}
+	err = eh.repo.SaveAppErrors(appErrs)
+	if err != nil {
+		return err
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
 type StaticDataRes struct {
