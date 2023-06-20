@@ -19,6 +19,7 @@ func (eh *ExtraHandler) handle() {
 	eh.app.Get("/static", eh.handleStaticData)
 	eh.app.Post("/errors", eh.handleSaveAppErrors)
 	eh.app.Get("/stats", eh.handleStats)
+	eh.app.Get("/class/:classid", eh.handleClassDetails)
 }
 
 func (eh *ExtraHandler) handleYearsData(ctx *fiber.Ctx) error {
@@ -81,6 +82,29 @@ func (eh *ExtraHandler) handleStats(ctx *fiber.Ctx) error {
 	})
 }
 
+func (eh *ExtraHandler) handleClassDetails(ctx *fiber.Ctx) error {
+	classID := ctx.Params("classid")
+	var resp ClassDetailsResp
+	classData, err := eh.repo.GetClassData(classID)
+	if err != nil {
+		return err
+	}
+	resp.ClassData = classData
+
+	classPeriods, err := eh.repo.GetClassPeriodsData(classID)
+	if err != nil {
+		return err
+	}
+	resp.ClassPeriods = classPeriods
+
+	students, err := eh.repo.GetStudentsData(classID, classPeriods)
+	if err != nil {
+		return err
+	}
+	resp.Students = students
+	return ctx.JSON(resp)
+}
+
 type StaticDataRes struct {
 	Grades   []models.Grade   `json:"grades"`
 	Subjects []models.Subject `json:"subjects"`
@@ -94,4 +118,9 @@ type Stats struct {
 }
 type StatsRes struct {
 	Stats Stats `json:"stats"`
+}
+type ClassDetailsResp struct {
+	ClassData    models.ClassData         `json:"class_data"`
+	Students     []models.StudentData     `json:"students"`
+	ClassPeriods []models.ClassPeriodData `json:"class_periods"`
 }
