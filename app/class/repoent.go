@@ -9,6 +9,8 @@ import (
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/class"
+	// "github.com/vmkevv/rigelapi/ent/classperiod"
+	// "github.com/vmkevv/rigelapi/ent/period"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -97,6 +99,8 @@ func (cer ClassEntRepo) GetClassPeriodsData(classID string) (
 	}
 
 	entClassPeriods, err := entClass.QueryClassPeriods().
+		// TODO:
+		// Order(classperiod.ByPeriodField(period.FieldName)). Adding edge order makes entClassPeriods an empty slice for a unknown reason
 		WithPeriod().
 		WithAttendanceDays(func(adq *ent.AttendanceDayQuery) {
 			adq.Order(ent.Asc(attendanceday.FieldDay))
