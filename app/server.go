@@ -11,6 +11,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/app/location"
+	"github.com/vmkevv/rigelapi/app/teacher"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/utils"
@@ -84,7 +85,8 @@ func (server Server) Run() error {
 
 	protected := server.app.Group("/auth", authMiddleware(server.config))
 
-	protected.Get("/profile", handlers.GetProfile(server.db))
+	teacher.Start(protected, server.db, server.dbCtx)
+	// protected.Get("/profile", handlers.GetProfile(server.db))
 	protected.Post("/parsexls", handlers.ParseXLS())
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
