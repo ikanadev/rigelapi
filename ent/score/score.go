@@ -2,6 +2,11 @@
 
 package score
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the score type in the database.
 	Label = "score"
@@ -57,4 +62,45 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Score queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPoints orders the results by the points field.
+func ByPoints(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPoints, opts...).ToFunc()
+}
+
+// ByActivityField orders the results by activity field.
+func ByActivityField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newActivityStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByStudentField orders the results by student field.
+func ByStudentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStudentStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newActivityStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ActivityInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ActivityTable, ActivityColumn),
+	)
+}
+func newStudentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StudentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, StudentTable, StudentColumn),
+	)
 }

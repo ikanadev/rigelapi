@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
@@ -24,6 +25,7 @@ type Attendance struct {
 	Edges                      AttendanceEdges `json:"edges"`
 	attendance_day_attendances *string
 	student_attendances        *string
+	selectValues               sql.SelectValues
 }
 
 // AttendanceEdges holds the relations/edges for other nodes in the graph.
@@ -64,8 +66,8 @@ func (e AttendanceEdges) StudentOrErr() (*Student, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Attendance) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Attendance) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case attendance.FieldID, attendance.FieldValue:
@@ -75,7 +77,7 @@ func (*Attendance) scanValues(columns []string) ([]interface{}, error) {
 		case attendance.ForeignKeys[1]: // student_attendances
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Attendance", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -83,7 +85,7 @@ func (*Attendance) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Attendance fields.
-func (a *Attendance) assignValues(columns []string, values []interface{}) error {
+func (a *Attendance) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -115,26 +117,34 @@ func (a *Attendance) assignValues(columns []string, values []interface{}) error 
 				a.student_attendances = new(string)
 				*a.student_attendances = value.String
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// GetValue returns the ent.Value that was dynamically selected and assigned to the Attendance.
+// This includes values selected through modifiers, order, etc.
+func (a *Attendance) GetValue(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryAttendanceDay queries the "attendanceDay" edge of the Attendance entity.
 func (a *Attendance) QueryAttendanceDay() *AttendanceDayQuery {
-	return (&AttendanceClient{config: a.config}).QueryAttendanceDay(a)
+	return NewAttendanceClient(a.config).QueryAttendanceDay(a)
 }
 
 // QueryStudent queries the "student" edge of the Attendance entity.
 func (a *Attendance) QueryStudent() *StudentQuery {
-	return (&AttendanceClient{config: a.config}).QueryStudent(a)
+	return NewAttendanceClient(a.config).QueryStudent(a)
 }
 
 // Update returns a builder for updating this Attendance.
 // Note that you need to call Attendance.Unwrap() before calling this method if this Attendance
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Attendance) Update() *AttendanceUpdateOne {
-	return (&AttendanceClient{config: a.config}).UpdateOne(a)
+	return NewAttendanceClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Attendance entity that was returned from a transaction after it was closed,
@@ -161,9 +171,3 @@ func (a *Attendance) String() string {
 
 // Attendances is a parsable slice of Attendance.
 type Attendances []*Attendance
-
-func (a Attendances) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

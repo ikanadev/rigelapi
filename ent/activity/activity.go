@@ -2,6 +2,11 @@
 
 package activity
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the activity type in the database.
 	Label = "activity"
@@ -69,4 +74,71 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Activity queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByDate orders the results by the date field.
+func ByDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDate, opts...).ToFunc()
+}
+
+// ByScoresCount orders the results by scores count.
+func ByScoresCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScoresStep(), opts...)
+	}
+}
+
+// ByScores orders the results by scores terms.
+func ByScores(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScoresStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByAreaField orders the results by area field.
+func ByAreaField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAreaStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByClassPeriodField orders the results by classPeriod field.
+func ByClassPeriodField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClassPeriodStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newScoresStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScoresInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScoresTable, ScoresColumn),
+	)
+}
+func newAreaStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AreaInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AreaTable, AreaColumn),
+	)
+}
+func newClassPeriodStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ClassPeriodInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ClassPeriodTable, ClassPeriodColumn),
+	)
 }

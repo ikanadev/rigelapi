@@ -116,34 +116,7 @@ func (au *AreaUpdate) ClearYear() *AreaUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *AreaUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(au.hooks) == 0 {
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AreaMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -169,16 +142,7 @@ func (au *AreaUpdate) ExecX(ctx context.Context) {
 }
 
 func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   area.Table,
-			Columns: area.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: area.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(area.Table, area.Columns, sqlgraph.NewFieldSpec(area.FieldID, field.TypeString))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -187,25 +151,13 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: area.FieldName,
-		})
+		_spec.SetField(area.FieldName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Points(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: area.FieldPoints,
-		})
+		_spec.SetField(area.FieldPoints, field.TypeInt, value)
 	}
 	if value, ok := au.mutation.AddedPoints(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: area.FieldPoints,
-		})
+		_spec.AddField(area.FieldPoints, field.TypeInt, value)
 	}
 	if au.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -215,10 +167,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -231,10 +180,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -250,10 +196,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -269,10 +212,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{area.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -285,10 +225,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{area.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -304,6 +241,7 @@ func (au *AreaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -400,6 +338,12 @@ func (auo *AreaUpdateOne) ClearYear() *AreaUpdateOne {
 	return auo
 }
 
+// Where appends a list predicates to the AreaUpdate builder.
+func (auo *AreaUpdateOne) Where(ps ...predicate.Area) *AreaUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *AreaUpdateOne) Select(field string, fields ...string) *AreaUpdateOne {
@@ -409,40 +353,7 @@ func (auo *AreaUpdateOne) Select(field string, fields ...string) *AreaUpdateOne 
 
 // Save executes the query and returns the updated Area entity.
 func (auo *AreaUpdateOne) Save(ctx context.Context) (*Area, error) {
-	var (
-		err  error
-		node *Area
-	)
-	if len(auo.hooks) == 0 {
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AreaMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Area)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AreaMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -468,16 +379,7 @@ func (auo *AreaUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   area.Table,
-			Columns: area.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: area.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(area.Table, area.Columns, sqlgraph.NewFieldSpec(area.FieldID, field.TypeString))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Area.id" for update`)}
@@ -503,25 +405,13 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 		}
 	}
 	if value, ok := auo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: area.FieldName,
-		})
+		_spec.SetField(area.FieldName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Points(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: area.FieldPoints,
-		})
+		_spec.SetField(area.FieldPoints, field.TypeInt, value)
 	}
 	if value, ok := auo.mutation.AddedPoints(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: area.FieldPoints,
-		})
+		_spec.AddField(area.FieldPoints, field.TypeInt, value)
 	}
 	if auo.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -531,10 +421,7 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -547,10 +434,7 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -566,10 +450,7 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -585,10 +466,7 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 			Columns: []string{area.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -601,10 +479,7 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 			Columns: []string{area.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -623,5 +498,6 @@ func (auo *AreaUpdateOne) sqlSave(ctx context.Context) (_node *Area, err error) 
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

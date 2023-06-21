@@ -99,34 +99,7 @@ func (su *ScoreUpdate) ClearStudent() *ScoreUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *ScoreUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(su.hooks) == 0 {
-		affected, err = su.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ScoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			su.mutation = mutation
-			affected, err = su.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(su.hooks) - 1; i >= 0; i-- {
-			if su.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = su.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, su.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -152,16 +125,7 @@ func (su *ScoreUpdate) ExecX(ctx context.Context) {
 }
 
 func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   score.Table,
-			Columns: score.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: score.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(score.Table, score.Columns, sqlgraph.NewFieldSpec(score.FieldID, field.TypeString))
 	if ps := su.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -170,18 +134,10 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := su.mutation.Points(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: score.FieldPoints,
-		})
+		_spec.SetField(score.FieldPoints, field.TypeInt, value)
 	}
 	if value, ok := su.mutation.AddedPoints(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: score.FieldPoints,
-		})
+		_spec.AddField(score.FieldPoints, field.TypeInt, value)
 	}
 	if su.mutation.ActivityCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -191,10 +147,7 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{score.ActivityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -207,10 +160,7 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{score.ActivityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -226,10 +176,7 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{score.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -242,10 +189,7 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{score.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -261,6 +205,7 @@ func (su *ScoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	su.mutation.done = true
 	return n, nil
 }
 
@@ -340,6 +285,12 @@ func (suo *ScoreUpdateOne) ClearStudent() *ScoreUpdateOne {
 	return suo
 }
 
+// Where appends a list predicates to the ScoreUpdate builder.
+func (suo *ScoreUpdateOne) Where(ps ...predicate.Score) *ScoreUpdateOne {
+	suo.mutation.Where(ps...)
+	return suo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (suo *ScoreUpdateOne) Select(field string, fields ...string) *ScoreUpdateOne {
@@ -349,40 +300,7 @@ func (suo *ScoreUpdateOne) Select(field string, fields ...string) *ScoreUpdateOn
 
 // Save executes the query and returns the updated Score entity.
 func (suo *ScoreUpdateOne) Save(ctx context.Context) (*Score, error) {
-	var (
-		err  error
-		node *Score
-	)
-	if len(suo.hooks) == 0 {
-		node, err = suo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ScoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			suo.mutation = mutation
-			node, err = suo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(suo.hooks) - 1; i >= 0; i-- {
-			if suo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = suo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, suo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Score)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ScoreMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -408,16 +326,7 @@ func (suo *ScoreUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   score.Table,
-			Columns: score.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: score.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(score.Table, score.Columns, sqlgraph.NewFieldSpec(score.FieldID, field.TypeString))
 	id, ok := suo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Score.id" for update`)}
@@ -443,18 +352,10 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 		}
 	}
 	if value, ok := suo.mutation.Points(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: score.FieldPoints,
-		})
+		_spec.SetField(score.FieldPoints, field.TypeInt, value)
 	}
 	if value, ok := suo.mutation.AddedPoints(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: score.FieldPoints,
-		})
+		_spec.AddField(score.FieldPoints, field.TypeInt, value)
 	}
 	if suo.mutation.ActivityCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -464,10 +365,7 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 			Columns: []string{score.ActivityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -480,10 +378,7 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 			Columns: []string{score.ActivityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -499,10 +394,7 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 			Columns: []string{score.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -515,10 +407,7 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 			Columns: []string{score.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -537,5 +426,6 @@ func (suo *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error
 		}
 		return nil, err
 	}
+	suo.mutation.done = true
 	return _node, nil
 }

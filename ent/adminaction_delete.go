@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (aad *AdminActionDelete) Where(ps ...predicate.AdminAction) *AdminActionDel
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (aad *AdminActionDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(aad.hooks) == 0 {
-		affected, err = aad.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminActionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aad.mutation = mutation
-			affected, err = aad.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(aad.hooks) - 1; i >= 0; i-- {
-			if aad.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aad.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, aad.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, aad.sqlExec, aad.mutation, aad.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (aad *AdminActionDelete) ExecX(ctx context.Context) int {
 }
 
 func (aad *AdminActionDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: adminaction.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: adminaction.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(adminaction.Table, sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString))
 	if ps := aad.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (aad *AdminActionDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	aad.mutation.done = true
 	return affected, err
 }
 
 // AdminActionDeleteOne is the builder for deleting a single AdminAction entity.
 type AdminActionDeleteOne struct {
 	aad *AdminActionDelete
+}
+
+// Where appends a list predicates to the AdminActionDelete builder.
+func (aado *AdminActionDeleteOne) Where(ps ...predicate.AdminAction) *AdminActionDeleteOne {
+	aado.aad.mutation.Where(ps...)
+	return aado
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (aado *AdminActionDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (aado *AdminActionDeleteOne) ExecX(ctx context.Context) {
-	aado.aad.ExecX(ctx)
+	if err := aado.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

@@ -105,49 +105,7 @@ func (yc *YearCreate) Mutation() *YearMutation {
 
 // Save creates the Year in the database.
 func (yc *YearCreate) Save(ctx context.Context) (*Year, error) {
-	var (
-		err  error
-		node *Year
-	)
-	if len(yc.hooks) == 0 {
-		if err = yc.check(); err != nil {
-			return nil, err
-		}
-		node, err = yc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*YearMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = yc.check(); err != nil {
-				return nil, err
-			}
-			yc.mutation = mutation
-			if node, err = yc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(yc.hooks) - 1; i >= 0; i-- {
-			if yc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = yc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, yc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Year)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from YearMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, yc.sqlSave, yc.mutation, yc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -181,6 +139,9 @@ func (yc *YearCreate) check() error {
 }
 
 func (yc *YearCreate) sqlSave(ctx context.Context) (*Year, error) {
+	if err := yc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := yc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, yc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -195,19 +156,15 @@ func (yc *YearCreate) sqlSave(ctx context.Context) (*Year, error) {
 			return nil, fmt.Errorf("unexpected Year.ID type: %T", _spec.ID.Value)
 		}
 	}
+	yc.mutation.id = &_node.ID
+	yc.mutation.done = true
 	return _node, nil
 }
 
 func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Year{config: yc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: year.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: year.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(year.Table, sqlgraph.NewFieldSpec(year.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = yc.conflict
 	if id, ok := yc.mutation.ID(); ok {
@@ -215,11 +172,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := yc.mutation.Value(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: year.FieldValue,
-		})
+		_spec.SetField(year.FieldValue, field.TypeInt, value)
 		_node.Value = value
 	}
 	if nodes := yc.mutation.ClassesIDs(); len(nodes) > 0 {
@@ -230,10 +183,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -249,10 +199,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -268,10 +215,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -287,10 +231,7 @@ func (yc *YearCreate) createSpec() (*Year, *sqlgraph.CreateSpec) {
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -499,8 +440,8 @@ func (ycb *YearCreateBulk) Save(ctx context.Context) ([]*Year, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ycb.builders[i+1].mutation)
 				} else {
@@ -614,7 +555,6 @@ func (u *YearUpsertBulk) UpdateNewValues() *YearUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(year.FieldID)
-				return
 			}
 		}
 	}))

@@ -12,144 +12,102 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.AttendanceDay(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.AttendanceDay(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.AttendanceDay(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.AttendanceDay {
+	return predicate.AttendanceDay(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.AttendanceDay {
+	return predicate.AttendanceDay(sql.FieldContainsFold(FieldID, id))
 }
 
 // Day applies equality check predicate on the "day" field. It's identical to DayEQ.
 func Day(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldEQ(FieldDay, v))
 }
 
 // DayEQ applies the EQ predicate on the "day" field.
 func DayEQ(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldEQ(FieldDay, v))
 }
 
 // DayNEQ applies the NEQ predicate on the "day" field.
 func DayNEQ(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldNEQ(FieldDay, v))
 }
 
 // DayIn applies the In predicate on the "day" field.
 func DayIn(vs ...time.Time) predicate.AttendanceDay {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDay), v...))
-	})
+	return predicate.AttendanceDay(sql.FieldIn(FieldDay, vs...))
 }
 
 // DayNotIn applies the NotIn predicate on the "day" field.
 func DayNotIn(vs ...time.Time) predicate.AttendanceDay {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDay), v...))
-	})
+	return predicate.AttendanceDay(sql.FieldNotIn(FieldDay, vs...))
 }
 
 // DayGT applies the GT predicate on the "day" field.
 func DayGT(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldGT(FieldDay, v))
 }
 
 // DayGTE applies the GTE predicate on the "day" field.
 func DayGTE(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldGTE(FieldDay, v))
 }
 
 // DayLT applies the LT predicate on the "day" field.
 func DayLT(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldLT(FieldDay, v))
 }
 
 // DayLTE applies the LTE predicate on the "day" field.
 func DayLTE(v time.Time) predicate.AttendanceDay {
-	return predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDay), v))
-	})
+	return predicate.AttendanceDay(sql.FieldLTE(FieldDay, v))
 }
 
 // HasAttendances applies the HasEdge predicate on the "attendances" edge.
@@ -157,7 +115,6 @@ func HasAttendances() predicate.AttendanceDay {
 	return predicate.AttendanceDay(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendancesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, AttendancesTable, AttendancesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -167,11 +124,7 @@ func HasAttendances() predicate.AttendanceDay {
 // HasAttendancesWith applies the HasEdge predicate on the "attendances" edge with a given conditions (other predicates).
 func HasAttendancesWith(preds ...predicate.Attendance) predicate.AttendanceDay {
 	return predicate.AttendanceDay(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendancesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendancesTable, AttendancesColumn),
-		)
+		step := newAttendancesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -185,7 +138,6 @@ func HasClassPeriod() predicate.AttendanceDay {
 	return predicate.AttendanceDay(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassPeriodTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, ClassPeriodTable, ClassPeriodColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -195,11 +147,7 @@ func HasClassPeriod() predicate.AttendanceDay {
 // HasClassPeriodWith applies the HasEdge predicate on the "classPeriod" edge with a given conditions (other predicates).
 func HasClassPeriodWith(preds ...predicate.ClassPeriod) predicate.AttendanceDay {
 	return predicate.AttendanceDay(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassPeriodInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ClassPeriodTable, ClassPeriodColumn),
-		)
+		step := newClassPeriodStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

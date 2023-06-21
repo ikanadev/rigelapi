@@ -105,49 +105,7 @@ func (sc *StudentCreate) Mutation() *StudentMutation {
 
 // Save creates the Student in the database.
 func (sc *StudentCreate) Save(ctx context.Context) (*Student, error) {
-	var (
-		err  error
-		node *Student
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*StudentMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Student)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from StudentMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -187,6 +145,9 @@ func (sc *StudentCreate) check() error {
 }
 
 func (sc *StudentCreate) sqlSave(ctx context.Context) (*Student, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -201,19 +162,15 @@ func (sc *StudentCreate) sqlSave(ctx context.Context) (*Student, error) {
 			return nil, fmt.Errorf("unexpected Student.ID type: %T", _spec.ID.Value)
 		}
 	}
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Student{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: student.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: student.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(student.Table, sqlgraph.NewFieldSpec(student.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
@@ -221,27 +178,15 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := sc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: student.FieldName,
-		})
+		_spec.SetField(student.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := sc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: student.FieldLastName,
-		})
+		_spec.SetField(student.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := sc.mutation.Ci(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: student.FieldCi,
-		})
+		_spec.SetField(student.FieldCi, field.TypeString, value)
 		_node.Ci = value
 	}
 	if nodes := sc.mutation.AttendancesIDs(); len(nodes) > 0 {
@@ -252,10 +197,7 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 			Columns: []string{student.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -271,10 +213,7 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 			Columns: []string{student.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -290,10 +229,7 @@ func (sc *StudentCreate) createSpec() (*Student, *sqlgraph.CreateSpec) {
 			Columns: []string{student.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -542,8 +478,8 @@ func (scb *StudentCreateBulk) Save(ctx context.Context) ([]*Student, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
@@ -657,7 +593,6 @@ func (u *StudentUpsertBulk) UpdateNewValues() *StudentUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(student.FieldID)
-				return
 			}
 		}
 	}))

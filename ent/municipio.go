@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/municipio"
 	"github.com/vmkevv/rigelapi/ent/provincia"
@@ -22,6 +23,7 @@ type Municipio struct {
 	// The values are being populated by the MunicipioQuery when eager-loading is set.
 	Edges                MunicipioEdges `json:"edges"`
 	provincia_municipios *string
+	selectValues         sql.SelectValues
 }
 
 // MunicipioEdges holds the relations/edges for other nodes in the graph.
@@ -58,8 +60,8 @@ func (e MunicipioEdges) ProvinciaOrErr() (*Provincia, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Municipio) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Municipio) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case municipio.FieldID, municipio.FieldName:
@@ -67,7 +69,7 @@ func (*Municipio) scanValues(columns []string) ([]interface{}, error) {
 		case municipio.ForeignKeys[0]: // provincia_municipios
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Municipio", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -75,7 +77,7 @@ func (*Municipio) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Municipio fields.
-func (m *Municipio) assignValues(columns []string, values []interface{}) error {
+func (m *Municipio) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -100,26 +102,34 @@ func (m *Municipio) assignValues(columns []string, values []interface{}) error {
 				m.provincia_municipios = new(string)
 				*m.provincia_municipios = value.String
 			}
+		default:
+			m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Municipio.
+// This includes values selected through modifiers, order, etc.
+func (m *Municipio) Value(name string) (ent.Value, error) {
+	return m.selectValues.Get(name)
+}
+
 // QuerySchools queries the "schools" edge of the Municipio entity.
 func (m *Municipio) QuerySchools() *SchoolQuery {
-	return (&MunicipioClient{config: m.config}).QuerySchools(m)
+	return NewMunicipioClient(m.config).QuerySchools(m)
 }
 
 // QueryProvincia queries the "provincia" edge of the Municipio entity.
 func (m *Municipio) QueryProvincia() *ProvinciaQuery {
-	return (&MunicipioClient{config: m.config}).QueryProvincia(m)
+	return NewMunicipioClient(m.config).QueryProvincia(m)
 }
 
 // Update returns a builder for updating this Municipio.
 // Note that you need to call Municipio.Unwrap() before calling this method if this Municipio
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (m *Municipio) Update() *MunicipioUpdateOne {
-	return (&MunicipioClient{config: m.config}).UpdateOne(m)
+	return NewMunicipioClient(m.config).UpdateOne(m)
 }
 
 // Unwrap unwraps the Municipio entity that was returned from a transaction after it was closed,
@@ -146,9 +156,3 @@ func (m *Municipio) String() string {
 
 // Municipios is a parsable slice of Municipio.
 type Municipios []*Municipio
-
-func (m Municipios) config(cfg config) {
-	for _i := range m {
-		m[_i].config = cfg
-	}
-}

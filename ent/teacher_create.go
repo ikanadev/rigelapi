@@ -121,50 +121,8 @@ func (tc *TeacherCreate) Mutation() *TeacherMutation {
 
 // Save creates the Teacher in the database.
 func (tc *TeacherCreate) Save(ctx context.Context) (*Teacher, error) {
-	var (
-		err  error
-		node *Teacher
-	)
 	tc.defaults()
-	if len(tc.hooks) == 0 {
-		if err = tc.check(); err != nil {
-			return nil, err
-		}
-		node, err = tc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TeacherMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = tc.check(); err != nil {
-				return nil, err
-			}
-			tc.mutation = mutation
-			if node, err = tc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tc.hooks) - 1; i >= 0; i-- {
-			if tc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Teacher)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TeacherMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -218,6 +176,9 @@ func (tc *TeacherCreate) check() error {
 }
 
 func (tc *TeacherCreate) sqlSave(ctx context.Context) (*Teacher, error) {
+	if err := tc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := tc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -232,19 +193,15 @@ func (tc *TeacherCreate) sqlSave(ctx context.Context) (*Teacher, error) {
 			return nil, fmt.Errorf("unexpected Teacher.ID type: %T", _spec.ID.Value)
 		}
 	}
+	tc.mutation.id = &_node.ID
+	tc.mutation.done = true
 	return _node, nil
 }
 
 func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Teacher{config: tc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: teacher.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: teacher.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(teacher.Table, sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = tc.conflict
 	if id, ok := tc.mutation.ID(); ok {
@@ -252,43 +209,23 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := tc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldName,
-		})
+		_spec.SetField(teacher.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := tc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldLastName,
-		})
+		_spec.SetField(teacher.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := tc.mutation.Email(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldEmail,
-		})
+		_spec.SetField(teacher.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
 	if value, ok := tc.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldPassword,
-		})
+		_spec.SetField(teacher.FieldPassword, field.TypeString, value)
 		_node.Password = value
 	}
 	if value, ok := tc.mutation.IsAdmin(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: teacher.FieldIsAdmin,
-		})
+		_spec.SetField(teacher.FieldIsAdmin, field.TypeBool, value)
 		_node.IsAdmin = value
 	}
 	if nodes := tc.mutation.ClassesIDs(); len(nodes) > 0 {
@@ -299,10 +236,7 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -318,10 +252,7 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -337,10 +268,7 @@ func (tc *TeacherCreate) createSpec() (*Teacher, *sqlgraph.CreateSpec) {
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -641,8 +569,8 @@ func (tcb *TeacherCreateBulk) Save(ctx context.Context) ([]*Teacher, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
 				} else {
@@ -756,7 +684,6 @@ func (u *TeacherUpsertBulk) UpdateNewValues() *TeacherUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(teacher.FieldID)
-				return
 			}
 		}
 	}))

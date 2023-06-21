@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/grade"
@@ -30,6 +31,7 @@ type Class struct {
 	subject_classes *string
 	teacher_classes *string
 	year_classes    *string
+	selectValues    sql.SelectValues
 }
 
 // ClassEdges holds the relations/edges for other nodes in the graph.
@@ -137,8 +139,8 @@ func (e ClassEdges) YearOrErr() (*Year, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Class) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Class) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case class.FieldID, class.FieldParallel:
@@ -154,7 +156,7 @@ func (*Class) scanValues(columns []string) ([]interface{}, error) {
 		case class.ForeignKeys[4]: // year_classes
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Class", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -162,7 +164,7 @@ func (*Class) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Class fields.
-func (c *Class) assignValues(columns []string, values []interface{}) error {
+func (c *Class) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -215,51 +217,59 @@ func (c *Class) assignValues(columns []string, values []interface{}) error {
 				c.year_classes = new(string)
 				*c.year_classes = value.String
 			}
+		default:
+			c.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Class.
+// This includes values selected through modifiers, order, etc.
+func (c *Class) Value(name string) (ent.Value, error) {
+	return c.selectValues.Get(name)
+}
+
 // QueryStudents queries the "students" edge of the Class entity.
 func (c *Class) QueryStudents() *StudentQuery {
-	return (&ClassClient{config: c.config}).QueryStudents(c)
+	return NewClassClient(c.config).QueryStudents(c)
 }
 
 // QueryClassPeriods queries the "classPeriods" edge of the Class entity.
 func (c *Class) QueryClassPeriods() *ClassPeriodQuery {
-	return (&ClassClient{config: c.config}).QueryClassPeriods(c)
+	return NewClassClient(c.config).QueryClassPeriods(c)
 }
 
 // QuerySchool queries the "school" edge of the Class entity.
 func (c *Class) QuerySchool() *SchoolQuery {
-	return (&ClassClient{config: c.config}).QuerySchool(c)
+	return NewClassClient(c.config).QuerySchool(c)
 }
 
 // QueryTeacher queries the "teacher" edge of the Class entity.
 func (c *Class) QueryTeacher() *TeacherQuery {
-	return (&ClassClient{config: c.config}).QueryTeacher(c)
+	return NewClassClient(c.config).QueryTeacher(c)
 }
 
 // QuerySubject queries the "subject" edge of the Class entity.
 func (c *Class) QuerySubject() *SubjectQuery {
-	return (&ClassClient{config: c.config}).QuerySubject(c)
+	return NewClassClient(c.config).QuerySubject(c)
 }
 
 // QueryGrade queries the "grade" edge of the Class entity.
 func (c *Class) QueryGrade() *GradeQuery {
-	return (&ClassClient{config: c.config}).QueryGrade(c)
+	return NewClassClient(c.config).QueryGrade(c)
 }
 
 // QueryYear queries the "year" edge of the Class entity.
 func (c *Class) QueryYear() *YearQuery {
-	return (&ClassClient{config: c.config}).QueryYear(c)
+	return NewClassClient(c.config).QueryYear(c)
 }
 
 // Update returns a builder for updating this Class.
 // Note that you need to call Class.Unwrap() before calling this method if this Class
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (c *Class) Update() *ClassUpdateOne {
-	return (&ClassClient{config: c.config}).UpdateOne(c)
+	return NewClassClient(c.config).UpdateOne(c)
 }
 
 // Unwrap unwraps the Class entity that was returned from a transaction after it was closed,
@@ -286,9 +296,3 @@ func (c *Class) String() string {
 
 // Classes is a parsable slice of Class.
 type Classes []*Class
-
-func (c Classes) config(cfg config) {
-	for _i := range c {
-		c[_i].config = cfg
-	}
-}

@@ -12,236 +12,162 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.ClassPeriod(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.ClassPeriod {
+	return predicate.ClassPeriod(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.ClassPeriod {
+	return predicate.ClassPeriod(sql.FieldContainsFold(FieldID, id))
 }
 
 // Start applies equality check predicate on the "start" field. It's identical to StartEQ.
 func Start(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldStart, v))
 }
 
 // End applies equality check predicate on the "end" field. It's identical to EndEQ.
 func End(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldEnd, v))
 }
 
 // Finished applies equality check predicate on the "finished" field. It's identical to FinishedEQ.
 func Finished(v bool) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldFinished), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldFinished, v))
 }
 
 // StartEQ applies the EQ predicate on the "start" field.
 func StartEQ(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldStart, v))
 }
 
 // StartNEQ applies the NEQ predicate on the "start" field.
 func StartNEQ(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldNEQ(FieldStart, v))
 }
 
 // StartIn applies the In predicate on the "start" field.
 func StartIn(vs ...time.Time) predicate.ClassPeriod {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldStart), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldIn(FieldStart, vs...))
 }
 
 // StartNotIn applies the NotIn predicate on the "start" field.
 func StartNotIn(vs ...time.Time) predicate.ClassPeriod {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldStart), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldNotIn(FieldStart, vs...))
 }
 
 // StartGT applies the GT predicate on the "start" field.
 func StartGT(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldGT(FieldStart, v))
 }
 
 // StartGTE applies the GTE predicate on the "start" field.
 func StartGTE(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldGTE(FieldStart, v))
 }
 
 // StartLT applies the LT predicate on the "start" field.
 func StartLT(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldLT(FieldStart, v))
 }
 
 // StartLTE applies the LTE predicate on the "start" field.
 func StartLTE(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldStart), v))
-	})
+	return predicate.ClassPeriod(sql.FieldLTE(FieldStart, v))
 }
 
 // EndEQ applies the EQ predicate on the "end" field.
 func EndEQ(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldEnd, v))
 }
 
 // EndNEQ applies the NEQ predicate on the "end" field.
 func EndNEQ(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldNEQ(FieldEnd, v))
 }
 
 // EndIn applies the In predicate on the "end" field.
 func EndIn(vs ...time.Time) predicate.ClassPeriod {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldEnd), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldIn(FieldEnd, vs...))
 }
 
 // EndNotIn applies the NotIn predicate on the "end" field.
 func EndNotIn(vs ...time.Time) predicate.ClassPeriod {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldEnd), v...))
-	})
+	return predicate.ClassPeriod(sql.FieldNotIn(FieldEnd, vs...))
 }
 
 // EndGT applies the GT predicate on the "end" field.
 func EndGT(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldGT(FieldEnd, v))
 }
 
 // EndGTE applies the GTE predicate on the "end" field.
 func EndGTE(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldGTE(FieldEnd, v))
 }
 
 // EndLT applies the LT predicate on the "end" field.
 func EndLT(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldLT(FieldEnd, v))
 }
 
 // EndLTE applies the LTE predicate on the "end" field.
 func EndLTE(v time.Time) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldEnd), v))
-	})
+	return predicate.ClassPeriod(sql.FieldLTE(FieldEnd, v))
 }
 
 // FinishedEQ applies the EQ predicate on the "finished" field.
 func FinishedEQ(v bool) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldFinished), v))
-	})
+	return predicate.ClassPeriod(sql.FieldEQ(FieldFinished, v))
 }
 
 // FinishedNEQ applies the NEQ predicate on the "finished" field.
 func FinishedNEQ(v bool) predicate.ClassPeriod {
-	return predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldFinished), v))
-	})
+	return predicate.ClassPeriod(sql.FieldNEQ(FieldFinished, v))
 }
 
 // HasAttendanceDays applies the HasEdge predicate on the "attendanceDays" edge.
@@ -249,7 +175,6 @@ func HasAttendanceDays() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceDaysTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaysTable, AttendanceDaysColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -259,11 +184,7 @@ func HasAttendanceDays() predicate.ClassPeriod {
 // HasAttendanceDaysWith applies the HasEdge predicate on the "attendanceDays" edge with a given conditions (other predicates).
 func HasAttendanceDaysWith(preds ...predicate.AttendanceDay) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceDaysInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AttendanceDaysTable, AttendanceDaysColumn),
-		)
+		step := newAttendanceDaysStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -277,7 +198,6 @@ func HasActivities() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ActivitiesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, ActivitiesTable, ActivitiesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -287,11 +207,7 @@ func HasActivities() predicate.ClassPeriod {
 // HasActivitiesWith applies the HasEdge predicate on the "activities" edge with a given conditions (other predicates).
 func HasActivitiesWith(preds ...predicate.Activity) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ActivitiesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ActivitiesTable, ActivitiesColumn),
-		)
+		step := newActivitiesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -305,7 +221,6 @@ func HasClass() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, ClassTable, ClassColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -315,11 +230,7 @@ func HasClass() predicate.ClassPeriod {
 // HasClassWith applies the HasEdge predicate on the "class" edge with a given conditions (other predicates).
 func HasClassWith(preds ...predicate.Class) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ClassTable, ClassColumn),
-		)
+		step := newClassStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -333,7 +244,6 @@ func HasPeriod() predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(PeriodTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, PeriodTable, PeriodColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -343,11 +253,7 @@ func HasPeriod() predicate.ClassPeriod {
 // HasPeriodWith applies the HasEdge predicate on the "period" edge with a given conditions (other predicates).
 func HasPeriodWith(preds ...predicate.Period) predicate.ClassPeriod {
 	return predicate.ClassPeriod(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(PeriodInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, PeriodTable, PeriodColumn),
-		)
+		step := newPeriodStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

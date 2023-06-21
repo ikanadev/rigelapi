@@ -2,6 +2,10 @@
 
 package apperror
 
+import (
+	"entgo.io/ent/dialect/sql"
+)
+
 const (
 	// Label holds the string label denoting the apperror type in the database.
 	Label = "app_error"
@@ -36,4 +40,32 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the AppError queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByCause orders the results by the cause field.
+func ByCause(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCause, opts...).ToFunc()
+}
+
+// ByErrorMsg orders the results by the error_msg field.
+func ByErrorMsg(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErrorMsg, opts...).ToFunc()
+}
+
+// ByErrorStack orders the results by the error_stack field.
+func ByErrorStack(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErrorStack, opts...).ToFunc()
 }

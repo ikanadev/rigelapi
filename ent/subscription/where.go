@@ -12,321 +12,217 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Subscription(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Subscription(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Subscription(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.Subscription {
+	return predicate.Subscription(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.Subscription {
+	return predicate.Subscription(sql.FieldContainsFold(FieldID, id))
 }
 
 // Method applies equality check predicate on the "method" field. It's identical to MethodEQ.
 func Method(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldMethod, v))
 }
 
 // Qtty applies equality check predicate on the "qtty" field. It's identical to QttyEQ.
 func Qtty(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldQtty, v))
 }
 
 // Date applies equality check predicate on the "date" field. It's identical to DateEQ.
 func Date(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldDate, v))
 }
 
 // MethodEQ applies the EQ predicate on the "method" field.
 func MethodEQ(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldMethod, v))
 }
 
 // MethodNEQ applies the NEQ predicate on the "method" field.
 func MethodNEQ(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldNEQ(FieldMethod, v))
 }
 
 // MethodIn applies the In predicate on the "method" field.
 func MethodIn(vs ...string) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldMethod), v...))
-	})
+	return predicate.Subscription(sql.FieldIn(FieldMethod, vs...))
 }
 
 // MethodNotIn applies the NotIn predicate on the "method" field.
 func MethodNotIn(vs ...string) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldMethod), v...))
-	})
+	return predicate.Subscription(sql.FieldNotIn(FieldMethod, vs...))
 }
 
 // MethodGT applies the GT predicate on the "method" field.
 func MethodGT(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldGT(FieldMethod, v))
 }
 
 // MethodGTE applies the GTE predicate on the "method" field.
 func MethodGTE(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldGTE(FieldMethod, v))
 }
 
 // MethodLT applies the LT predicate on the "method" field.
 func MethodLT(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldLT(FieldMethod, v))
 }
 
 // MethodLTE applies the LTE predicate on the "method" field.
 func MethodLTE(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldLTE(FieldMethod, v))
 }
 
 // MethodContains applies the Contains predicate on the "method" field.
 func MethodContains(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldContains(FieldMethod, v))
 }
 
 // MethodHasPrefix applies the HasPrefix predicate on the "method" field.
 func MethodHasPrefix(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldHasPrefix(FieldMethod, v))
 }
 
 // MethodHasSuffix applies the HasSuffix predicate on the "method" field.
 func MethodHasSuffix(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldHasSuffix(FieldMethod, v))
 }
 
 // MethodEqualFold applies the EqualFold predicate on the "method" field.
 func MethodEqualFold(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldEqualFold(FieldMethod, v))
 }
 
 // MethodContainsFold applies the ContainsFold predicate on the "method" field.
 func MethodContainsFold(v string) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldMethod), v))
-	})
+	return predicate.Subscription(sql.FieldContainsFold(FieldMethod, v))
 }
 
 // QttyEQ applies the EQ predicate on the "qtty" field.
 func QttyEQ(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldQtty, v))
 }
 
 // QttyNEQ applies the NEQ predicate on the "qtty" field.
 func QttyNEQ(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldNEQ(FieldQtty, v))
 }
 
 // QttyIn applies the In predicate on the "qtty" field.
 func QttyIn(vs ...int) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldQtty), v...))
-	})
+	return predicate.Subscription(sql.FieldIn(FieldQtty, vs...))
 }
 
 // QttyNotIn applies the NotIn predicate on the "qtty" field.
 func QttyNotIn(vs ...int) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldQtty), v...))
-	})
+	return predicate.Subscription(sql.FieldNotIn(FieldQtty, vs...))
 }
 
 // QttyGT applies the GT predicate on the "qtty" field.
 func QttyGT(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldGT(FieldQtty, v))
 }
 
 // QttyGTE applies the GTE predicate on the "qtty" field.
 func QttyGTE(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldGTE(FieldQtty, v))
 }
 
 // QttyLT applies the LT predicate on the "qtty" field.
 func QttyLT(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldLT(FieldQtty, v))
 }
 
 // QttyLTE applies the LTE predicate on the "qtty" field.
 func QttyLTE(v int) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldQtty), v))
-	})
+	return predicate.Subscription(sql.FieldLTE(FieldQtty, v))
 }
 
 // DateEQ applies the EQ predicate on the "date" field.
 func DateEQ(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldEQ(FieldDate, v))
 }
 
 // DateNEQ applies the NEQ predicate on the "date" field.
 func DateNEQ(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldNEQ(FieldDate, v))
 }
 
 // DateIn applies the In predicate on the "date" field.
 func DateIn(vs ...time.Time) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDate), v...))
-	})
+	return predicate.Subscription(sql.FieldIn(FieldDate, vs...))
 }
 
 // DateNotIn applies the NotIn predicate on the "date" field.
 func DateNotIn(vs ...time.Time) predicate.Subscription {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDate), v...))
-	})
+	return predicate.Subscription(sql.FieldNotIn(FieldDate, vs...))
 }
 
 // DateGT applies the GT predicate on the "date" field.
 func DateGT(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldGT(FieldDate, v))
 }
 
 // DateGTE applies the GTE predicate on the "date" field.
 func DateGTE(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldGTE(FieldDate, v))
 }
 
 // DateLT applies the LT predicate on the "date" field.
 func DateLT(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldLT(FieldDate, v))
 }
 
 // DateLTE applies the LTE predicate on the "date" field.
 func DateLTE(v time.Time) predicate.Subscription {
-	return predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDate), v))
-	})
+	return predicate.Subscription(sql.FieldLTE(FieldDate, v))
 }
 
 // HasTeacher applies the HasEdge predicate on the "teacher" edge.
@@ -334,7 +230,6 @@ func HasTeacher() predicate.Subscription {
 	return predicate.Subscription(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -344,11 +239,7 @@ func HasTeacher() predicate.Subscription {
 // HasTeacherWith applies the HasEdge predicate on the "teacher" edge with a given conditions (other predicates).
 func HasTeacherWith(preds ...predicate.Teacher) predicate.Subscription {
 	return predicate.Subscription(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
-		)
+		step := newTeacherStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -362,7 +253,6 @@ func HasYear() predicate.Subscription {
 	return predicate.Subscription(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(YearTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -372,11 +262,7 @@ func HasYear() predicate.Subscription {
 // HasYearWith applies the HasEdge predicate on the "year" edge with a given conditions (other predicates).
 func HasYearWith(preds ...predicate.Year) predicate.Subscription {
 	return predicate.Subscription(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(YearInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
-		)
+		step := newYearStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

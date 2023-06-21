@@ -77,49 +77,7 @@ func (pc *ProvinciaCreate) Mutation() *ProvinciaMutation {
 
 // Save creates the Provincia in the database.
 func (pc *ProvinciaCreate) Save(ctx context.Context) (*Provincia, error) {
-	var (
-		err  error
-		node *Provincia
-	)
-	if len(pc.hooks) == 0 {
-		if err = pc.check(); err != nil {
-			return nil, err
-		}
-		node, err = pc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProvinciaMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pc.check(); err != nil {
-				return nil, err
-			}
-			pc.mutation = mutation
-			if node, err = pc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pc.hooks) - 1; i >= 0; i-- {
-			if pc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Provincia)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ProvinciaMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -153,6 +111,9 @@ func (pc *ProvinciaCreate) check() error {
 }
 
 func (pc *ProvinciaCreate) sqlSave(ctx context.Context) (*Provincia, error) {
+	if err := pc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -167,19 +128,15 @@ func (pc *ProvinciaCreate) sqlSave(ctx context.Context) (*Provincia, error) {
 			return nil, fmt.Errorf("unexpected Provincia.ID type: %T", _spec.ID.Value)
 		}
 	}
+	pc.mutation.id = &_node.ID
+	pc.mutation.done = true
 	return _node, nil
 }
 
 func (pc *ProvinciaCreate) createSpec() (*Provincia, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Provincia{config: pc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: provincia.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: provincia.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(provincia.Table, sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = pc.conflict
 	if id, ok := pc.mutation.ID(); ok {
@@ -187,11 +144,7 @@ func (pc *ProvinciaCreate) createSpec() (*Provincia, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := pc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: provincia.FieldName,
-		})
+		_spec.SetField(provincia.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if nodes := pc.mutation.MunicipiosIDs(); len(nodes) > 0 {
@@ -202,10 +155,7 @@ func (pc *ProvinciaCreate) createSpec() (*Provincia, *sqlgraph.CreateSpec) {
 			Columns: []string{provincia.MunicipiosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: municipio.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(municipio.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -221,10 +171,7 @@ func (pc *ProvinciaCreate) createSpec() (*Provincia, *sqlgraph.CreateSpec) {
 			Columns: []string{provincia.DepartamentoColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: dpto.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(dpto.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -421,8 +368,8 @@ func (pcb *ProvinciaCreateBulk) Save(ctx context.Context) ([]*Provincia, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pcb.builders[i+1].mutation)
 				} else {
@@ -536,7 +483,6 @@ func (u *ProvinciaUpsertBulk) UpdateNewValues() *ProvinciaUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(provincia.FieldID)
-				return
 			}
 		}
 	}))

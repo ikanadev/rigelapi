@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/area"
@@ -27,6 +28,7 @@ type Activity struct {
 	Edges                   ActivityEdges `json:"edges"`
 	area_activities         *string
 	class_period_activities *string
+	selectValues            sql.SelectValues
 }
 
 // ActivityEdges holds the relations/edges for other nodes in the graph.
@@ -78,8 +80,8 @@ func (e ActivityEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Activity) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Activity) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case activity.FieldID, activity.FieldName:
@@ -91,7 +93,7 @@ func (*Activity) scanValues(columns []string) ([]interface{}, error) {
 		case activity.ForeignKeys[1]: // class_period_activities
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Activity", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -99,7 +101,7 @@ func (*Activity) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Activity fields.
-func (a *Activity) assignValues(columns []string, values []interface{}) error {
+func (a *Activity) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -137,31 +139,39 @@ func (a *Activity) assignValues(columns []string, values []interface{}) error {
 				a.class_period_activities = new(string)
 				*a.class_period_activities = value.String
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Activity.
+// This includes values selected through modifiers, order, etc.
+func (a *Activity) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryScores queries the "scores" edge of the Activity entity.
 func (a *Activity) QueryScores() *ScoreQuery {
-	return (&ActivityClient{config: a.config}).QueryScores(a)
+	return NewActivityClient(a.config).QueryScores(a)
 }
 
 // QueryArea queries the "area" edge of the Activity entity.
 func (a *Activity) QueryArea() *AreaQuery {
-	return (&ActivityClient{config: a.config}).QueryArea(a)
+	return NewActivityClient(a.config).QueryArea(a)
 }
 
 // QueryClassPeriod queries the "classPeriod" edge of the Activity entity.
 func (a *Activity) QueryClassPeriod() *ClassPeriodQuery {
-	return (&ActivityClient{config: a.config}).QueryClassPeriod(a)
+	return NewActivityClient(a.config).QueryClassPeriod(a)
 }
 
 // Update returns a builder for updating this Activity.
 // Note that you need to call Activity.Unwrap() before calling this method if this Activity
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Activity) Update() *ActivityUpdateOne {
-	return (&ActivityClient{config: a.config}).UpdateOne(a)
+	return NewActivityClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Activity entity that was returned from a transaction after it was closed,
@@ -191,9 +201,3 @@ func (a *Activity) String() string {
 
 // Activities is a parsable slice of Activity.
 type Activities []*Activity
-
-func (a Activities) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

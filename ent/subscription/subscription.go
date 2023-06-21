@@ -2,6 +2,11 @@
 
 package subscription
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the subscription type in the database.
 	Label = "subscription"
@@ -63,4 +68,55 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Subscription queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByMethod orders the results by the method field.
+func ByMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMethod, opts...).ToFunc()
+}
+
+// ByQtty orders the results by the qtty field.
+func ByQtty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQtty, opts...).ToFunc()
+}
+
+// ByDate orders the results by the date field.
+func ByDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDate, opts...).ToFunc()
+}
+
+// ByTeacherField orders the results by teacher field.
+func ByTeacherField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTeacherStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByYearField orders the results by year field.
+func ByYearField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newYearStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newTeacherStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TeacherInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
+	)
+}
+func newYearStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(YearInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
+	)
 }

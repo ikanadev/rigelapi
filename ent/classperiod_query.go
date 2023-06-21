@@ -22,11 +22,9 @@ import (
 // ClassPeriodQuery is the builder for querying ClassPeriod entities.
 type ClassPeriodQuery struct {
 	config
-	limit              *int
-	offset             *int
-	unique             *bool
-	order              []OrderFunc
-	fields             []string
+	ctx                *QueryContext
+	order              []classperiod.OrderOption
+	inters             []Interceptor
 	predicates         []predicate.ClassPeriod
 	withAttendanceDays *AttendanceDayQuery
 	withActivities     *ActivityQuery
@@ -44,34 +42,34 @@ func (cpq *ClassPeriodQuery) Where(ps ...predicate.ClassPeriod) *ClassPeriodQuer
 	return cpq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (cpq *ClassPeriodQuery) Limit(limit int) *ClassPeriodQuery {
-	cpq.limit = &limit
+	cpq.ctx.Limit = &limit
 	return cpq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (cpq *ClassPeriodQuery) Offset(offset int) *ClassPeriodQuery {
-	cpq.offset = &offset
+	cpq.ctx.Offset = &offset
 	return cpq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (cpq *ClassPeriodQuery) Unique(unique bool) *ClassPeriodQuery {
-	cpq.unique = &unique
+	cpq.ctx.Unique = &unique
 	return cpq
 }
 
-// Order adds an order step to the query.
-func (cpq *ClassPeriodQuery) Order(o ...OrderFunc) *ClassPeriodQuery {
+// Order specifies how the records should be ordered.
+func (cpq *ClassPeriodQuery) Order(o ...classperiod.OrderOption) *ClassPeriodQuery {
 	cpq.order = append(cpq.order, o...)
 	return cpq
 }
 
 // QueryAttendanceDays chains the current query on the "attendanceDays" edge.
 func (cpq *ClassPeriodQuery) QueryAttendanceDays() *AttendanceDayQuery {
-	query := &AttendanceDayQuery{config: cpq.config}
+	query := (&AttendanceDayClient{config: cpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -93,7 +91,7 @@ func (cpq *ClassPeriodQuery) QueryAttendanceDays() *AttendanceDayQuery {
 
 // QueryActivities chains the current query on the "activities" edge.
 func (cpq *ClassPeriodQuery) QueryActivities() *ActivityQuery {
-	query := &ActivityQuery{config: cpq.config}
+	query := (&ActivityClient{config: cpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -115,7 +113,7 @@ func (cpq *ClassPeriodQuery) QueryActivities() *ActivityQuery {
 
 // QueryClass chains the current query on the "class" edge.
 func (cpq *ClassPeriodQuery) QueryClass() *ClassQuery {
-	query := &ClassQuery{config: cpq.config}
+	query := (&ClassClient{config: cpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -137,7 +135,7 @@ func (cpq *ClassPeriodQuery) QueryClass() *ClassQuery {
 
 // QueryPeriod chains the current query on the "period" edge.
 func (cpq *ClassPeriodQuery) QueryPeriod() *PeriodQuery {
-	query := &PeriodQuery{config: cpq.config}
+	query := (&PeriodClient{config: cpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -160,7 +158,7 @@ func (cpq *ClassPeriodQuery) QueryPeriod() *PeriodQuery {
 // First returns the first ClassPeriod entity from the query.
 // Returns a *NotFoundError when no ClassPeriod was found.
 func (cpq *ClassPeriodQuery) First(ctx context.Context) (*ClassPeriod, error) {
-	nodes, err := cpq.Limit(1).All(ctx)
+	nodes, err := cpq.Limit(1).All(setContextOp(ctx, cpq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +181,7 @@ func (cpq *ClassPeriodQuery) FirstX(ctx context.Context) *ClassPeriod {
 // Returns a *NotFoundError when no ClassPeriod ID was found.
 func (cpq *ClassPeriodQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cpq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = cpq.Limit(1).IDs(setContextOp(ctx, cpq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -206,7 +204,7 @@ func (cpq *ClassPeriodQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one ClassPeriod entity is found.
 // Returns a *NotFoundError when no ClassPeriod entities are found.
 func (cpq *ClassPeriodQuery) Only(ctx context.Context) (*ClassPeriod, error) {
-	nodes, err := cpq.Limit(2).All(ctx)
+	nodes, err := cpq.Limit(2).All(setContextOp(ctx, cpq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +232,7 @@ func (cpq *ClassPeriodQuery) OnlyX(ctx context.Context) *ClassPeriod {
 // Returns a *NotFoundError when no entities are found.
 func (cpq *ClassPeriodQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cpq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = cpq.Limit(2).IDs(setContextOp(ctx, cpq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -259,10 +257,12 @@ func (cpq *ClassPeriodQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of ClassPeriods.
 func (cpq *ClassPeriodQuery) All(ctx context.Context) ([]*ClassPeriod, error) {
+	ctx = setContextOp(ctx, cpq.ctx, "All")
 	if err := cpq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return cpq.sqlAll(ctx)
+	qr := querierAll[[]*ClassPeriod, *ClassPeriodQuery]()
+	return withInterceptors[[]*ClassPeriod](ctx, cpq, qr, cpq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -275,9 +275,12 @@ func (cpq *ClassPeriodQuery) AllX(ctx context.Context) []*ClassPeriod {
 }
 
 // IDs executes the query and returns a list of ClassPeriod IDs.
-func (cpq *ClassPeriodQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := cpq.Select(classperiod.FieldID).Scan(ctx, &ids); err != nil {
+func (cpq *ClassPeriodQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if cpq.ctx.Unique == nil && cpq.path != nil {
+		cpq.Unique(true)
+	}
+	ctx = setContextOp(ctx, cpq.ctx, "IDs")
+	if err = cpq.Select(classperiod.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -294,10 +297,11 @@ func (cpq *ClassPeriodQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (cpq *ClassPeriodQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, cpq.ctx, "Count")
 	if err := cpq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return cpq.sqlCount(ctx)
+	return withInterceptors[int](ctx, cpq, querierCount[*ClassPeriodQuery](), cpq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -311,10 +315,15 @@ func (cpq *ClassPeriodQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cpq *ClassPeriodQuery) Exist(ctx context.Context) (bool, error) {
-	if err := cpq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, cpq.ctx, "Exist")
+	switch _, err := cpq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return cpq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -334,25 +343,24 @@ func (cpq *ClassPeriodQuery) Clone() *ClassPeriodQuery {
 	}
 	return &ClassPeriodQuery{
 		config:             cpq.config,
-		limit:              cpq.limit,
-		offset:             cpq.offset,
-		order:              append([]OrderFunc{}, cpq.order...),
+		ctx:                cpq.ctx.Clone(),
+		order:              append([]classperiod.OrderOption{}, cpq.order...),
+		inters:             append([]Interceptor{}, cpq.inters...),
 		predicates:         append([]predicate.ClassPeriod{}, cpq.predicates...),
 		withAttendanceDays: cpq.withAttendanceDays.Clone(),
 		withActivities:     cpq.withActivities.Clone(),
 		withClass:          cpq.withClass.Clone(),
 		withPeriod:         cpq.withPeriod.Clone(),
 		// clone intermediate query.
-		sql:    cpq.sql.Clone(),
-		path:   cpq.path,
-		unique: cpq.unique,
+		sql:  cpq.sql.Clone(),
+		path: cpq.path,
 	}
 }
 
 // WithAttendanceDays tells the query-builder to eager-load the nodes that are connected to
 // the "attendanceDays" edge. The optional arguments are used to configure the query builder of the edge.
 func (cpq *ClassPeriodQuery) WithAttendanceDays(opts ...func(*AttendanceDayQuery)) *ClassPeriodQuery {
-	query := &AttendanceDayQuery{config: cpq.config}
+	query := (&AttendanceDayClient{config: cpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -363,7 +371,7 @@ func (cpq *ClassPeriodQuery) WithAttendanceDays(opts ...func(*AttendanceDayQuery
 // WithActivities tells the query-builder to eager-load the nodes that are connected to
 // the "activities" edge. The optional arguments are used to configure the query builder of the edge.
 func (cpq *ClassPeriodQuery) WithActivities(opts ...func(*ActivityQuery)) *ClassPeriodQuery {
-	query := &ActivityQuery{config: cpq.config}
+	query := (&ActivityClient{config: cpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -374,7 +382,7 @@ func (cpq *ClassPeriodQuery) WithActivities(opts ...func(*ActivityQuery)) *Class
 // WithClass tells the query-builder to eager-load the nodes that are connected to
 // the "class" edge. The optional arguments are used to configure the query builder of the edge.
 func (cpq *ClassPeriodQuery) WithClass(opts ...func(*ClassQuery)) *ClassPeriodQuery {
-	query := &ClassQuery{config: cpq.config}
+	query := (&ClassClient{config: cpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -385,7 +393,7 @@ func (cpq *ClassPeriodQuery) WithClass(opts ...func(*ClassQuery)) *ClassPeriodQu
 // WithPeriod tells the query-builder to eager-load the nodes that are connected to
 // the "period" edge. The optional arguments are used to configure the query builder of the edge.
 func (cpq *ClassPeriodQuery) WithPeriod(opts ...func(*PeriodQuery)) *ClassPeriodQuery {
-	query := &PeriodQuery{config: cpq.config}
+	query := (&PeriodClient{config: cpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -408,16 +416,11 @@ func (cpq *ClassPeriodQuery) WithPeriod(opts ...func(*PeriodQuery)) *ClassPeriod
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (cpq *ClassPeriodQuery) GroupBy(field string, fields ...string) *ClassPeriodGroupBy {
-	grbuild := &ClassPeriodGroupBy{config: cpq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := cpq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return cpq.sqlQuery(ctx), nil
-	}
+	cpq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ClassPeriodGroupBy{build: cpq}
+	grbuild.flds = &cpq.ctx.Fields
 	grbuild.label = classperiod.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -434,15 +437,30 @@ func (cpq *ClassPeriodQuery) GroupBy(field string, fields ...string) *ClassPerio
 //		Select(classperiod.FieldStart).
 //		Scan(ctx, &v)
 func (cpq *ClassPeriodQuery) Select(fields ...string) *ClassPeriodSelect {
-	cpq.fields = append(cpq.fields, fields...)
-	selbuild := &ClassPeriodSelect{ClassPeriodQuery: cpq}
-	selbuild.label = classperiod.Label
-	selbuild.flds, selbuild.scan = &cpq.fields, selbuild.Scan
-	return selbuild
+	cpq.ctx.Fields = append(cpq.ctx.Fields, fields...)
+	sbuild := &ClassPeriodSelect{ClassPeriodQuery: cpq}
+	sbuild.label = classperiod.Label
+	sbuild.flds, sbuild.scan = &cpq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a ClassPeriodSelect configured with the given aggregations.
+func (cpq *ClassPeriodQuery) Aggregate(fns ...AggregateFunc) *ClassPeriodSelect {
+	return cpq.Select().Aggregate(fns...)
 }
 
 func (cpq *ClassPeriodQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range cpq.fields {
+	for _, inter := range cpq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, cpq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range cpq.ctx.Fields {
 		if !classperiod.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -475,10 +493,10 @@ func (cpq *ClassPeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, classperiod.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*ClassPeriod).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &ClassPeriod{config: cpq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -534,7 +552,7 @@ func (cpq *ClassPeriodQuery) loadAttendanceDays(ctx context.Context, query *Atte
 	}
 	query.withFKs = true
 	query.Where(predicate.AttendanceDay(func(s *sql.Selector) {
-		s.Where(sql.InValues(classperiod.AttendanceDaysColumn, fks...))
+		s.Where(sql.InValues(s.C(classperiod.AttendanceDaysColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -547,7 +565,7 @@ func (cpq *ClassPeriodQuery) loadAttendanceDays(ctx context.Context, query *Atte
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_attendance_days" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "class_period_attendance_days" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -565,7 +583,7 @@ func (cpq *ClassPeriodQuery) loadActivities(ctx context.Context, query *Activity
 	}
 	query.withFKs = true
 	query.Where(predicate.Activity(func(s *sql.Selector) {
-		s.Where(sql.InValues(classperiod.ActivitiesColumn, fks...))
+		s.Where(sql.InValues(s.C(classperiod.ActivitiesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -578,7 +596,7 @@ func (cpq *ClassPeriodQuery) loadActivities(ctx context.Context, query *Activity
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_period_activities" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "class_period_activities" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -596,6 +614,9 @@ func (cpq *ClassPeriodQuery) loadClass(ctx context.Context, query *ClassQuery, n
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(class.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -626,6 +647,9 @@ func (cpq *ClassPeriodQuery) loadPeriod(ctx context.Context, query *PeriodQuery,
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(period.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -645,38 +669,22 @@ func (cpq *ClassPeriodQuery) loadPeriod(ctx context.Context, query *PeriodQuery,
 
 func (cpq *ClassPeriodQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := cpq.querySpec()
-	_spec.Node.Columns = cpq.fields
-	if len(cpq.fields) > 0 {
-		_spec.Unique = cpq.unique != nil && *cpq.unique
+	_spec.Node.Columns = cpq.ctx.Fields
+	if len(cpq.ctx.Fields) > 0 {
+		_spec.Unique = cpq.ctx.Unique != nil && *cpq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, cpq.driver, _spec)
 }
 
-func (cpq *ClassPeriodQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := cpq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (cpq *ClassPeriodQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   classperiod.Table,
-			Columns: classperiod.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: classperiod.FieldID,
-			},
-		},
-		From:   cpq.sql,
-		Unique: true,
-	}
-	if unique := cpq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(classperiod.Table, classperiod.Columns, sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString))
+	_spec.From = cpq.sql
+	if unique := cpq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if cpq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := cpq.fields; len(fields) > 0 {
+	if fields := cpq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, classperiod.FieldID)
 		for i := range fields {
@@ -692,10 +700,10 @@ func (cpq *ClassPeriodQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := cpq.limit; limit != nil {
+	if limit := cpq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := cpq.offset; offset != nil {
+	if offset := cpq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := cpq.order; len(ps) > 0 {
@@ -711,7 +719,7 @@ func (cpq *ClassPeriodQuery) querySpec() *sqlgraph.QuerySpec {
 func (cpq *ClassPeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(cpq.driver.Dialect())
 	t1 := builder.Table(classperiod.Table)
-	columns := cpq.fields
+	columns := cpq.ctx.Fields
 	if len(columns) == 0 {
 		columns = classperiod.Columns
 	}
@@ -720,7 +728,7 @@ func (cpq *ClassPeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = cpq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if cpq.unique != nil && *cpq.unique {
+	if cpq.ctx.Unique != nil && *cpq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range cpq.predicates {
@@ -729,12 +737,12 @@ func (cpq *ClassPeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range cpq.order {
 		p(selector)
 	}
-	if offset := cpq.offset; offset != nil {
+	if offset := cpq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := cpq.limit; limit != nil {
+	if limit := cpq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -742,13 +750,8 @@ func (cpq *ClassPeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // ClassPeriodGroupBy is the group-by builder for ClassPeriod entities.
 type ClassPeriodGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *ClassPeriodQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -757,74 +760,77 @@ func (cpgb *ClassPeriodGroupBy) Aggregate(fns ...AggregateFunc) *ClassPeriodGrou
 	return cpgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (cpgb *ClassPeriodGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := cpgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (cpgb *ClassPeriodGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, cpgb.build.ctx, "GroupBy")
+	if err := cpgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	cpgb.sql = query
-	return cpgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*ClassPeriodQuery, *ClassPeriodGroupBy](ctx, cpgb.build, cpgb, cpgb.build.inters, v)
 }
 
-func (cpgb *ClassPeriodGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range cpgb.fields {
-		if !classperiod.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (cpgb *ClassPeriodGroupBy) sqlScan(ctx context.Context, root *ClassPeriodQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(cpgb.fns))
+	for _, fn := range cpgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := cpgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*cpgb.flds)+len(cpgb.fns))
+		for _, f := range *cpgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*cpgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := cpgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := cpgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (cpgb *ClassPeriodGroupBy) sqlQuery() *sql.Selector {
-	selector := cpgb.sql.Select()
-	aggregation := make([]string, 0, len(cpgb.fns))
-	for _, fn := range cpgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(cpgb.fields)+len(cpgb.fns))
-		for _, f := range cpgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(cpgb.fields...)...)
-}
-
 // ClassPeriodSelect is the builder for selecting fields of ClassPeriod entities.
 type ClassPeriodSelect struct {
 	*ClassPeriodQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (cps *ClassPeriodSelect) Aggregate(fns ...AggregateFunc) *ClassPeriodSelect {
+	cps.fns = append(cps.fns, fns...)
+	return cps
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (cps *ClassPeriodSelect) Scan(ctx context.Context, v interface{}) error {
+func (cps *ClassPeriodSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, cps.ctx, "Select")
 	if err := cps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	cps.sql = cps.ClassPeriodQuery.sqlQuery(ctx)
-	return cps.sqlScan(ctx, v)
+	return scanWithInterceptors[*ClassPeriodQuery, *ClassPeriodSelect](ctx, cps.ClassPeriodQuery, cps, cps.inters, v)
 }
 
-func (cps *ClassPeriodSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (cps *ClassPeriodSelect) sqlScan(ctx context.Context, root *ClassPeriodQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(cps.fns))
+	for _, fn := range cps.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*cps.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := cps.sql.Query()
+	query, args := selector.Query()
 	if err := cps.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

@@ -2,6 +2,11 @@
 
 package school
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the school type in the database.
 	Label = "school"
@@ -62,4 +67,62 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the School queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByLat orders the results by the lat field.
+func ByLat(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLat, opts...).ToFunc()
+}
+
+// ByLon orders the results by the lon field.
+func ByLon(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLon, opts...).ToFunc()
+}
+
+// ByClassesCount orders the results by classes count.
+func ByClassesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newClassesStep(), opts...)
+	}
+}
+
+// ByClasses orders the results by classes terms.
+func ByClasses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClassesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByMunicipioField orders the results by municipio field.
+func ByMunicipioField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMunicipioStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newClassesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ClassesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ClassesTable, ClassesColumn),
+	)
+}
+func newMunicipioStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MunicipioInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MunicipioTable, MunicipioColumn),
+	)
 }

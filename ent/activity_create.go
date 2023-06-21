@@ -104,49 +104,7 @@ func (ac *ActivityCreate) Mutation() *ActivityMutation {
 
 // Save creates the Activity in the database.
 func (ac *ActivityCreate) Save(ctx context.Context) (*Activity, error) {
-	var (
-		err  error
-		node *Activity
-	)
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ActivityMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Activity)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ActivityMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -183,6 +141,9 @@ func (ac *ActivityCreate) check() error {
 }
 
 func (ac *ActivityCreate) sqlSave(ctx context.Context) (*Activity, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -197,19 +158,15 @@ func (ac *ActivityCreate) sqlSave(ctx context.Context) (*Activity, error) {
 			return nil, fmt.Errorf("unexpected Activity.ID type: %T", _spec.ID.Value)
 		}
 	}
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Activity{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: activity.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: activity.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(activity.Table, sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = ac.conflict
 	if id, ok := ac.mutation.ID(); ok {
@@ -217,19 +174,11 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := ac.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: activity.FieldName,
-		})
+		_spec.SetField(activity.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := ac.mutation.Date(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: activity.FieldDate,
-		})
+		_spec.SetField(activity.FieldDate, field.TypeTime, value)
 		_node.Date = value
 	}
 	if nodes := ac.mutation.ScoresIDs(); len(nodes) > 0 {
@@ -240,10 +189,7 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -259,10 +205,7 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 			Columns: []string{activity.AreaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -279,10 +222,7 @@ func (ac *ActivityCreate) createSpec() (*Activity, *sqlgraph.CreateSpec) {
 			Columns: []string{activity.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -505,8 +445,8 @@ func (acb *ActivityCreateBulk) Save(ctx context.Context) ([]*Activity, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
@@ -620,7 +560,6 @@ func (u *ActivityUpsertBulk) UpdateNewValues() *ActivityUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(activity.FieldID)
-				return
 			}
 		}
 	}))

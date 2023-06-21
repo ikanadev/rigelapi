@@ -2,6 +2,11 @@
 
 package provincia
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the provincia type in the database.
 	Label = "provincia"
@@ -56,4 +61,52 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Provincia queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByMunicipiosCount orders the results by municipios count.
+func ByMunicipiosCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newMunicipiosStep(), opts...)
+	}
+}
+
+// ByMunicipios orders the results by municipios terms.
+func ByMunicipios(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMunicipiosStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByDepartamentoField orders the results by departamento field.
+func ByDepartamentoField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDepartamentoStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newMunicipiosStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MunicipiosInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, MunicipiosTable, MunicipiosColumn),
+	)
+}
+func newDepartamentoStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DepartamentoInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, DepartamentoTable, DepartamentoColumn),
+	)
 }

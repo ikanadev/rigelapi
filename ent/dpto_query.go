@@ -19,11 +19,9 @@ import (
 // DptoQuery is the builder for querying Dpto entities.
 type DptoQuery struct {
 	config
-	limit          *int
-	offset         *int
-	unique         *bool
-	order          []OrderFunc
-	fields         []string
+	ctx            *QueryContext
+	order          []dpto.OrderOption
+	inters         []Interceptor
 	predicates     []predicate.Dpto
 	withProvincias *ProvinciaQuery
 	// intermediate query (i.e. traversal path).
@@ -37,34 +35,34 @@ func (dq *DptoQuery) Where(ps ...predicate.Dpto) *DptoQuery {
 	return dq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (dq *DptoQuery) Limit(limit int) *DptoQuery {
-	dq.limit = &limit
+	dq.ctx.Limit = &limit
 	return dq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (dq *DptoQuery) Offset(offset int) *DptoQuery {
-	dq.offset = &offset
+	dq.ctx.Offset = &offset
 	return dq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (dq *DptoQuery) Unique(unique bool) *DptoQuery {
-	dq.unique = &unique
+	dq.ctx.Unique = &unique
 	return dq
 }
 
-// Order adds an order step to the query.
-func (dq *DptoQuery) Order(o ...OrderFunc) *DptoQuery {
+// Order specifies how the records should be ordered.
+func (dq *DptoQuery) Order(o ...dpto.OrderOption) *DptoQuery {
 	dq.order = append(dq.order, o...)
 	return dq
 }
 
 // QueryProvincias chains the current query on the "provincias" edge.
 func (dq *DptoQuery) QueryProvincias() *ProvinciaQuery {
-	query := &ProvinciaQuery{config: dq.config}
+	query := (&ProvinciaClient{config: dq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (dq *DptoQuery) QueryProvincias() *ProvinciaQuery {
 // First returns the first Dpto entity from the query.
 // Returns a *NotFoundError when no Dpto was found.
 func (dq *DptoQuery) First(ctx context.Context) (*Dpto, error) {
-	nodes, err := dq.Limit(1).All(ctx)
+	nodes, err := dq.Limit(1).All(setContextOp(ctx, dq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (dq *DptoQuery) FirstX(ctx context.Context) *Dpto {
 // Returns a *NotFoundError when no Dpto ID was found.
 func (dq *DptoQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = dq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = dq.Limit(1).IDs(setContextOp(ctx, dq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (dq *DptoQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Dpto entity is found.
 // Returns a *NotFoundError when no Dpto entities are found.
 func (dq *DptoQuery) Only(ctx context.Context) (*Dpto, error) {
-	nodes, err := dq.Limit(2).All(ctx)
+	nodes, err := dq.Limit(2).All(setContextOp(ctx, dq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (dq *DptoQuery) OnlyX(ctx context.Context) *Dpto {
 // Returns a *NotFoundError when no entities are found.
 func (dq *DptoQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = dq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = dq.Limit(2).IDs(setContextOp(ctx, dq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (dq *DptoQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Dptos.
 func (dq *DptoQuery) All(ctx context.Context) ([]*Dpto, error) {
+	ctx = setContextOp(ctx, dq.ctx, "All")
 	if err := dq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return dq.sqlAll(ctx)
+	qr := querierAll[[]*Dpto, *DptoQuery]()
+	return withInterceptors[[]*Dpto](ctx, dq, qr, dq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (dq *DptoQuery) AllX(ctx context.Context) []*Dpto {
 }
 
 // IDs executes the query and returns a list of Dpto IDs.
-func (dq *DptoQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := dq.Select(dpto.FieldID).Scan(ctx, &ids); err != nil {
+func (dq *DptoQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if dq.ctx.Unique == nil && dq.path != nil {
+		dq.Unique(true)
+	}
+	ctx = setContextOp(ctx, dq.ctx, "IDs")
+	if err = dq.Select(dpto.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (dq *DptoQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (dq *DptoQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, dq.ctx, "Count")
 	if err := dq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return dq.sqlCount(ctx)
+	return withInterceptors[int](ctx, dq, querierCount[*DptoQuery](), dq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (dq *DptoQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (dq *DptoQuery) Exist(ctx context.Context) (bool, error) {
-	if err := dq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, dq.ctx, "Exist")
+	switch _, err := dq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return dq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (dq *DptoQuery) Clone() *DptoQuery {
 	}
 	return &DptoQuery{
 		config:         dq.config,
-		limit:          dq.limit,
-		offset:         dq.offset,
-		order:          append([]OrderFunc{}, dq.order...),
+		ctx:            dq.ctx.Clone(),
+		order:          append([]dpto.OrderOption{}, dq.order...),
+		inters:         append([]Interceptor{}, dq.inters...),
 		predicates:     append([]predicate.Dpto{}, dq.predicates...),
 		withProvincias: dq.withProvincias.Clone(),
 		// clone intermediate query.
-		sql:    dq.sql.Clone(),
-		path:   dq.path,
-		unique: dq.unique,
+		sql:  dq.sql.Clone(),
+		path: dq.path,
 	}
 }
 
 // WithProvincias tells the query-builder to eager-load the nodes that are connected to
 // the "provincias" edge. The optional arguments are used to configure the query builder of the edge.
 func (dq *DptoQuery) WithProvincias(opts ...func(*ProvinciaQuery)) *DptoQuery {
-	query := &ProvinciaQuery{config: dq.config}
+	query := (&ProvinciaClient{config: dq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (dq *DptoQuery) WithProvincias(opts ...func(*ProvinciaQuery)) *DptoQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (dq *DptoQuery) GroupBy(field string, fields ...string) *DptoGroupBy {
-	grbuild := &DptoGroupBy{config: dq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := dq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return dq.sqlQuery(ctx), nil
-	}
+	dq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &DptoGroupBy{build: dq}
+	grbuild.flds = &dq.ctx.Fields
 	grbuild.label = dpto.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (dq *DptoQuery) GroupBy(field string, fields ...string) *DptoGroupBy {
 //		Select(dpto.FieldName).
 //		Scan(ctx, &v)
 func (dq *DptoQuery) Select(fields ...string) *DptoSelect {
-	dq.fields = append(dq.fields, fields...)
-	selbuild := &DptoSelect{DptoQuery: dq}
-	selbuild.label = dpto.Label
-	selbuild.flds, selbuild.scan = &dq.fields, selbuild.Scan
-	return selbuild
+	dq.ctx.Fields = append(dq.ctx.Fields, fields...)
+	sbuild := &DptoSelect{DptoQuery: dq}
+	sbuild.label = dpto.Label
+	sbuild.flds, sbuild.scan = &dq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a DptoSelect configured with the given aggregations.
+func (dq *DptoQuery) Aggregate(fns ...AggregateFunc) *DptoSelect {
+	return dq.Select().Aggregate(fns...)
 }
 
 func (dq *DptoQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range dq.fields {
+	for _, inter := range dq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, dq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range dq.ctx.Fields {
 		if !dpto.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -356,10 +374,10 @@ func (dq *DptoQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dpto, e
 			dq.withProvincias != nil,
 		}
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Dpto).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Dpto{config: dq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -396,7 +414,7 @@ func (dq *DptoQuery) loadProvincias(ctx context.Context, query *ProvinciaQuery, 
 	}
 	query.withFKs = true
 	query.Where(predicate.Provincia(func(s *sql.Selector) {
-		s.Where(sql.InValues(dpto.ProvinciasColumn, fks...))
+		s.Where(sql.InValues(s.C(dpto.ProvinciasColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -409,7 +427,7 @@ func (dq *DptoQuery) loadProvincias(ctx context.Context, query *ProvinciaQuery, 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "dpto_provincias" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "dpto_provincias" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -418,38 +436,22 @@ func (dq *DptoQuery) loadProvincias(ctx context.Context, query *ProvinciaQuery, 
 
 func (dq *DptoQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := dq.querySpec()
-	_spec.Node.Columns = dq.fields
-	if len(dq.fields) > 0 {
-		_spec.Unique = dq.unique != nil && *dq.unique
+	_spec.Node.Columns = dq.ctx.Fields
+	if len(dq.ctx.Fields) > 0 {
+		_spec.Unique = dq.ctx.Unique != nil && *dq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, dq.driver, _spec)
 }
 
-func (dq *DptoQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := dq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (dq *DptoQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dpto.Table,
-			Columns: dpto.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: dpto.FieldID,
-			},
-		},
-		From:   dq.sql,
-		Unique: true,
-	}
-	if unique := dq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(dpto.Table, dpto.Columns, sqlgraph.NewFieldSpec(dpto.FieldID, field.TypeString))
+	_spec.From = dq.sql
+	if unique := dq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if dq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := dq.fields; len(fields) > 0 {
+	if fields := dq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, dpto.FieldID)
 		for i := range fields {
@@ -465,10 +467,10 @@ func (dq *DptoQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := dq.limit; limit != nil {
+	if limit := dq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := dq.offset; offset != nil {
+	if offset := dq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := dq.order; len(ps) > 0 {
@@ -484,7 +486,7 @@ func (dq *DptoQuery) querySpec() *sqlgraph.QuerySpec {
 func (dq *DptoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(dq.driver.Dialect())
 	t1 := builder.Table(dpto.Table)
-	columns := dq.fields
+	columns := dq.ctx.Fields
 	if len(columns) == 0 {
 		columns = dpto.Columns
 	}
@@ -493,7 +495,7 @@ func (dq *DptoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = dq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if dq.unique != nil && *dq.unique {
+	if dq.ctx.Unique != nil && *dq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range dq.predicates {
@@ -502,12 +504,12 @@ func (dq *DptoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range dq.order {
 		p(selector)
 	}
-	if offset := dq.offset; offset != nil {
+	if offset := dq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := dq.limit; limit != nil {
+	if limit := dq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -515,13 +517,8 @@ func (dq *DptoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // DptoGroupBy is the group-by builder for Dpto entities.
 type DptoGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *DptoQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -530,74 +527,77 @@ func (dgb *DptoGroupBy) Aggregate(fns ...AggregateFunc) *DptoGroupBy {
 	return dgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (dgb *DptoGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := dgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (dgb *DptoGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, dgb.build.ctx, "GroupBy")
+	if err := dgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	dgb.sql = query
-	return dgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*DptoQuery, *DptoGroupBy](ctx, dgb.build, dgb, dgb.build.inters, v)
 }
 
-func (dgb *DptoGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range dgb.fields {
-		if !dpto.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (dgb *DptoGroupBy) sqlScan(ctx context.Context, root *DptoQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(dgb.fns))
+	for _, fn := range dgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := dgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*dgb.flds)+len(dgb.fns))
+		for _, f := range *dgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*dgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := dgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := dgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (dgb *DptoGroupBy) sqlQuery() *sql.Selector {
-	selector := dgb.sql.Select()
-	aggregation := make([]string, 0, len(dgb.fns))
-	for _, fn := range dgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(dgb.fields)+len(dgb.fns))
-		for _, f := range dgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(dgb.fields...)...)
-}
-
 // DptoSelect is the builder for selecting fields of Dpto entities.
 type DptoSelect struct {
 	*DptoQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ds *DptoSelect) Aggregate(fns ...AggregateFunc) *DptoSelect {
+	ds.fns = append(ds.fns, fns...)
+	return ds
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ds *DptoSelect) Scan(ctx context.Context, v interface{}) error {
+func (ds *DptoSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ds.ctx, "Select")
 	if err := ds.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ds.sql = ds.DptoQuery.sqlQuery(ctx)
-	return ds.sqlScan(ctx, v)
+	return scanWithInterceptors[*DptoQuery, *DptoSelect](ctx, ds.DptoQuery, ds, ds.inters, v)
 }
 
-func (ds *DptoSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ds *DptoSelect) sqlScan(ctx context.Context, root *DptoQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ds.fns))
+	for _, fn := range ds.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ds.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ds.sql.Query()
+	query, args := selector.Query()
 	if err := ds.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

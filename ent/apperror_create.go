@@ -59,49 +59,7 @@ func (aec *AppErrorCreate) Mutation() *AppErrorMutation {
 
 // Save creates the AppError in the database.
 func (aec *AppErrorCreate) Save(ctx context.Context) (*AppError, error) {
-	var (
-		err  error
-		node *AppError
-	)
-	if len(aec.hooks) == 0 {
-		if err = aec.check(); err != nil {
-			return nil, err
-		}
-		node, err = aec.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AppErrorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = aec.check(); err != nil {
-				return nil, err
-			}
-			aec.mutation = mutation
-			if node, err = aec.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aec.hooks) - 1; i >= 0; i-- {
-			if aec.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aec.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aec.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AppError)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AppErrorMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aec.sqlSave, aec.mutation, aec.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -144,6 +102,9 @@ func (aec *AppErrorCreate) check() error {
 }
 
 func (aec *AppErrorCreate) sqlSave(ctx context.Context) (*AppError, error) {
+	if err := aec.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := aec.createSpec()
 	if err := sqlgraph.CreateNode(ctx, aec.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -158,19 +119,15 @@ func (aec *AppErrorCreate) sqlSave(ctx context.Context) (*AppError, error) {
 			return nil, fmt.Errorf("unexpected AppError.ID type: %T", _spec.ID.Value)
 		}
 	}
+	aec.mutation.id = &_node.ID
+	aec.mutation.done = true
 	return _node, nil
 }
 
 func (aec *AppErrorCreate) createSpec() (*AppError, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AppError{config: aec.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: apperror.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: apperror.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(apperror.Table, sqlgraph.NewFieldSpec(apperror.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = aec.conflict
 	if id, ok := aec.mutation.ID(); ok {
@@ -178,35 +135,19 @@ func (aec *AppErrorCreate) createSpec() (*AppError, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := aec.mutation.UserID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldUserID,
-		})
+		_spec.SetField(apperror.FieldUserID, field.TypeString, value)
 		_node.UserID = value
 	}
 	if value, ok := aec.mutation.Cause(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldCause,
-		})
+		_spec.SetField(apperror.FieldCause, field.TypeString, value)
 		_node.Cause = value
 	}
 	if value, ok := aec.mutation.ErrorMsg(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorMsg,
-		})
+		_spec.SetField(apperror.FieldErrorMsg, field.TypeString, value)
 		_node.ErrorMsg = value
 	}
 	if value, ok := aec.mutation.ErrorStack(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorStack,
-		})
+		_spec.SetField(apperror.FieldErrorStack, field.TypeString, value)
 		_node.ErrorStack = value
 	}
 	return _node, _spec
@@ -475,8 +416,8 @@ func (aecb *AppErrorCreateBulk) Save(ctx context.Context) ([]*AppError, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, aecb.builders[i+1].mutation)
 				} else {
@@ -590,7 +531,6 @@ func (u *AppErrorUpsertBulk) UpdateNewValues() *AppErrorUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(apperror.FieldID)
-				return
 			}
 		}
 	}))

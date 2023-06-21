@@ -94,49 +94,7 @@ func (sc *SubscriptionCreate) Mutation() *SubscriptionMutation {
 
 // Save creates the Subscription in the database.
 func (sc *SubscriptionCreate) Save(ctx context.Context) (*Subscription, error) {
-	var (
-		err  error
-		node *Subscription
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SubscriptionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Subscription)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SubscriptionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -176,6 +134,9 @@ func (sc *SubscriptionCreate) check() error {
 }
 
 func (sc *SubscriptionCreate) sqlSave(ctx context.Context) (*Subscription, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -190,19 +151,15 @@ func (sc *SubscriptionCreate) sqlSave(ctx context.Context) (*Subscription, error
 			return nil, fmt.Errorf("unexpected Subscription.ID type: %T", _spec.ID.Value)
 		}
 	}
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *SubscriptionCreate) createSpec() (*Subscription, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Subscription{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: subscription.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: subscription.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(subscription.Table, sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
@@ -210,27 +167,15 @@ func (sc *SubscriptionCreate) createSpec() (*Subscription, *sqlgraph.CreateSpec)
 		_spec.ID.Value = id
 	}
 	if value, ok := sc.mutation.Method(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: subscription.FieldMethod,
-		})
+		_spec.SetField(subscription.FieldMethod, field.TypeString, value)
 		_node.Method = value
 	}
 	if value, ok := sc.mutation.Qtty(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: subscription.FieldQtty,
-		})
+		_spec.SetField(subscription.FieldQtty, field.TypeInt, value)
 		_node.Qtty = value
 	}
 	if value, ok := sc.mutation.Date(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: subscription.FieldDate,
-		})
+		_spec.SetField(subscription.FieldDate, field.TypeTime, value)
 		_node.Date = value
 	}
 	if nodes := sc.mutation.TeacherIDs(); len(nodes) > 0 {
@@ -241,10 +186,7 @@ func (sc *SubscriptionCreate) createSpec() (*Subscription, *sqlgraph.CreateSpec)
 			Columns: []string{subscription.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -261,10 +203,7 @@ func (sc *SubscriptionCreate) createSpec() (*Subscription, *sqlgraph.CreateSpec)
 			Columns: []string{subscription.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -526,8 +465,8 @@ func (scb *SubscriptionCreateBulk) Save(ctx context.Context) ([]*Subscription, e
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
@@ -641,7 +580,6 @@ func (u *SubscriptionUpsertBulk) UpdateNewValues() *SubscriptionUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(subscription.FieldID)
-				return
 			}
 		}
 	}))

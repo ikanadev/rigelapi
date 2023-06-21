@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/period"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -22,6 +23,7 @@ type Period struct {
 	// The values are being populated by the PeriodQuery when eager-loading is set.
 	Edges        PeriodEdges `json:"edges"`
 	year_periods *string
+	selectValues sql.SelectValues
 }
 
 // PeriodEdges holds the relations/edges for other nodes in the graph.
@@ -58,8 +60,8 @@ func (e PeriodEdges) YearOrErr() (*Year, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Period) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Period) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case period.FieldID, period.FieldName:
@@ -67,7 +69,7 @@ func (*Period) scanValues(columns []string) ([]interface{}, error) {
 		case period.ForeignKeys[0]: // year_periods
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Period", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -75,7 +77,7 @@ func (*Period) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Period fields.
-func (pe *Period) assignValues(columns []string, values []interface{}) error {
+func (pe *Period) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -100,26 +102,34 @@ func (pe *Period) assignValues(columns []string, values []interface{}) error {
 				pe.year_periods = new(string)
 				*pe.year_periods = value.String
 			}
+		default:
+			pe.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Period.
+// This includes values selected through modifiers, order, etc.
+func (pe *Period) Value(name string) (ent.Value, error) {
+	return pe.selectValues.Get(name)
+}
+
 // QueryClassPeriods queries the "classPeriods" edge of the Period entity.
 func (pe *Period) QueryClassPeriods() *ClassPeriodQuery {
-	return (&PeriodClient{config: pe.config}).QueryClassPeriods(pe)
+	return NewPeriodClient(pe.config).QueryClassPeriods(pe)
 }
 
 // QueryYear queries the "year" edge of the Period entity.
 func (pe *Period) QueryYear() *YearQuery {
-	return (&PeriodClient{config: pe.config}).QueryYear(pe)
+	return NewPeriodClient(pe.config).QueryYear(pe)
 }
 
 // Update returns a builder for updating this Period.
 // Note that you need to call Period.Unwrap() before calling this method if this Period
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pe *Period) Update() *PeriodUpdateOne {
-	return (&PeriodClient{config: pe.config}).UpdateOne(pe)
+	return NewPeriodClient(pe.config).UpdateOne(pe)
 }
 
 // Unwrap unwraps the Period entity that was returned from a transaction after it was closed,
@@ -146,9 +156,3 @@ func (pe *Period) String() string {
 
 // Periods is a parsable slice of Period.
 type Periods []*Period
-
-func (pe Periods) config(cfg config) {
-	for _i := range pe {
-		pe[_i].config = cfg
-	}
-}

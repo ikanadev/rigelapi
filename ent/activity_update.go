@@ -136,34 +136,7 @@ func (au *ActivityUpdate) ClearClassPeriod() *ActivityUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *ActivityUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(au.hooks) == 0 {
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ActivityMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -189,16 +162,7 @@ func (au *ActivityUpdate) ExecX(ctx context.Context) {
 }
 
 func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   activity.Table,
-			Columns: activity.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: activity.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(activity.Table, activity.Columns, sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -207,18 +171,10 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: activity.FieldName,
-		})
+		_spec.SetField(activity.FieldName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Date(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: activity.FieldDate,
-		})
+		_spec.SetField(activity.FieldDate, field.TypeTime, value)
 	}
 	if au.mutation.ScoresCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -228,10 +184,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -244,10 +197,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -263,10 +213,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -282,10 +229,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.AreaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -298,10 +242,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.AreaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -317,10 +258,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -333,10 +271,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{activity.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -352,6 +287,7 @@ func (au *ActivityUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -466,6 +402,12 @@ func (auo *ActivityUpdateOne) ClearClassPeriod() *ActivityUpdateOne {
 	return auo
 }
 
+// Where appends a list predicates to the ActivityUpdate builder.
+func (auo *ActivityUpdateOne) Where(ps ...predicate.Activity) *ActivityUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *ActivityUpdateOne) Select(field string, fields ...string) *ActivityUpdateOne {
@@ -475,40 +417,7 @@ func (auo *ActivityUpdateOne) Select(field string, fields ...string) *ActivityUp
 
 // Save executes the query and returns the updated Activity entity.
 func (auo *ActivityUpdateOne) Save(ctx context.Context) (*Activity, error) {
-	var (
-		err  error
-		node *Activity
-	)
-	if len(auo.hooks) == 0 {
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ActivityMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Activity)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ActivityMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -534,16 +443,7 @@ func (auo *ActivityUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   activity.Table,
-			Columns: activity.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: activity.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(activity.Table, activity.Columns, sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Activity.id" for update`)}
@@ -569,18 +469,10 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 		}
 	}
 	if value, ok := auo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: activity.FieldName,
-		})
+		_spec.SetField(activity.FieldName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Date(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: activity.FieldDate,
-		})
+		_spec.SetField(activity.FieldDate, field.TypeTime, value)
 	}
 	if auo.mutation.ScoresCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -590,10 +482,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -606,10 +495,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -625,10 +511,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.ScoresColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: score.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(score.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -644,10 +527,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.AreaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -660,10 +540,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.AreaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -679,10 +556,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -695,10 +569,7 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 			Columns: []string{activity.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -717,5 +588,6 @@ func (auo *ActivityUpdateOne) sqlSave(ctx context.Context) (_node *Activity, err
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

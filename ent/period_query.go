@@ -20,11 +20,9 @@ import (
 // PeriodQuery is the builder for querying Period entities.
 type PeriodQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
+	ctx              *QueryContext
+	order            []period.OrderOption
+	inters           []Interceptor
 	predicates       []predicate.Period
 	withClassPeriods *ClassPeriodQuery
 	withYear         *YearQuery
@@ -40,34 +38,34 @@ func (pq *PeriodQuery) Where(ps ...predicate.Period) *PeriodQuery {
 	return pq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (pq *PeriodQuery) Limit(limit int) *PeriodQuery {
-	pq.limit = &limit
+	pq.ctx.Limit = &limit
 	return pq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (pq *PeriodQuery) Offset(offset int) *PeriodQuery {
-	pq.offset = &offset
+	pq.ctx.Offset = &offset
 	return pq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (pq *PeriodQuery) Unique(unique bool) *PeriodQuery {
-	pq.unique = &unique
+	pq.ctx.Unique = &unique
 	return pq
 }
 
-// Order adds an order step to the query.
-func (pq *PeriodQuery) Order(o ...OrderFunc) *PeriodQuery {
+// Order specifies how the records should be ordered.
+func (pq *PeriodQuery) Order(o ...period.OrderOption) *PeriodQuery {
 	pq.order = append(pq.order, o...)
 	return pq
 }
 
 // QueryClassPeriods chains the current query on the "classPeriods" edge.
 func (pq *PeriodQuery) QueryClassPeriods() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: pq.config}
+	query := (&ClassPeriodClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (pq *PeriodQuery) QueryClassPeriods() *ClassPeriodQuery {
 
 // QueryYear chains the current query on the "year" edge.
 func (pq *PeriodQuery) QueryYear() *YearQuery {
-	query := &YearQuery{config: pq.config}
+	query := (&YearClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,7 +110,7 @@ func (pq *PeriodQuery) QueryYear() *YearQuery {
 // First returns the first Period entity from the query.
 // Returns a *NotFoundError when no Period was found.
 func (pq *PeriodQuery) First(ctx context.Context) (*Period, error) {
-	nodes, err := pq.Limit(1).All(ctx)
+	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (pq *PeriodQuery) FirstX(ctx context.Context) *Period {
 // Returns a *NotFoundError when no Period ID was found.
 func (pq *PeriodQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +156,7 @@ func (pq *PeriodQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Period entity is found.
 // Returns a *NotFoundError when no Period entities are found.
 func (pq *PeriodQuery) Only(ctx context.Context) (*Period, error) {
-	nodes, err := pq.Limit(2).All(ctx)
+	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func (pq *PeriodQuery) OnlyX(ctx context.Context) *Period {
 // Returns a *NotFoundError when no entities are found.
 func (pq *PeriodQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,10 +209,12 @@ func (pq *PeriodQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Periods.
 func (pq *PeriodQuery) All(ctx context.Context) ([]*Period, error) {
+	ctx = setContextOp(ctx, pq.ctx, "All")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return pq.sqlAll(ctx)
+	qr := querierAll[[]*Period, *PeriodQuery]()
+	return withInterceptors[[]*Period](ctx, pq, qr, pq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -227,9 +227,12 @@ func (pq *PeriodQuery) AllX(ctx context.Context) []*Period {
 }
 
 // IDs executes the query and returns a list of Period IDs.
-func (pq *PeriodQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := pq.Select(period.FieldID).Scan(ctx, &ids); err != nil {
+func (pq *PeriodQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if pq.ctx.Unique == nil && pq.path != nil {
+		pq.Unique(true)
+	}
+	ctx = setContextOp(ctx, pq.ctx, "IDs")
+	if err = pq.Select(period.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -246,10 +249,11 @@ func (pq *PeriodQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (pq *PeriodQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, pq.ctx, "Count")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return pq.sqlCount(ctx)
+	return withInterceptors[int](ctx, pq, querierCount[*PeriodQuery](), pq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -263,10 +267,15 @@ func (pq *PeriodQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pq *PeriodQuery) Exist(ctx context.Context) (bool, error) {
-	if err := pq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, pq.ctx, "Exist")
+	switch _, err := pq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return pq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -286,23 +295,22 @@ func (pq *PeriodQuery) Clone() *PeriodQuery {
 	}
 	return &PeriodQuery{
 		config:           pq.config,
-		limit:            pq.limit,
-		offset:           pq.offset,
-		order:            append([]OrderFunc{}, pq.order...),
+		ctx:              pq.ctx.Clone(),
+		order:            append([]period.OrderOption{}, pq.order...),
+		inters:           append([]Interceptor{}, pq.inters...),
 		predicates:       append([]predicate.Period{}, pq.predicates...),
 		withClassPeriods: pq.withClassPeriods.Clone(),
 		withYear:         pq.withYear.Clone(),
 		// clone intermediate query.
-		sql:    pq.sql.Clone(),
-		path:   pq.path,
-		unique: pq.unique,
+		sql:  pq.sql.Clone(),
+		path: pq.path,
 	}
 }
 
 // WithClassPeriods tells the query-builder to eager-load the nodes that are connected to
 // the "classPeriods" edge. The optional arguments are used to configure the query builder of the edge.
 func (pq *PeriodQuery) WithClassPeriods(opts ...func(*ClassPeriodQuery)) *PeriodQuery {
-	query := &ClassPeriodQuery{config: pq.config}
+	query := (&ClassPeriodClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -313,7 +321,7 @@ func (pq *PeriodQuery) WithClassPeriods(opts ...func(*ClassPeriodQuery)) *Period
 // WithYear tells the query-builder to eager-load the nodes that are connected to
 // the "year" edge. The optional arguments are used to configure the query builder of the edge.
 func (pq *PeriodQuery) WithYear(opts ...func(*YearQuery)) *PeriodQuery {
-	query := &YearQuery{config: pq.config}
+	query := (&YearClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -336,16 +344,11 @@ func (pq *PeriodQuery) WithYear(opts ...func(*YearQuery)) *PeriodQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pq *PeriodQuery) GroupBy(field string, fields ...string) *PeriodGroupBy {
-	grbuild := &PeriodGroupBy{config: pq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := pq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return pq.sqlQuery(ctx), nil
-	}
+	pq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &PeriodGroupBy{build: pq}
+	grbuild.flds = &pq.ctx.Fields
 	grbuild.label = period.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -362,15 +365,30 @@ func (pq *PeriodQuery) GroupBy(field string, fields ...string) *PeriodGroupBy {
 //		Select(period.FieldName).
 //		Scan(ctx, &v)
 func (pq *PeriodQuery) Select(fields ...string) *PeriodSelect {
-	pq.fields = append(pq.fields, fields...)
-	selbuild := &PeriodSelect{PeriodQuery: pq}
-	selbuild.label = period.Label
-	selbuild.flds, selbuild.scan = &pq.fields, selbuild.Scan
-	return selbuild
+	pq.ctx.Fields = append(pq.ctx.Fields, fields...)
+	sbuild := &PeriodSelect{PeriodQuery: pq}
+	sbuild.label = period.Label
+	sbuild.flds, sbuild.scan = &pq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a PeriodSelect configured with the given aggregations.
+func (pq *PeriodQuery) Aggregate(fns ...AggregateFunc) *PeriodSelect {
+	return pq.Select().Aggregate(fns...)
 }
 
 func (pq *PeriodQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range pq.fields {
+	for _, inter := range pq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, pq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range pq.ctx.Fields {
 		if !period.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -401,10 +419,10 @@ func (pq *PeriodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Perio
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, period.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Period).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Period{config: pq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -447,7 +465,7 @@ func (pq *PeriodQuery) loadClassPeriods(ctx context.Context, query *ClassPeriodQ
 	}
 	query.withFKs = true
 	query.Where(predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.InValues(period.ClassPeriodsColumn, fks...))
+		s.Where(sql.InValues(s.C(period.ClassPeriodsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -460,7 +478,7 @@ func (pq *PeriodQuery) loadClassPeriods(ctx context.Context, query *ClassPeriodQ
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "period_class_periods" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "period_class_periods" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -478,6 +496,9 @@ func (pq *PeriodQuery) loadYear(ctx context.Context, query *YearQuery, nodes []*
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(year.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -498,38 +519,22 @@ func (pq *PeriodQuery) loadYear(ctx context.Context, query *YearQuery, nodes []*
 
 func (pq *PeriodQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pq.querySpec()
-	_spec.Node.Columns = pq.fields
-	if len(pq.fields) > 0 {
-		_spec.Unique = pq.unique != nil && *pq.unique
+	_spec.Node.Columns = pq.ctx.Fields
+	if len(pq.ctx.Fields) > 0 {
+		_spec.Unique = pq.ctx.Unique != nil && *pq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, pq.driver, _spec)
 }
 
-func (pq *PeriodQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := pq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (pq *PeriodQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   period.Table,
-			Columns: period.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: period.FieldID,
-			},
-		},
-		From:   pq.sql,
-		Unique: true,
-	}
-	if unique := pq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(period.Table, period.Columns, sqlgraph.NewFieldSpec(period.FieldID, field.TypeString))
+	_spec.From = pq.sql
+	if unique := pq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if pq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := pq.fields; len(fields) > 0 {
+	if fields := pq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, period.FieldID)
 		for i := range fields {
@@ -545,10 +550,10 @@ func (pq *PeriodQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := pq.limit; limit != nil {
+	if limit := pq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := pq.offset; offset != nil {
+	if offset := pq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := pq.order; len(ps) > 0 {
@@ -564,7 +569,7 @@ func (pq *PeriodQuery) querySpec() *sqlgraph.QuerySpec {
 func (pq *PeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pq.driver.Dialect())
 	t1 := builder.Table(period.Table)
-	columns := pq.fields
+	columns := pq.ctx.Fields
 	if len(columns) == 0 {
 		columns = period.Columns
 	}
@@ -573,7 +578,7 @@ func (pq *PeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = pq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if pq.unique != nil && *pq.unique {
+	if pq.ctx.Unique != nil && *pq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range pq.predicates {
@@ -582,12 +587,12 @@ func (pq *PeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range pq.order {
 		p(selector)
 	}
-	if offset := pq.offset; offset != nil {
+	if offset := pq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := pq.limit; limit != nil {
+	if limit := pq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -595,13 +600,8 @@ func (pq *PeriodQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // PeriodGroupBy is the group-by builder for Period entities.
 type PeriodGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *PeriodQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -610,74 +610,77 @@ func (pgb *PeriodGroupBy) Aggregate(fns ...AggregateFunc) *PeriodGroupBy {
 	return pgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (pgb *PeriodGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := pgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (pgb *PeriodGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, pgb.build.ctx, "GroupBy")
+	if err := pgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pgb.sql = query
-	return pgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*PeriodQuery, *PeriodGroupBy](ctx, pgb.build, pgb, pgb.build.inters, v)
 }
 
-func (pgb *PeriodGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range pgb.fields {
-		if !period.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (pgb *PeriodGroupBy) sqlScan(ctx context.Context, root *PeriodQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(pgb.fns))
+	for _, fn := range pgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := pgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*pgb.flds)+len(pgb.fns))
+		for _, f := range *pgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*pgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := pgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := pgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (pgb *PeriodGroupBy) sqlQuery() *sql.Selector {
-	selector := pgb.sql.Select()
-	aggregation := make([]string, 0, len(pgb.fns))
-	for _, fn := range pgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
-		for _, f := range pgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(pgb.fields...)...)
-}
-
 // PeriodSelect is the builder for selecting fields of Period entities.
 type PeriodSelect struct {
 	*PeriodQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ps *PeriodSelect) Aggregate(fns ...AggregateFunc) *PeriodSelect {
+	ps.fns = append(ps.fns, fns...)
+	return ps
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ps *PeriodSelect) Scan(ctx context.Context, v interface{}) error {
+func (ps *PeriodSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ps.ctx, "Select")
 	if err := ps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ps.sql = ps.PeriodQuery.sqlQuery(ctx)
-	return ps.sqlScan(ctx, v)
+	return scanWithInterceptors[*PeriodQuery, *PeriodSelect](ctx, ps.PeriodQuery, ps, ps.inters, v)
 }
 
-func (ps *PeriodSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ps *PeriodSelect) sqlScan(ctx context.Context, root *PeriodQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ps.fns))
+	for _, fn := range ps.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ps.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ps.sql.Query()
+	query, args := selector.Query()
 	if err := ps.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

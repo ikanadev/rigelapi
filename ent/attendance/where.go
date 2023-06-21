@@ -10,109 +10,77 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Attendance(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Attendance(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Attendance(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.Attendance {
+	return predicate.Attendance(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.Attendance {
+	return predicate.Attendance(sql.FieldContainsFold(FieldID, id))
 }
 
 // ValueEQ applies the EQ predicate on the "value" field.
 func ValueEQ(v Value) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldValue), v))
-	})
+	return predicate.Attendance(sql.FieldEQ(FieldValue, v))
 }
 
 // ValueNEQ applies the NEQ predicate on the "value" field.
 func ValueNEQ(v Value) predicate.Attendance {
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldValue), v))
-	})
+	return predicate.Attendance(sql.FieldNEQ(FieldValue, v))
 }
 
 // ValueIn applies the In predicate on the "value" field.
 func ValueIn(vs ...Value) predicate.Attendance {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldValue), v...))
-	})
+	return predicate.Attendance(sql.FieldIn(FieldValue, vs...))
 }
 
 // ValueNotIn applies the NotIn predicate on the "value" field.
 func ValueNotIn(vs ...Value) predicate.Attendance {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldValue), v...))
-	})
+	return predicate.Attendance(sql.FieldNotIn(FieldValue, vs...))
 }
 
 // HasAttendanceDay applies the HasEdge predicate on the "attendanceDay" edge.
@@ -120,7 +88,6 @@ func HasAttendanceDay() predicate.Attendance {
 	return predicate.Attendance(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceDayTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, AttendanceDayTable, AttendanceDayColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -130,11 +97,7 @@ func HasAttendanceDay() predicate.Attendance {
 // HasAttendanceDayWith applies the HasEdge predicate on the "attendanceDay" edge with a given conditions (other predicates).
 func HasAttendanceDayWith(preds ...predicate.AttendanceDay) predicate.Attendance {
 	return predicate.Attendance(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AttendanceDayInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, AttendanceDayTable, AttendanceDayColumn),
-		)
+		step := newAttendanceDayStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -148,7 +111,6 @@ func HasStudent() predicate.Attendance {
 	return predicate.Attendance(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StudentTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, StudentTable, StudentColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -158,11 +120,7 @@ func HasStudent() predicate.Attendance {
 // HasStudentWith applies the HasEdge predicate on the "student" edge with a given conditions (other predicates).
 func HasStudentWith(preds ...predicate.Student) predicate.Attendance {
 	return predicate.Attendance(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StudentInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, StudentTable, StudentColumn),
-		)
+		step := newStudentStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

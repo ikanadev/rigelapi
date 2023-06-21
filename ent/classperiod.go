@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
@@ -29,6 +30,7 @@ type ClassPeriod struct {
 	Edges                ClassPeriodEdges `json:"edges"`
 	class_class_periods  *string
 	period_class_periods *string
+	selectValues         sql.SelectValues
 }
 
 // ClassPeriodEdges holds the relations/edges for other nodes in the graph.
@@ -91,8 +93,8 @@ func (e ClassPeriodEdges) PeriodOrErr() (*Period, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*ClassPeriod) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*ClassPeriod) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case classperiod.FieldFinished:
@@ -106,7 +108,7 @@ func (*ClassPeriod) scanValues(columns []string) ([]interface{}, error) {
 		case classperiod.ForeignKeys[1]: // period_class_periods
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type ClassPeriod", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -114,7 +116,7 @@ func (*ClassPeriod) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the ClassPeriod fields.
-func (cp *ClassPeriod) assignValues(columns []string, values []interface{}) error {
+func (cp *ClassPeriod) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -158,36 +160,44 @@ func (cp *ClassPeriod) assignValues(columns []string, values []interface{}) erro
 				cp.period_class_periods = new(string)
 				*cp.period_class_periods = value.String
 			}
+		default:
+			cp.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the ClassPeriod.
+// This includes values selected through modifiers, order, etc.
+func (cp *ClassPeriod) Value(name string) (ent.Value, error) {
+	return cp.selectValues.Get(name)
+}
+
 // QueryAttendanceDays queries the "attendanceDays" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryAttendanceDays() *AttendanceDayQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryAttendanceDays(cp)
+	return NewClassPeriodClient(cp.config).QueryAttendanceDays(cp)
 }
 
 // QueryActivities queries the "activities" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryActivities() *ActivityQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryActivities(cp)
+	return NewClassPeriodClient(cp.config).QueryActivities(cp)
 }
 
 // QueryClass queries the "class" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryClass() *ClassQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryClass(cp)
+	return NewClassPeriodClient(cp.config).QueryClass(cp)
 }
 
 // QueryPeriod queries the "period" edge of the ClassPeriod entity.
 func (cp *ClassPeriod) QueryPeriod() *PeriodQuery {
-	return (&ClassPeriodClient{config: cp.config}).QueryPeriod(cp)
+	return NewClassPeriodClient(cp.config).QueryPeriod(cp)
 }
 
 // Update returns a builder for updating this ClassPeriod.
 // Note that you need to call ClassPeriod.Unwrap() before calling this method if this ClassPeriod
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (cp *ClassPeriod) Update() *ClassPeriodUpdateOne {
-	return (&ClassPeriodClient{config: cp.config}).UpdateOne(cp)
+	return NewClassPeriodClient(cp.config).UpdateOne(cp)
 }
 
 // Unwrap unwraps the ClassPeriod entity that was returned from a transaction after it was closed,
@@ -220,9 +230,3 @@ func (cp *ClassPeriod) String() string {
 
 // ClassPeriods is a parsable slice of ClassPeriod.
 type ClassPeriods []*ClassPeriod
-
-func (cp ClassPeriods) config(cfg config) {
-	for _i := range cp {
-		cp[_i].config = cfg
-	}
-}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
@@ -19,7 +20,8 @@ type Year struct {
 	Value int `json:"value,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the YearQuery when eager-loading is set.
-	Edges YearEdges `json:"edges"`
+	Edges        YearEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // YearEdges holds the relations/edges for other nodes in the graph.
@@ -74,8 +76,8 @@ func (e YearEdges) SubscriptionsOrErr() ([]*Subscription, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Year) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Year) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case year.FieldValue:
@@ -83,7 +85,7 @@ func (*Year) scanValues(columns []string) ([]interface{}, error) {
 		case year.FieldID:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Year", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -91,7 +93,7 @@ func (*Year) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Year fields.
-func (y *Year) assignValues(columns []string, values []interface{}) error {
+func (y *Year) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -109,36 +111,44 @@ func (y *Year) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				y.Value = int(value.Int64)
 			}
+		default:
+			y.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// GetValue returns the ent.Value that was dynamically selected and assigned to the Year.
+// This includes values selected through modifiers, order, etc.
+func (y *Year) GetValue(name string) (ent.Value, error) {
+	return y.selectValues.Get(name)
+}
+
 // QueryClasses queries the "classes" edge of the Year entity.
 func (y *Year) QueryClasses() *ClassQuery {
-	return (&YearClient{config: y.config}).QueryClasses(y)
+	return NewYearClient(y.config).QueryClasses(y)
 }
 
 // QueryPeriods queries the "periods" edge of the Year entity.
 func (y *Year) QueryPeriods() *PeriodQuery {
-	return (&YearClient{config: y.config}).QueryPeriods(y)
+	return NewYearClient(y.config).QueryPeriods(y)
 }
 
 // QueryAreas queries the "areas" edge of the Year entity.
 func (y *Year) QueryAreas() *AreaQuery {
-	return (&YearClient{config: y.config}).QueryAreas(y)
+	return NewYearClient(y.config).QueryAreas(y)
 }
 
 // QuerySubscriptions queries the "subscriptions" edge of the Year entity.
 func (y *Year) QuerySubscriptions() *SubscriptionQuery {
-	return (&YearClient{config: y.config}).QuerySubscriptions(y)
+	return NewYearClient(y.config).QuerySubscriptions(y)
 }
 
 // Update returns a builder for updating this Year.
 // Note that you need to call Year.Unwrap() before calling this method if this Year
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (y *Year) Update() *YearUpdateOne {
-	return (&YearClient{config: y.config}).UpdateOne(y)
+	return NewYearClient(y.config).UpdateOne(y)
 }
 
 // Unwrap unwraps the Year entity that was returned from a transaction after it was closed,
@@ -165,9 +175,3 @@ func (y *Year) String() string {
 
 // Years is a parsable slice of Year.
 type Years []*Year
-
-func (y Years) config(cfg config) {
-	for _i := range y {
-		y[_i].config = cfg
-	}
-}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
@@ -23,6 +24,7 @@ type AttendanceDay struct {
 	// The values are being populated by the AttendanceDayQuery when eager-loading is set.
 	Edges                        AttendanceDayEdges `json:"edges"`
 	class_period_attendance_days *string
+	selectValues                 sql.SelectValues
 }
 
 // AttendanceDayEdges holds the relations/edges for other nodes in the graph.
@@ -59,8 +61,8 @@ func (e AttendanceDayEdges) ClassPeriodOrErr() (*ClassPeriod, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*AttendanceDay) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*AttendanceDay) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case attendanceday.FieldID:
@@ -70,7 +72,7 @@ func (*AttendanceDay) scanValues(columns []string) ([]interface{}, error) {
 		case attendanceday.ForeignKeys[0]: // class_period_attendance_days
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type AttendanceDay", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -78,7 +80,7 @@ func (*AttendanceDay) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the AttendanceDay fields.
-func (ad *AttendanceDay) assignValues(columns []string, values []interface{}) error {
+func (ad *AttendanceDay) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -103,26 +105,34 @@ func (ad *AttendanceDay) assignValues(columns []string, values []interface{}) er
 				ad.class_period_attendance_days = new(string)
 				*ad.class_period_attendance_days = value.String
 			}
+		default:
+			ad.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the AttendanceDay.
+// This includes values selected through modifiers, order, etc.
+func (ad *AttendanceDay) Value(name string) (ent.Value, error) {
+	return ad.selectValues.Get(name)
+}
+
 // QueryAttendances queries the "attendances" edge of the AttendanceDay entity.
 func (ad *AttendanceDay) QueryAttendances() *AttendanceQuery {
-	return (&AttendanceDayClient{config: ad.config}).QueryAttendances(ad)
+	return NewAttendanceDayClient(ad.config).QueryAttendances(ad)
 }
 
 // QueryClassPeriod queries the "classPeriod" edge of the AttendanceDay entity.
 func (ad *AttendanceDay) QueryClassPeriod() *ClassPeriodQuery {
-	return (&AttendanceDayClient{config: ad.config}).QueryClassPeriod(ad)
+	return NewAttendanceDayClient(ad.config).QueryClassPeriod(ad)
 }
 
 // Update returns a builder for updating this AttendanceDay.
 // Note that you need to call AttendanceDay.Unwrap() before calling this method if this AttendanceDay
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ad *AttendanceDay) Update() *AttendanceDayUpdateOne {
-	return (&AttendanceDayClient{config: ad.config}).UpdateOne(ad)
+	return NewAttendanceDayClient(ad.config).UpdateOne(ad)
 }
 
 // Unwrap unwraps the AttendanceDay entity that was returned from a transaction after it was closed,
@@ -149,9 +159,3 @@ func (ad *AttendanceDay) String() string {
 
 // AttendanceDays is a parsable slice of AttendanceDay.
 type AttendanceDays []*AttendanceDay
-
-func (ad AttendanceDays) config(cfg config) {
-	for _i := range ad {
-		ad[_i].config = cfg
-	}
-}

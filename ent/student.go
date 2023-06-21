@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/student"
@@ -26,6 +27,7 @@ type Student struct {
 	// The values are being populated by the StudentQuery when eager-loading is set.
 	Edges          StudentEdges `json:"edges"`
 	class_students *string
+	selectValues   sql.SelectValues
 }
 
 // StudentEdges holds the relations/edges for other nodes in the graph.
@@ -73,8 +75,8 @@ func (e StudentEdges) ClassOrErr() (*Class, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Student) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Student) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case student.FieldID, student.FieldName, student.FieldLastName, student.FieldCi:
@@ -82,7 +84,7 @@ func (*Student) scanValues(columns []string) ([]interface{}, error) {
 		case student.ForeignKeys[0]: // class_students
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Student", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -90,7 +92,7 @@ func (*Student) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Student fields.
-func (s *Student) assignValues(columns []string, values []interface{}) error {
+func (s *Student) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -127,31 +129,39 @@ func (s *Student) assignValues(columns []string, values []interface{}) error {
 				s.class_students = new(string)
 				*s.class_students = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Student.
+// This includes values selected through modifiers, order, etc.
+func (s *Student) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryAttendances queries the "attendances" edge of the Student entity.
 func (s *Student) QueryAttendances() *AttendanceQuery {
-	return (&StudentClient{config: s.config}).QueryAttendances(s)
+	return NewStudentClient(s.config).QueryAttendances(s)
 }
 
 // QueryScores queries the "scores" edge of the Student entity.
 func (s *Student) QueryScores() *ScoreQuery {
-	return (&StudentClient{config: s.config}).QueryScores(s)
+	return NewStudentClient(s.config).QueryScores(s)
 }
 
 // QueryClass queries the "class" edge of the Student entity.
 func (s *Student) QueryClass() *ClassQuery {
-	return (&StudentClient{config: s.config}).QueryClass(s)
+	return NewStudentClient(s.config).QueryClass(s)
 }
 
 // Update returns a builder for updating this Student.
 // Note that you need to call Student.Unwrap() before calling this method if this Student
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Student) Update() *StudentUpdateOne {
-	return (&StudentClient{config: s.config}).UpdateOne(s)
+	return NewStudentClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Student entity that was returned from a transaction after it was closed,
@@ -184,9 +194,3 @@ func (s *Student) String() string {
 
 // Students is a parsable slice of Student.
 type Students []*Student
-
-func (s Students) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

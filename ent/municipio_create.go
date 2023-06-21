@@ -77,49 +77,7 @@ func (mc *MunicipioCreate) Mutation() *MunicipioMutation {
 
 // Save creates the Municipio in the database.
 func (mc *MunicipioCreate) Save(ctx context.Context) (*Municipio, error) {
-	var (
-		err  error
-		node *Municipio
-	)
-	if len(mc.hooks) == 0 {
-		if err = mc.check(); err != nil {
-			return nil, err
-		}
-		node, err = mc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MunicipioMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = mc.check(); err != nil {
-				return nil, err
-			}
-			mc.mutation = mutation
-			if node, err = mc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(mc.hooks) - 1; i >= 0; i-- {
-			if mc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = mc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, mc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Municipio)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from MunicipioMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, mc.sqlSave, mc.mutation, mc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -153,6 +111,9 @@ func (mc *MunicipioCreate) check() error {
 }
 
 func (mc *MunicipioCreate) sqlSave(ctx context.Context) (*Municipio, error) {
+	if err := mc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := mc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, mc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -167,19 +128,15 @@ func (mc *MunicipioCreate) sqlSave(ctx context.Context) (*Municipio, error) {
 			return nil, fmt.Errorf("unexpected Municipio.ID type: %T", _spec.ID.Value)
 		}
 	}
+	mc.mutation.id = &_node.ID
+	mc.mutation.done = true
 	return _node, nil
 }
 
 func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Municipio{config: mc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: municipio.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: municipio.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(municipio.Table, sqlgraph.NewFieldSpec(municipio.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = mc.conflict
 	if id, ok := mc.mutation.ID(); ok {
@@ -187,11 +144,7 @@ func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := mc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: municipio.FieldName,
-		})
+		_spec.SetField(municipio.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if nodes := mc.mutation.SchoolsIDs(); len(nodes) > 0 {
@@ -202,10 +155,7 @@ func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -221,10 +171,7 @@ func (mc *MunicipioCreate) createSpec() (*Municipio, *sqlgraph.CreateSpec) {
 			Columns: []string{municipio.ProvinciaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -421,8 +368,8 @@ func (mcb *MunicipioCreateBulk) Save(ctx context.Context) ([]*Municipio, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, mcb.builders[i+1].mutation)
 				} else {
@@ -536,7 +483,6 @@ func (u *MunicipioUpsertBulk) UpdateNewValues() *MunicipioUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(municipio.FieldID)
-				return
 			}
 		}
 	}))

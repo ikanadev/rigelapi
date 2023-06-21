@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/municipio"
 	"github.com/vmkevv/rigelapi/ent/school"
@@ -26,6 +27,7 @@ type School struct {
 	// The values are being populated by the SchoolQuery when eager-loading is set.
 	Edges             SchoolEdges `json:"edges"`
 	municipio_schools *string
+	selectValues      sql.SelectValues
 }
 
 // SchoolEdges holds the relations/edges for other nodes in the graph.
@@ -62,8 +64,8 @@ func (e SchoolEdges) MunicipioOrErr() (*Municipio, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*School) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*School) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case school.FieldID, school.FieldName, school.FieldLat, school.FieldLon:
@@ -71,7 +73,7 @@ func (*School) scanValues(columns []string) ([]interface{}, error) {
 		case school.ForeignKeys[0]: // municipio_schools
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type School", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -79,7 +81,7 @@ func (*School) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the School fields.
-func (s *School) assignValues(columns []string, values []interface{}) error {
+func (s *School) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -116,26 +118,34 @@ func (s *School) assignValues(columns []string, values []interface{}) error {
 				s.municipio_schools = new(string)
 				*s.municipio_schools = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the School.
+// This includes values selected through modifiers, order, etc.
+func (s *School) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryClasses queries the "classes" edge of the School entity.
 func (s *School) QueryClasses() *ClassQuery {
-	return (&SchoolClient{config: s.config}).QueryClasses(s)
+	return NewSchoolClient(s.config).QueryClasses(s)
 }
 
 // QueryMunicipio queries the "municipio" edge of the School entity.
 func (s *School) QueryMunicipio() *MunicipioQuery {
-	return (&SchoolClient{config: s.config}).QueryMunicipio(s)
+	return NewSchoolClient(s.config).QueryMunicipio(s)
 }
 
 // Update returns a builder for updating this School.
 // Note that you need to call School.Unwrap() before calling this method if this School
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *School) Update() *SchoolUpdateOne {
-	return (&SchoolClient{config: s.config}).UpdateOne(s)
+	return NewSchoolClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the School entity that was returned from a transaction after it was closed,
@@ -168,9 +178,3 @@ func (s *School) String() string {
 
 // Schools is a parsable slice of School.
 type Schools []*School
-
-func (s Schools) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

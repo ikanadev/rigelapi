@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (yd *YearDelete) Where(ps ...predicate.Year) *YearDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (yd *YearDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(yd.hooks) == 0 {
-		affected, err = yd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*YearMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			yd.mutation = mutation
-			affected, err = yd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(yd.hooks) - 1; i >= 0; i-- {
-			if yd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = yd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, yd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, yd.sqlExec, yd.mutation, yd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (yd *YearDelete) ExecX(ctx context.Context) int {
 }
 
 func (yd *YearDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: year.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: year.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(year.Table, sqlgraph.NewFieldSpec(year.FieldID, field.TypeString))
 	if ps := yd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (yd *YearDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	yd.mutation.done = true
 	return affected, err
 }
 
 // YearDeleteOne is the builder for deleting a single Year entity.
 type YearDeleteOne struct {
 	yd *YearDelete
+}
+
+// Where appends a list predicates to the YearDelete builder.
+func (ydo *YearDeleteOne) Where(ps ...predicate.Year) *YearDeleteOne {
+	ydo.yd.mutation.Where(ps...)
+	return ydo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (ydo *YearDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (ydo *YearDeleteOne) ExecX(ctx context.Context) {
-	ydo.yd.ExecX(ctx)
+	if err := ydo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

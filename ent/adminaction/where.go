@@ -10,285 +10,197 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.AdminAction(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.AdminAction(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.AdminAction(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.AdminAction {
+	return predicate.AdminAction(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.AdminAction {
+	return predicate.AdminAction(sql.FieldContainsFold(FieldID, id))
 }
 
 // Action applies equality check predicate on the "action" field. It's identical to ActionEQ.
 func Action(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldAction, v))
 }
 
 // Info applies equality check predicate on the "info" field. It's identical to InfoEQ.
 func Info(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldInfo, v))
 }
 
 // ActionEQ applies the EQ predicate on the "action" field.
 func ActionEQ(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldAction, v))
 }
 
 // ActionNEQ applies the NEQ predicate on the "action" field.
 func ActionNEQ(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldNEQ(FieldAction, v))
 }
 
 // ActionIn applies the In predicate on the "action" field.
 func ActionIn(vs ...string) predicate.AdminAction {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAction), v...))
-	})
+	return predicate.AdminAction(sql.FieldIn(FieldAction, vs...))
 }
 
 // ActionNotIn applies the NotIn predicate on the "action" field.
 func ActionNotIn(vs ...string) predicate.AdminAction {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAction), v...))
-	})
+	return predicate.AdminAction(sql.FieldNotIn(FieldAction, vs...))
 }
 
 // ActionGT applies the GT predicate on the "action" field.
 func ActionGT(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldGT(FieldAction, v))
 }
 
 // ActionGTE applies the GTE predicate on the "action" field.
 func ActionGTE(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldGTE(FieldAction, v))
 }
 
 // ActionLT applies the LT predicate on the "action" field.
 func ActionLT(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldLT(FieldAction, v))
 }
 
 // ActionLTE applies the LTE predicate on the "action" field.
 func ActionLTE(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldLTE(FieldAction, v))
 }
 
 // ActionContains applies the Contains predicate on the "action" field.
 func ActionContains(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldContains(FieldAction, v))
 }
 
 // ActionHasPrefix applies the HasPrefix predicate on the "action" field.
 func ActionHasPrefix(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldHasPrefix(FieldAction, v))
 }
 
 // ActionHasSuffix applies the HasSuffix predicate on the "action" field.
 func ActionHasSuffix(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldHasSuffix(FieldAction, v))
 }
 
 // ActionEqualFold applies the EqualFold predicate on the "action" field.
 func ActionEqualFold(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldEqualFold(FieldAction, v))
 }
 
 // ActionContainsFold applies the ContainsFold predicate on the "action" field.
 func ActionContainsFold(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldAction), v))
-	})
+	return predicate.AdminAction(sql.FieldContainsFold(FieldAction, v))
 }
 
 // InfoEQ applies the EQ predicate on the "info" field.
 func InfoEQ(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldEQ(FieldInfo, v))
 }
 
 // InfoNEQ applies the NEQ predicate on the "info" field.
 func InfoNEQ(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldNEQ(FieldInfo, v))
 }
 
 // InfoIn applies the In predicate on the "info" field.
 func InfoIn(vs ...string) predicate.AdminAction {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldInfo), v...))
-	})
+	return predicate.AdminAction(sql.FieldIn(FieldInfo, vs...))
 }
 
 // InfoNotIn applies the NotIn predicate on the "info" field.
 func InfoNotIn(vs ...string) predicate.AdminAction {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldInfo), v...))
-	})
+	return predicate.AdminAction(sql.FieldNotIn(FieldInfo, vs...))
 }
 
 // InfoGT applies the GT predicate on the "info" field.
 func InfoGT(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldGT(FieldInfo, v))
 }
 
 // InfoGTE applies the GTE predicate on the "info" field.
 func InfoGTE(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldGTE(FieldInfo, v))
 }
 
 // InfoLT applies the LT predicate on the "info" field.
 func InfoLT(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldLT(FieldInfo, v))
 }
 
 // InfoLTE applies the LTE predicate on the "info" field.
 func InfoLTE(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldLTE(FieldInfo, v))
 }
 
 // InfoContains applies the Contains predicate on the "info" field.
 func InfoContains(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldContains(FieldInfo, v))
 }
 
 // InfoHasPrefix applies the HasPrefix predicate on the "info" field.
 func InfoHasPrefix(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldHasPrefix(FieldInfo, v))
 }
 
 // InfoHasSuffix applies the HasSuffix predicate on the "info" field.
 func InfoHasSuffix(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldHasSuffix(FieldInfo, v))
 }
 
 // InfoEqualFold applies the EqualFold predicate on the "info" field.
 func InfoEqualFold(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldEqualFold(FieldInfo, v))
 }
 
 // InfoContainsFold applies the ContainsFold predicate on the "info" field.
 func InfoContainsFold(v string) predicate.AdminAction {
-	return predicate.AdminAction(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldInfo), v))
-	})
+	return predicate.AdminAction(sql.FieldContainsFold(FieldInfo, v))
 }
 
 // HasTeacher applies the HasEdge predicate on the "teacher" edge.
@@ -296,7 +208,6 @@ func HasTeacher() predicate.AdminAction {
 	return predicate.AdminAction(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -306,11 +217,7 @@ func HasTeacher() predicate.AdminAction {
 // HasTeacherWith applies the HasEdge predicate on the "teacher" edge with a given conditions (other predicates).
 func HasTeacherWith(preds ...predicate.Teacher) predicate.AdminAction {
 	return predicate.AdminAction(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
-		)
+		step := newTeacherStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

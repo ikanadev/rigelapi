@@ -126,49 +126,7 @@ func (cpc *ClassPeriodCreate) Mutation() *ClassPeriodMutation {
 
 // Save creates the ClassPeriod in the database.
 func (cpc *ClassPeriodCreate) Save(ctx context.Context) (*ClassPeriod, error) {
-	var (
-		err  error
-		node *ClassPeriod
-	)
-	if len(cpc.hooks) == 0 {
-		if err = cpc.check(); err != nil {
-			return nil, err
-		}
-		node, err = cpc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ClassPeriodMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = cpc.check(); err != nil {
-				return nil, err
-			}
-			cpc.mutation = mutation
-			if node, err = cpc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(cpc.hooks) - 1; i >= 0; i-- {
-			if cpc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cpc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, cpc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ClassPeriod)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ClassPeriodMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, cpc.sqlSave, cpc.mutation, cpc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -208,6 +166,9 @@ func (cpc *ClassPeriodCreate) check() error {
 }
 
 func (cpc *ClassPeriodCreate) sqlSave(ctx context.Context) (*ClassPeriod, error) {
+	if err := cpc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := cpc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, cpc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -222,19 +183,15 @@ func (cpc *ClassPeriodCreate) sqlSave(ctx context.Context) (*ClassPeriod, error)
 			return nil, fmt.Errorf("unexpected ClassPeriod.ID type: %T", _spec.ID.Value)
 		}
 	}
+	cpc.mutation.id = &_node.ID
+	cpc.mutation.done = true
 	return _node, nil
 }
 
 func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) {
 	var (
 		_node = &ClassPeriod{config: cpc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: classperiod.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: classperiod.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(classperiod.Table, sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = cpc.conflict
 	if id, ok := cpc.mutation.ID(); ok {
@@ -242,27 +199,15 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 		_spec.ID.Value = id
 	}
 	if value, ok := cpc.mutation.Start(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldStart,
-		})
+		_spec.SetField(classperiod.FieldStart, field.TypeTime, value)
 		_node.Start = value
 	}
 	if value, ok := cpc.mutation.End(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldEnd,
-		})
+		_spec.SetField(classperiod.FieldEnd, field.TypeTime, value)
 		_node.End = value
 	}
 	if value, ok := cpc.mutation.Finished(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: classperiod.FieldFinished,
-		})
+		_spec.SetField(classperiod.FieldFinished, field.TypeBool, value)
 		_node.Finished = value
 	}
 	if nodes := cpc.mutation.AttendanceDaysIDs(); len(nodes) > 0 {
@@ -273,10 +218,7 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -292,10 +234,7 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -311,10 +250,7 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 			Columns: []string{classperiod.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -331,10 +267,7 @@ func (cpc *ClassPeriodCreate) createSpec() (*ClassPeriod, *sqlgraph.CreateSpec) 
 			Columns: []string{classperiod.PeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -583,8 +516,8 @@ func (cpcb *ClassPeriodCreateBulk) Save(ctx context.Context) ([]*ClassPeriod, er
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, cpcb.builders[i+1].mutation)
 				} else {
@@ -698,7 +631,6 @@ func (u *ClassPeriodUpsertBulk) UpdateNewValues() *ClassPeriodUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(classperiod.FieldID)
-				return
 			}
 		}
 	}))

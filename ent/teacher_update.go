@@ -183,34 +183,7 @@ func (tu *TeacherUpdate) RemoveSubscriptions(s ...*Subscription) *TeacherUpdate 
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TeacherUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(tu.hooks) == 0 {
-		affected, err = tu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TeacherMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			tu.mutation = mutation
-			affected, err = tu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(tu.hooks) - 1; i >= 0; i-- {
-			if tu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, tu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -236,16 +209,7 @@ func (tu *TeacherUpdate) ExecX(ctx context.Context) {
 }
 
 func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   teacher.Table,
-			Columns: teacher.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: teacher.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(teacher.Table, teacher.Columns, sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -254,39 +218,19 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := tu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldName,
-		})
+		_spec.SetField(teacher.FieldName, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldLastName,
-		})
+		_spec.SetField(teacher.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.Email(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldEmail,
-		})
+		_spec.SetField(teacher.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldPassword,
-		})
+		_spec.SetField(teacher.FieldPassword, field.TypeString, value)
 	}
 	if value, ok := tu.mutation.IsAdmin(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: teacher.FieldIsAdmin,
-		})
+		_spec.SetField(teacher.FieldIsAdmin, field.TypeBool, value)
 	}
 	if tu.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -296,10 +240,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -312,10 +253,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -331,10 +269,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -350,10 +285,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -366,10 +298,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -385,10 +314,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -404,10 +330,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -420,10 +343,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -439,10 +359,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -458,6 +375,7 @@ func (tu *TeacherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	tu.mutation.done = true
 	return n, nil
 }
 
@@ -620,6 +538,12 @@ func (tuo *TeacherUpdateOne) RemoveSubscriptions(s ...*Subscription) *TeacherUpd
 	return tuo.RemoveSubscriptionIDs(ids...)
 }
 
+// Where appends a list predicates to the TeacherUpdate builder.
+func (tuo *TeacherUpdateOne) Where(ps ...predicate.Teacher) *TeacherUpdateOne {
+	tuo.mutation.Where(ps...)
+	return tuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (tuo *TeacherUpdateOne) Select(field string, fields ...string) *TeacherUpdateOne {
@@ -629,40 +553,7 @@ func (tuo *TeacherUpdateOne) Select(field string, fields ...string) *TeacherUpda
 
 // Save executes the query and returns the updated Teacher entity.
 func (tuo *TeacherUpdateOne) Save(ctx context.Context) (*Teacher, error) {
-	var (
-		err  error
-		node *Teacher
-	)
-	if len(tuo.hooks) == 0 {
-		node, err = tuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*TeacherMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			tuo.mutation = mutation
-			node, err = tuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(tuo.hooks) - 1; i >= 0; i-- {
-			if tuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = tuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, tuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Teacher)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from TeacherMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -688,16 +579,7 @@ func (tuo *TeacherUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   teacher.Table,
-			Columns: teacher.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: teacher.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(teacher.Table, teacher.Columns, sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString))
 	id, ok := tuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Teacher.id" for update`)}
@@ -723,39 +605,19 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 	}
 	if value, ok := tuo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldName,
-		})
+		_spec.SetField(teacher.FieldName, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldLastName,
-		})
+		_spec.SetField(teacher.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.Email(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldEmail,
-		})
+		_spec.SetField(teacher.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: teacher.FieldPassword,
-		})
+		_spec.SetField(teacher.FieldPassword, field.TypeString, value)
 	}
 	if value, ok := tuo.mutation.IsAdmin(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: teacher.FieldIsAdmin,
-		})
+		_spec.SetField(teacher.FieldIsAdmin, field.TypeBool, value)
 	}
 	if tuo.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -765,10 +627,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -781,10 +640,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -800,10 +656,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -819,10 +672,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -835,10 +685,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -854,10 +701,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.ActionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: adminaction.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -873,10 +717,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -889,10 +730,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -908,10 +746,7 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 			Columns: []string{teacher.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -930,5 +765,6 @@ func (tuo *TeacherUpdateOne) sqlSave(ctx context.Context) (_node *Teacher, err e
 		}
 		return nil, err
 	}
+	tuo.mutation.done = true
 	return _node, nil
 }

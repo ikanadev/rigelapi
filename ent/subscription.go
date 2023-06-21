@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
@@ -29,6 +30,7 @@ type Subscription struct {
 	Edges                 SubscriptionEdges `json:"edges"`
 	teacher_subscriptions *string
 	year_subscriptions    *string
+	selectValues          sql.SelectValues
 }
 
 // SubscriptionEdges holds the relations/edges for other nodes in the graph.
@@ -69,8 +71,8 @@ func (e SubscriptionEdges) YearOrErr() (*Year, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Subscription) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Subscription) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case subscription.FieldQtty:
@@ -84,7 +86,7 @@ func (*Subscription) scanValues(columns []string) ([]interface{}, error) {
 		case subscription.ForeignKeys[1]: // year_subscriptions
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Subscription", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -92,7 +94,7 @@ func (*Subscription) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Subscription fields.
-func (s *Subscription) assignValues(columns []string, values []interface{}) error {
+func (s *Subscription) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -136,26 +138,34 @@ func (s *Subscription) assignValues(columns []string, values []interface{}) erro
 				s.year_subscriptions = new(string)
 				*s.year_subscriptions = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Subscription.
+// This includes values selected through modifiers, order, etc.
+func (s *Subscription) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryTeacher queries the "teacher" edge of the Subscription entity.
 func (s *Subscription) QueryTeacher() *TeacherQuery {
-	return (&SubscriptionClient{config: s.config}).QueryTeacher(s)
+	return NewSubscriptionClient(s.config).QueryTeacher(s)
 }
 
 // QueryYear queries the "year" edge of the Subscription entity.
 func (s *Subscription) QueryYear() *YearQuery {
-	return (&SubscriptionClient{config: s.config}).QueryYear(s)
+	return NewSubscriptionClient(s.config).QueryYear(s)
 }
 
 // Update returns a builder for updating this Subscription.
 // Note that you need to call Subscription.Unwrap() before calling this method if this Subscription
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Subscription) Update() *SubscriptionUpdateOne {
-	return (&SubscriptionClient{config: s.config}).UpdateOne(s)
+	return NewSubscriptionClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Subscription entity that was returned from a transaction after it was closed,
@@ -188,9 +198,3 @@ func (s *Subscription) String() string {
 
 // Subscriptions is a parsable slice of Subscription.
 type Subscriptions []*Subscription
-
-func (s Subscriptions) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

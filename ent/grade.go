@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/grade"
 )
@@ -19,7 +20,8 @@ type Grade struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GradeQuery when eager-loading is set.
-	Edges GradeEdges `json:"edges"`
+	Edges        GradeEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // GradeEdges holds the relations/edges for other nodes in the graph.
@@ -41,14 +43,14 @@ func (e GradeEdges) ClassesOrErr() ([]*Class, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Grade) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Grade) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case grade.FieldID, grade.FieldName:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Grade", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -56,7 +58,7 @@ func (*Grade) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Grade fields.
-func (gr *Grade) assignValues(columns []string, values []interface{}) error {
+func (gr *Grade) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -74,21 +76,29 @@ func (gr *Grade) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				gr.Name = value.String
 			}
+		default:
+			gr.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Grade.
+// This includes values selected through modifiers, order, etc.
+func (gr *Grade) Value(name string) (ent.Value, error) {
+	return gr.selectValues.Get(name)
+}
+
 // QueryClasses queries the "classes" edge of the Grade entity.
 func (gr *Grade) QueryClasses() *ClassQuery {
-	return (&GradeClient{config: gr.config}).QueryClasses(gr)
+	return NewGradeClient(gr.config).QueryClasses(gr)
 }
 
 // Update returns a builder for updating this Grade.
 // Note that you need to call Grade.Unwrap() before calling this method if this Grade
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (gr *Grade) Update() *GradeUpdateOne {
-	return (&GradeClient{config: gr.config}).UpdateOne(gr)
+	return NewGradeClient(gr.config).UpdateOne(gr)
 }
 
 // Unwrap unwraps the Grade entity that was returned from a transaction after it was closed,
@@ -115,9 +125,3 @@ func (gr *Grade) String() string {
 
 // Grades is a parsable slice of Grade.
 type Grades []*Grade
-
-func (gr Grades) config(cfg config) {
-	for _i := range gr {
-		gr[_i].config = cfg
-	}
-}

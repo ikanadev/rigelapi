@@ -81,49 +81,7 @@ func (ac *AttendanceCreate) Mutation() *AttendanceMutation {
 
 // Save creates the Attendance in the database.
 func (ac *AttendanceCreate) Save(ctx context.Context) (*Attendance, error) {
-	var (
-		err  error
-		node *Attendance
-	)
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttendanceMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Attendance)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AttendanceMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -162,6 +120,9 @@ func (ac *AttendanceCreate) check() error {
 }
 
 func (ac *AttendanceCreate) sqlSave(ctx context.Context) (*Attendance, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -176,19 +137,15 @@ func (ac *AttendanceCreate) sqlSave(ctx context.Context) (*Attendance, error) {
 			return nil, fmt.Errorf("unexpected Attendance.ID type: %T", _spec.ID.Value)
 		}
 	}
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Attendance{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: attendance.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: attendance.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(attendance.Table, sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = ac.conflict
 	if id, ok := ac.mutation.ID(); ok {
@@ -196,11 +153,7 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := ac.mutation.Value(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: attendance.FieldValue,
-		})
+		_spec.SetField(attendance.FieldValue, field.TypeEnum, value)
 		_node.Value = value
 	}
 	if nodes := ac.mutation.AttendanceDayIDs(); len(nodes) > 0 {
@@ -211,10 +164,7 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 			Columns: []string{attendance.AttendanceDayColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -231,10 +181,7 @@ func (ac *AttendanceCreate) createSpec() (*Attendance, *sqlgraph.CreateSpec) {
 			Columns: []string{attendance.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -431,8 +378,8 @@ func (acb *AttendanceCreateBulk) Save(ctx context.Context) ([]*Attendance, error
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
@@ -546,7 +493,6 @@ func (u *AttendanceUpsertBulk) UpdateNewValues() *AttendanceUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(attendance.FieldID)
-				return
 			}
 		}
 	}))

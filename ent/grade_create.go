@@ -57,49 +57,7 @@ func (gc *GradeCreate) Mutation() *GradeMutation {
 
 // Save creates the Grade in the database.
 func (gc *GradeCreate) Save(ctx context.Context) (*Grade, error) {
-	var (
-		err  error
-		node *Grade
-	)
-	if len(gc.hooks) == 0 {
-		if err = gc.check(); err != nil {
-			return nil, err
-		}
-		node, err = gc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*GradeMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = gc.check(); err != nil {
-				return nil, err
-			}
-			gc.mutation = mutation
-			if node, err = gc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(gc.hooks) - 1; i >= 0; i-- {
-			if gc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = gc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, gc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Grade)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from GradeMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, gc.sqlSave, gc.mutation, gc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -133,6 +91,9 @@ func (gc *GradeCreate) check() error {
 }
 
 func (gc *GradeCreate) sqlSave(ctx context.Context) (*Grade, error) {
+	if err := gc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := gc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, gc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -147,19 +108,15 @@ func (gc *GradeCreate) sqlSave(ctx context.Context) (*Grade, error) {
 			return nil, fmt.Errorf("unexpected Grade.ID type: %T", _spec.ID.Value)
 		}
 	}
+	gc.mutation.id = &_node.ID
+	gc.mutation.done = true
 	return _node, nil
 }
 
 func (gc *GradeCreate) createSpec() (*Grade, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Grade{config: gc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: grade.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: grade.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(grade.Table, sqlgraph.NewFieldSpec(grade.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = gc.conflict
 	if id, ok := gc.mutation.ID(); ok {
@@ -167,11 +124,7 @@ func (gc *GradeCreate) createSpec() (*Grade, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := gc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: grade.FieldName,
-		})
+		_spec.SetField(grade.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if nodes := gc.mutation.ClassesIDs(); len(nodes) > 0 {
@@ -182,10 +135,7 @@ func (gc *GradeCreate) createSpec() (*Grade, *sqlgraph.CreateSpec) {
 			Columns: []string{grade.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -381,8 +331,8 @@ func (gcb *GradeCreateBulk) Save(ctx context.Context) ([]*Grade, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, gcb.builders[i+1].mutation)
 				} else {
@@ -496,7 +446,6 @@ func (u *GradeUpsertBulk) UpdateNewValues() *GradeUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(grade.FieldID)
-				return
 			}
 		}
 	}))

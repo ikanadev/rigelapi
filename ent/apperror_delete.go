@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (aed *AppErrorDelete) Where(ps ...predicate.AppError) *AppErrorDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (aed *AppErrorDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(aed.hooks) == 0 {
-		affected, err = aed.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AppErrorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aed.mutation = mutation
-			affected, err = aed.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(aed.hooks) - 1; i >= 0; i-- {
-			if aed.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aed.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, aed.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, aed.sqlExec, aed.mutation, aed.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (aed *AppErrorDelete) ExecX(ctx context.Context) int {
 }
 
 func (aed *AppErrorDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: apperror.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: apperror.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(apperror.Table, sqlgraph.NewFieldSpec(apperror.FieldID, field.TypeString))
 	if ps := aed.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (aed *AppErrorDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	aed.mutation.done = true
 	return affected, err
 }
 
 // AppErrorDeleteOne is the builder for deleting a single AppError entity.
 type AppErrorDeleteOne struct {
 	aed *AppErrorDelete
+}
+
+// Where appends a list predicates to the AppErrorDelete builder.
+func (aedo *AppErrorDeleteOne) Where(ps ...predicate.AppError) *AppErrorDeleteOne {
+	aedo.aed.mutation.Where(ps...)
+	return aedo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (aedo *AppErrorDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (aedo *AppErrorDeleteOne) ExecX(ctx context.Context) {
-	aedo.aed.ExecX(ctx)
+	if err := aedo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

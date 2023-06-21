@@ -9,497 +9,337 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.AppError(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.AppError(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.AppError(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.AppError {
+	return predicate.AppError(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.AppError {
+	return predicate.AppError(sql.FieldContainsFold(FieldID, id))
 }
 
 // UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
 func UserID(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldUserID, v))
 }
 
 // Cause applies equality check predicate on the "cause" field. It's identical to CauseEQ.
 func Cause(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldCause, v))
 }
 
 // ErrorMsg applies equality check predicate on the "error_msg" field. It's identical to ErrorMsgEQ.
 func ErrorMsg(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldErrorMsg, v))
 }
 
 // ErrorStack applies equality check predicate on the "error_stack" field. It's identical to ErrorStackEQ.
 func ErrorStack(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldErrorStack, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.
 func UserIDEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldUserID, v))
 }
 
 // UserIDNEQ applies the NEQ predicate on the "user_id" field.
 func UserIDNEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldNEQ(FieldUserID, v))
 }
 
 // UserIDIn applies the In predicate on the "user_id" field.
 func UserIDIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUserID), v...))
-	})
+	return predicate.AppError(sql.FieldIn(FieldUserID, vs...))
 }
 
 // UserIDNotIn applies the NotIn predicate on the "user_id" field.
 func UserIDNotIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUserID), v...))
-	})
+	return predicate.AppError(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // UserIDGT applies the GT predicate on the "user_id" field.
 func UserIDGT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldGT(FieldUserID, v))
 }
 
 // UserIDGTE applies the GTE predicate on the "user_id" field.
 func UserIDGTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldGTE(FieldUserID, v))
 }
 
 // UserIDLT applies the LT predicate on the "user_id" field.
 func UserIDLT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldLT(FieldUserID, v))
 }
 
 // UserIDLTE applies the LTE predicate on the "user_id" field.
 func UserIDLTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldLTE(FieldUserID, v))
 }
 
 // UserIDContains applies the Contains predicate on the "user_id" field.
 func UserIDContains(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldContains(FieldUserID, v))
 }
 
 // UserIDHasPrefix applies the HasPrefix predicate on the "user_id" field.
 func UserIDHasPrefix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldHasPrefix(FieldUserID, v))
 }
 
 // UserIDHasSuffix applies the HasSuffix predicate on the "user_id" field.
 func UserIDHasSuffix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldHasSuffix(FieldUserID, v))
 }
 
 // UserIDEqualFold applies the EqualFold predicate on the "user_id" field.
 func UserIDEqualFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldEqualFold(FieldUserID, v))
 }
 
 // UserIDContainsFold applies the ContainsFold predicate on the "user_id" field.
 func UserIDContainsFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldUserID), v))
-	})
+	return predicate.AppError(sql.FieldContainsFold(FieldUserID, v))
 }
 
 // CauseEQ applies the EQ predicate on the "cause" field.
 func CauseEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldCause, v))
 }
 
 // CauseNEQ applies the NEQ predicate on the "cause" field.
 func CauseNEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldNEQ(FieldCause, v))
 }
 
 // CauseIn applies the In predicate on the "cause" field.
 func CauseIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCause), v...))
-	})
+	return predicate.AppError(sql.FieldIn(FieldCause, vs...))
 }
 
 // CauseNotIn applies the NotIn predicate on the "cause" field.
 func CauseNotIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCause), v...))
-	})
+	return predicate.AppError(sql.FieldNotIn(FieldCause, vs...))
 }
 
 // CauseGT applies the GT predicate on the "cause" field.
 func CauseGT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldGT(FieldCause, v))
 }
 
 // CauseGTE applies the GTE predicate on the "cause" field.
 func CauseGTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldGTE(FieldCause, v))
 }
 
 // CauseLT applies the LT predicate on the "cause" field.
 func CauseLT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldLT(FieldCause, v))
 }
 
 // CauseLTE applies the LTE predicate on the "cause" field.
 func CauseLTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldLTE(FieldCause, v))
 }
 
 // CauseContains applies the Contains predicate on the "cause" field.
 func CauseContains(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldContains(FieldCause, v))
 }
 
 // CauseHasPrefix applies the HasPrefix predicate on the "cause" field.
 func CauseHasPrefix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldHasPrefix(FieldCause, v))
 }
 
 // CauseHasSuffix applies the HasSuffix predicate on the "cause" field.
 func CauseHasSuffix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldHasSuffix(FieldCause, v))
 }
 
 // CauseEqualFold applies the EqualFold predicate on the "cause" field.
 func CauseEqualFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldEqualFold(FieldCause, v))
 }
 
 // CauseContainsFold applies the ContainsFold predicate on the "cause" field.
 func CauseContainsFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldCause), v))
-	})
+	return predicate.AppError(sql.FieldContainsFold(FieldCause, v))
 }
 
 // ErrorMsgEQ applies the EQ predicate on the "error_msg" field.
 func ErrorMsgEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldErrorMsg, v))
 }
 
 // ErrorMsgNEQ applies the NEQ predicate on the "error_msg" field.
 func ErrorMsgNEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldNEQ(FieldErrorMsg, v))
 }
 
 // ErrorMsgIn applies the In predicate on the "error_msg" field.
 func ErrorMsgIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldErrorMsg), v...))
-	})
+	return predicate.AppError(sql.FieldIn(FieldErrorMsg, vs...))
 }
 
 // ErrorMsgNotIn applies the NotIn predicate on the "error_msg" field.
 func ErrorMsgNotIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldErrorMsg), v...))
-	})
+	return predicate.AppError(sql.FieldNotIn(FieldErrorMsg, vs...))
 }
 
 // ErrorMsgGT applies the GT predicate on the "error_msg" field.
 func ErrorMsgGT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldGT(FieldErrorMsg, v))
 }
 
 // ErrorMsgGTE applies the GTE predicate on the "error_msg" field.
 func ErrorMsgGTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldGTE(FieldErrorMsg, v))
 }
 
 // ErrorMsgLT applies the LT predicate on the "error_msg" field.
 func ErrorMsgLT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldLT(FieldErrorMsg, v))
 }
 
 // ErrorMsgLTE applies the LTE predicate on the "error_msg" field.
 func ErrorMsgLTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldLTE(FieldErrorMsg, v))
 }
 
 // ErrorMsgContains applies the Contains predicate on the "error_msg" field.
 func ErrorMsgContains(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldContains(FieldErrorMsg, v))
 }
 
 // ErrorMsgHasPrefix applies the HasPrefix predicate on the "error_msg" field.
 func ErrorMsgHasPrefix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldHasPrefix(FieldErrorMsg, v))
 }
 
 // ErrorMsgHasSuffix applies the HasSuffix predicate on the "error_msg" field.
 func ErrorMsgHasSuffix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldHasSuffix(FieldErrorMsg, v))
 }
 
 // ErrorMsgEqualFold applies the EqualFold predicate on the "error_msg" field.
 func ErrorMsgEqualFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldEqualFold(FieldErrorMsg, v))
 }
 
 // ErrorMsgContainsFold applies the ContainsFold predicate on the "error_msg" field.
 func ErrorMsgContainsFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldErrorMsg), v))
-	})
+	return predicate.AppError(sql.FieldContainsFold(FieldErrorMsg, v))
 }
 
 // ErrorStackEQ applies the EQ predicate on the "error_stack" field.
 func ErrorStackEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldEQ(FieldErrorStack, v))
 }
 
 // ErrorStackNEQ applies the NEQ predicate on the "error_stack" field.
 func ErrorStackNEQ(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldNEQ(FieldErrorStack, v))
 }
 
 // ErrorStackIn applies the In predicate on the "error_stack" field.
 func ErrorStackIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldErrorStack), v...))
-	})
+	return predicate.AppError(sql.FieldIn(FieldErrorStack, vs...))
 }
 
 // ErrorStackNotIn applies the NotIn predicate on the "error_stack" field.
 func ErrorStackNotIn(vs ...string) predicate.AppError {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldErrorStack), v...))
-	})
+	return predicate.AppError(sql.FieldNotIn(FieldErrorStack, vs...))
 }
 
 // ErrorStackGT applies the GT predicate on the "error_stack" field.
 func ErrorStackGT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldGT(FieldErrorStack, v))
 }
 
 // ErrorStackGTE applies the GTE predicate on the "error_stack" field.
 func ErrorStackGTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldGTE(FieldErrorStack, v))
 }
 
 // ErrorStackLT applies the LT predicate on the "error_stack" field.
 func ErrorStackLT(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldLT(FieldErrorStack, v))
 }
 
 // ErrorStackLTE applies the LTE predicate on the "error_stack" field.
 func ErrorStackLTE(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldLTE(FieldErrorStack, v))
 }
 
 // ErrorStackContains applies the Contains predicate on the "error_stack" field.
 func ErrorStackContains(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldContains(FieldErrorStack, v))
 }
 
 // ErrorStackHasPrefix applies the HasPrefix predicate on the "error_stack" field.
 func ErrorStackHasPrefix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldHasPrefix(FieldErrorStack, v))
 }
 
 // ErrorStackHasSuffix applies the HasSuffix predicate on the "error_stack" field.
 func ErrorStackHasSuffix(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldHasSuffix(FieldErrorStack, v))
 }
 
 // ErrorStackEqualFold applies the EqualFold predicate on the "error_stack" field.
 func ErrorStackEqualFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldEqualFold(FieldErrorStack, v))
 }
 
 // ErrorStackContainsFold applies the ContainsFold predicate on the "error_stack" field.
 func ErrorStackContainsFold(v string) predicate.AppError {
-	return predicate.AppError(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldErrorStack), v))
-	})
+	return predicate.AppError(sql.FieldContainsFold(FieldErrorStack, v))
 }
 
 // And groups predicates with the AND operator between them.

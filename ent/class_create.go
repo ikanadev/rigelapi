@@ -173,49 +173,7 @@ func (cc *ClassCreate) Mutation() *ClassMutation {
 
 // Save creates the Class in the database.
 func (cc *ClassCreate) Save(ctx context.Context) (*Class, error) {
-	var (
-		err  error
-		node *Class
-	)
-	if len(cc.hooks) == 0 {
-		if err = cc.check(); err != nil {
-			return nil, err
-		}
-		node, err = cc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ClassMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = cc.check(); err != nil {
-				return nil, err
-			}
-			cc.mutation = mutation
-			if node, err = cc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(cc.hooks) - 1; i >= 0; i-- {
-			if cc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, cc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Class)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ClassMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, cc.sqlSave, cc.mutation, cc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -249,6 +207,9 @@ func (cc *ClassCreate) check() error {
 }
 
 func (cc *ClassCreate) sqlSave(ctx context.Context) (*Class, error) {
+	if err := cc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := cc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, cc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -263,19 +224,15 @@ func (cc *ClassCreate) sqlSave(ctx context.Context) (*Class, error) {
 			return nil, fmt.Errorf("unexpected Class.ID type: %T", _spec.ID.Value)
 		}
 	}
+	cc.mutation.id = &_node.ID
+	cc.mutation.done = true
 	return _node, nil
 }
 
 func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Class{config: cc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: class.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: class.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(class.Table, sqlgraph.NewFieldSpec(class.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = cc.conflict
 	if id, ok := cc.mutation.ID(); ok {
@@ -283,11 +240,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := cc.mutation.Parallel(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: class.FieldParallel,
-		})
+		_spec.SetField(class.FieldParallel, field.TypeString, value)
 		_node.Parallel = value
 	}
 	if nodes := cc.mutation.StudentsIDs(); len(nodes) > 0 {
@@ -298,10 +251,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.StudentsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -317,10 +267,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -336,10 +283,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.SchoolColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -356,10 +300,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -376,10 +317,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.SubjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -396,10 +334,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.GradeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: grade.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(grade.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -416,10 +351,7 @@ func (cc *ClassCreate) createSpec() (*Class, *sqlgraph.CreateSpec) {
 			Columns: []string{class.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -616,8 +548,8 @@ func (ccb *ClassCreateBulk) Save(ctx context.Context) ([]*Class, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ccb.builders[i+1].mutation)
 				} else {
@@ -731,7 +663,6 @@ func (u *ClassUpsertBulk) UpdateNewValues() *ClassUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(class.FieldID)
-				return
 			}
 		}
 	}))

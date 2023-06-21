@@ -2,6 +2,11 @@
 
 package period
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the period type in the database.
 	Label = "period"
@@ -56,4 +61,52 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Period queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByClassPeriodsCount orders the results by classPeriods count.
+func ByClassPeriodsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newClassPeriodsStep(), opts...)
+	}
+}
+
+// ByClassPeriods orders the results by classPeriods terms.
+func ByClassPeriods(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClassPeriodsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByYearField orders the results by year field.
+func ByYearField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newYearStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newClassPeriodsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ClassPeriodsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ClassPeriodsTable, ClassPeriodsColumn),
+	)
+}
+func newYearStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(YearInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
+	)
 }
