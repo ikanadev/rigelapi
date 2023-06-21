@@ -7,12 +7,12 @@ import (
 )
 
 type AuthHandler struct {
-	app      fiber.Router
+	app      *fiber.App
 	authRepo AuthRepository
 	config   config.Config
 }
 
-func NewAuthHandler(app fiber.Router, repo AuthRepository, config config.Config) AuthHandler {
+func NewAuthHandler(app *fiber.App, repo AuthRepository, config config.Config) AuthHandler {
 	return AuthHandler{app, repo, config}
 }
 

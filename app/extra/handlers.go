@@ -6,11 +6,11 @@ import (
 )
 
 type ExtraHandler struct {
-	app  fiber.Router
+	app  *fiber.App
 	repo ExtraRepository
 }
 
-func NewExtraHandler(app fiber.Router, repo ExtraRepository) ExtraHandler {
+func NewExtraHandler(app *fiber.App, repo ExtraRepository) ExtraHandler {
 	return ExtraHandler{app, repo}
 }
 
