@@ -9,4 +9,5 @@ type ClassRepository interface {
 		classID string,
 		classPeriodsData []models.ClassPeriodData,
 	) ([]models.StudentData, error)
+	GetTeacherClasses(teacherID string, yearID string) ([]models.ClassData, error)
 }

@@ -86,10 +86,10 @@ func (server Server) Run() error {
 	// server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
 
 	teacher.Start(protected, server.db, server.dbCtx)
-	class.Start(server.app, server.db, server.dbCtx)
+	class.Start(server.app, protected, server.db, server.dbCtx)
 	// protected.Get("/profile", handlers.GetProfile(server.db))
 	// protected.Post("/parsexls", handlers.ParseXLS())
-	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
+	// protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
 	protected.Post("/students", handlers.SaveStudent(server.db))
 	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))

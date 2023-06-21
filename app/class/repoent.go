@@ -10,6 +10,8 @@ import (
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/student"
+	"github.com/vmkevv/rigelapi/ent/teacher"
+	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 type ClassEntRepo struct {
@@ -19,6 +21,39 @@ type ClassEntRepo struct {
 
 func NewClassEntRepo(ent *ent.Client, ctx context.Context) ClassEntRepo {
 	return ClassEntRepo{ent, ctx}
+}
+
+func (cer ClassEntRepo) GetTeacherClasses(
+	teacherID string,
+	yearID string,
+) ([]models.ClassData, error) {
+	entClasses, err := cer.ent.Class.Query().
+		Where(
+			class.HasTeacherWith(teacher.ID(teacherID)),
+			class.HasYearWith(year.ID(yearID)),
+		).
+		WithGrade().
+		WithSubject().
+		WithTeacher().
+		WithYear(func(yq *ent.YearQuery) {
+			yq.WithAreas()
+		}).
+		WithSchool(func(sq *ent.SchoolQuery) {
+			sq.WithMunicipio(func(mq *ent.MunicipioQuery) {
+				mq.WithProvincia(func(pq *ent.ProvinciaQuery) {
+					pq.WithDepartamento()
+				})
+			})
+		}).
+		All(cer.ctx)
+	if err != nil {
+		return nil, err
+	}
+	classesData := make([]models.ClassData, len(entClasses))
+	for i, class := range entClasses {
+		classesData[i] = entClassToClassData(class)
+	}
+	return classesData, nil
 }
 
 func (cer ClassEntRepo) GetClassData(classID string) (models.ClassData, error) {
@@ -43,42 +78,7 @@ func (cer ClassEntRepo) GetClassData(classID string) (models.ClassData, error) {
 	if err != nil {
 		return classData, err
 	}
-	classData.ID = entClass.ID
-	classData.Parallel = entClass.Parallel
-	classData.Municipio = entClass.Edges.School.Edges.Municipio.Name
-	classData.Provincia = entClass.Edges.
-		School.Edges.
-		Municipio.Edges.
-		Provincia.Name
-	classData.Departamento = entClass.Edges.
-		School.Edges.
-		Municipio.Edges.
-		Provincia.Edges.
-		Departamento.Name
-	classData.School = models.School{
-		ID:   entClass.Edges.School.ID,
-		Name: entClass.Edges.School.Name,
-		Lat:  entClass.Edges.School.Lat,
-		Lon:  entClass.Edges.School.Lon,
-	}
-	classData.Teacher = models.Teacher{
-		ID:       entClass.Edges.Teacher.ID,
-		Name:     entClass.Edges.Teacher.Name,
-		LastName: entClass.Edges.Teacher.LastName,
-		Email:    entClass.Edges.Teacher.Email,
-	}
-	classData.Subject = models.Subject{
-		ID:   entClass.Edges.Subject.ID,
-		Name: entClass.Edges.Subject.Name,
-	}
-	classData.Grade = models.Grade{
-		ID:   entClass.Edges.Grade.ID,
-		Name: entClass.Edges.Grade.Name,
-	}
-	classData.Year = models.Year{
-		ID:    entClass.Edges.Year.ID,
-		Value: entClass.Edges.Year.Value,
-	}
+	classData = entClassToClassData(entClass)
 	return classData, nil
 }
 
@@ -280,4 +280,45 @@ func (cer ClassEntRepo) GetStudentsData(
 	}
 
 	return studentsData, nil
+}
+
+func entClassToClassData(entClass *ent.Class) models.ClassData {
+	return models.ClassData{
+		ID:        entClass.ID,
+		Parallel:  entClass.Parallel,
+		Municipio: entClass.Edges.School.Edges.Municipio.Name,
+		Provincia: entClass.Edges.
+			School.Edges.
+			Municipio.Edges.
+			Provincia.Name,
+		Departamento: entClass.Edges.
+			School.Edges.
+			Municipio.Edges.
+			Provincia.Edges.
+			Departamento.Name,
+		School: models.School{
+			ID:   entClass.Edges.School.ID,
+			Name: entClass.Edges.School.Name,
+			Lat:  entClass.Edges.School.Lat,
+			Lon:  entClass.Edges.School.Lon,
+		},
+		Teacher: models.Teacher{
+			ID:       entClass.Edges.Teacher.ID,
+			Name:     entClass.Edges.Teacher.Name,
+			LastName: entClass.Edges.Teacher.LastName,
+			Email:    entClass.Edges.Teacher.Email,
+		},
+		Subject: models.Subject{
+			ID:   entClass.Edges.Subject.ID,
+			Name: entClass.Edges.Subject.Name,
+		},
+		Grade: models.Grade{
+			ID:   entClass.Edges.Grade.ID,
+			Name: entClass.Edges.Grade.Name,
+		},
+		Year: models.Year{
+			ID:    entClass.Edges.Year.ID,
+			Value: entClass.Edges.Year.Value,
+		},
+	}
 }
