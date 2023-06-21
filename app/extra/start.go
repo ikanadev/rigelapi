@@ -7,8 +7,8 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 )
 
-func Start(app *fiber.App, ent *ent.Client, ctx context.Context) {
+func Start(app *fiber.App, teacherApp fiber.Router, ent *ent.Client, ctx context.Context) {
 	repo := NewExtraEntRepo(ent, ctx)
-	handlers := NewExtraHandler(app, repo)
+	handlers := NewExtraHandler(app, teacherApp, repo)
 	handlers.handle()
 }

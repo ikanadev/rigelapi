@@ -3,15 +3,21 @@ package extra
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/app/models"
+	"github.com/xuri/excelize/v2"
 )
 
 type ExtraHandler struct {
-	app  *fiber.App
-	repo ExtraRepository
+	app        *fiber.App
+	teacherApp fiber.Router
+	repo       ExtraRepository
 }
 
-func NewExtraHandler(app *fiber.App, repo ExtraRepository) ExtraHandler {
-	return ExtraHandler{app, repo}
+func NewExtraHandler(
+	app *fiber.App,
+	teacherApp fiber.Router,
+	repo ExtraRepository,
+) ExtraHandler {
+	return ExtraHandler{app, teacherApp, repo}
 }
 
 func (eh *ExtraHandler) handle() {
@@ -20,6 +26,7 @@ func (eh *ExtraHandler) handle() {
 	eh.app.Post("/errors", eh.handleSaveAppErrors)
 	eh.app.Get("/stats", eh.handleStats)
 	eh.app.Get("/class/:classid", eh.handleClassDetails)
+	eh.teacherApp.Get("/parsexls", eh.handleXLSParser)
 }
 
 func (eh *ExtraHandler) handleYearsData(ctx *fiber.Ctx) error {
@@ -105,6 +112,31 @@ func (eh *ExtraHandler) handleClassDetails(ctx *fiber.Ctx) error {
 	return ctx.JSON(resp)
 }
 
+func (eh *ExtraHandler) handleXLSParser(ctx *fiber.Ctx) error {
+	formFile, err := ctx.FormFile("xls")
+	if err != nil {
+		return err
+	}
+	file, err := formFile.Open()
+	if err != nil {
+		return err
+	}
+	xlsFile, err := excelize.OpenReader(file)
+	if err != nil {
+		return err
+	}
+	sheets := xlsFile.GetSheetList()
+	resp := XLSParserResp{}
+	for _, sheetName := range sheets {
+		rows, err := xlsFile.GetRows(sheetName)
+		if err != nil {
+			return err
+		}
+		resp[sheetName] = rows
+	}
+	return ctx.JSON(resp)
+}
+
 type StaticDataRes struct {
 	Grades   []models.Grade   `json:"grades"`
 	Subjects []models.Subject `json:"subjects"`
@@ -124,3 +156,4 @@ type ClassDetailsResp struct {
 	Students     []models.StudentData     `json:"students"`
 	ClassPeriods []models.ClassPeriodData `json:"class_periods"`
 }
+type XLSParserResp map[string][][]string

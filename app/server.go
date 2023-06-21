@@ -67,10 +67,11 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 func (server Server) Run() error {
 	server.app.Use(cors.New())
 	// server.app.Use(logUserAgent())
+	protected := server.app.Group("/auth", authMiddleware(server.config))
 
 	auth.Start(server.app, server.db, server.dbCtx, server.config, server.newID)
 	location.Start(server.app, server.db, server.dbCtx)
-	extra.Start(server.app, server.db, server.dbCtx)
+	extra.Start(server.app, protected, server.db, server.dbCtx)
 	// server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
 	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
 	// server.app.Get("/deps", handlers.DepsHandler(server.db))
@@ -83,11 +84,9 @@ func (server Server) Run() error {
 	// server.app.Get("/stats", handlers.StatsHandler(server.db))
 	// server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
 
-	protected := server.app.Group("/auth", authMiddleware(server.config))
-
 	teacher.Start(protected, server.db, server.dbCtx)
 	// protected.Get("/profile", handlers.GetProfile(server.db))
-	protected.Post("/parsexls", handlers.ParseXLS())
+	// protected.Post("/parsexls", handlers.ParseXLS())
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
 	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
 	protected.Post("/students", handlers.SaveStudent(server.db))
