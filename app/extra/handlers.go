@@ -25,7 +25,6 @@ func (eh *ExtraHandler) handle() {
 	eh.app.Get("/static", eh.handleStaticData)
 	eh.app.Post("/errors", eh.handleSaveAppErrors)
 	eh.app.Get("/stats", eh.handleStats)
-	eh.app.Get("/class/:classid", eh.handleClassDetails)
 	eh.teacherApp.Get("/parsexls", eh.handleXLSParser)
 }
 
@@ -87,29 +86,6 @@ func (eh *ExtraHandler) handleStats(ctx *fiber.Ctx) error {
 			Activities: acts,
 		},
 	})
-}
-
-func (eh *ExtraHandler) handleClassDetails(ctx *fiber.Ctx) error {
-	classID := ctx.Params("classid")
-	var resp ClassDetailsResp
-	classData, err := eh.repo.GetClassData(classID)
-	if err != nil {
-		return err
-	}
-	resp.ClassData = classData
-
-	classPeriods, err := eh.repo.GetClassPeriodsData(classID)
-	if err != nil {
-		return err
-	}
-	resp.ClassPeriods = classPeriods
-
-	students, err := eh.repo.GetStudentsData(classID, classPeriods)
-	if err != nil {
-		return err
-	}
-	resp.Students = students
-	return ctx.JSON(resp)
 }
 
 func (eh *ExtraHandler) handleXLSParser(ctx *fiber.Ctx) error {

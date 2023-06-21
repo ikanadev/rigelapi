@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app/auth"
+	"github.com/vmkevv/rigelapi/app/class"
 	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/app/location"
@@ -85,6 +86,7 @@ func (server Server) Run() error {
 	// server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
 
 	teacher.Start(protected, server.db, server.dbCtx)
+	class.Start(server.app, server.db, server.dbCtx)
 	// protected.Get("/profile", handlers.GetProfile(server.db))
 	// protected.Post("/parsexls", handlers.ParseXLS())
 	protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
