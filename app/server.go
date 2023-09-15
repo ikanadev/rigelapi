@@ -13,13 +13,13 @@ import (
 )
 
 type Server struct {
-	DB           *ent.Client
-	Config       config.Config
-	App          *fiber.App
-	ProtectedApp fiber.Router
-	AdminApp     fiber.Router
-	IDGenerator  func() string
-	DBCtx        context.Context
+	DB          *ent.Client
+	Config      config.Config
+	App         *fiber.App
+	TeacherApp  fiber.Router
+	AdminApp    fiber.Router
+	IDGenerator func() string
+	DBCtx       context.Context
 }
 type errMsg struct {
 	Message string `json:"message"`
@@ -65,19 +65,19 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 
 func (server Server) Run() {
 	server.App.Use(cors.New())
-	server.ProtectedApp.Post("/class", handlers.NewClassHandler(server.DB, server.IDGenerator))
-	server.ProtectedApp.Post("/students", handlers.SaveStudent(server.DB))
-	server.ProtectedApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
-	server.ProtectedApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
-	server.ProtectedApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))
-	server.ProtectedApp.Post("/attendancedays", handlers.SaveAttendanceDays(server.DB))
-	server.ProtectedApp.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.DB))
-	server.ProtectedApp.Post("/attendances", handlers.SaveAttendances(server.DB))
-	server.ProtectedApp.Get("/attendances/year/:yearid", handlers.GetAttendances(server.DB))
-	server.ProtectedApp.Post("/activities", handlers.SaveActivities(server.DB))
-	server.ProtectedApp.Get("/activities/year/:yearid", handlers.GetActivities(server.DB))
-	server.ProtectedApp.Post("/scores", handlers.SaveScores(server.DB))
-	server.ProtectedApp.Get("/scores/year/:yearid", handlers.GetScores(server.DB))
+	server.TeacherApp.Post("/class", handlers.NewClassHandler(server.DB, server.IDGenerator))
+	server.TeacherApp.Post("/students", handlers.SaveStudent(server.DB))
+	server.TeacherApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
+	server.TeacherApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
+	server.TeacherApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))
+	server.TeacherApp.Post("/attendancedays", handlers.SaveAttendanceDays(server.DB))
+	server.TeacherApp.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.DB))
+	server.TeacherApp.Post("/attendances", handlers.SaveAttendances(server.DB))
+	server.TeacherApp.Get("/attendances/year/:yearid", handlers.GetAttendances(server.DB))
+	server.TeacherApp.Post("/activities", handlers.SaveActivities(server.DB))
+	server.TeacherApp.Get("/activities/year/:yearid", handlers.GetActivities(server.DB))
+	server.TeacherApp.Post("/scores", handlers.SaveScores(server.DB))
+	server.TeacherApp.Get("/scores/year/:yearid", handlers.GetScores(server.DB))
 	server.AdminApp.Get("/teachers", handlers.GetTeachers(server.DB))
 	server.AdminApp.Get("/teacher/:id", handlers.GetTeacher(server.DB))
 	server.AdminApp.Post("/subscription", handlers.AddSubscription(server.DB, server.IDGenerator))
