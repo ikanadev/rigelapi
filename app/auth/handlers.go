@@ -1,24 +1,33 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/config"
 )
 
 type AuthHandler struct {
-	app      *fiber.App
-	authRepo AuthRepository
-	config   config.Config
+	app        *fiber.App
+	teacherApp fiber.Router
+	repo       AuthRepository
+	config     config.Config
 }
 
-func NewAuthHandler(app *fiber.App, repo AuthRepository, config config.Config) AuthHandler {
-	return AuthHandler{app, repo, config}
+func NewAuthHandler(
+	app *fiber.App,
+	teacherApp fiber.Router,
+	repo AuthRepository,
+	config config.Config,
+) AuthHandler {
+	return AuthHandler{app, teacherApp, repo, config}
 }
 
 func (ah *AuthHandler) handle() {
 	ah.app.Post("/signup", ah.HandleSignUp)
 	ah.app.Post("/signin", ah.HandleSignIn)
+	ah.teacherApp.Get("/profile", ah.HandleGetProfile)
 }
 
 func (ah *AuthHandler) HandleSignUp(ctx *fiber.Ctx) error {
@@ -27,7 +36,7 @@ func (ah *AuthHandler) HandleSignUp(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	err = ah.authRepo.Register(reqData.Name, reqData.LastName, reqData.Email, reqData.Password)
+	err = ah.repo.Register(reqData.Name, reqData.LastName, reqData.Email, reqData.Password)
 	if err != nil {
 		return err
 	}
@@ -40,7 +49,7 @@ func (ah *AuthHandler) HandleSignIn(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	teacher, token, err := ah.authRepo.GetTeacher(reqData.Email, reqData.Password)
+	teacher, token, err := ah.repo.GetTeacher(reqData.Email, reqData.Password)
 	if err != nil {
 		return err
 	}
@@ -48,6 +57,21 @@ func (ah *AuthHandler) HandleSignIn(ctx *fiber.Ctx) error {
 		Teacher: teacher,
 		JWT:     token,
 	})
+}
+
+func (ah *AuthHandler) HandleGetProfile(ctx *fiber.Ctx) error {
+	teacherID, ok := ctx.Locals("id").(string)
+	if !ok {
+		return errors.New("id not found in locals")
+	}
+	if len(teacherID) == 0 {
+		return errors.New("id is empty")
+	}
+	profile, err := ah.repo.GetProfile(teacherID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(profile)
 }
 
 type SignInReq struct {

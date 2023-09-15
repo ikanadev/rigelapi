@@ -2,28 +2,24 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/vmkevv/rigelapi/app/auth"
-	"github.com/vmkevv/rigelapi/app/class"
-	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/handlers"
-	"github.com/vmkevv/rigelapi/app/location"
-	"github.com/vmkevv/rigelapi/app/teacher"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/utils"
 )
 
 type Server struct {
-	db     *ent.Client
-	config config.Config
-	app    *fiber.App
-	newID  func() string
-	dbCtx  context.Context
+	DB           *ent.Client
+	Config       config.Config
+	App          *fiber.App
+	ProtectedApp fiber.Router
+	AdminApp     fiber.Router
+	IDGenerator  func() string
+	DBCtx        context.Context
 }
 type errMsg struct {
 	Message string `json:"message"`
@@ -60,57 +56,31 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 		db,
 		config,
 		app,
+		app.Group("/auth", authMiddleware(config)),
+		app.Group("/admin", authMiddleware(config), adminMiddleware(db)),
 		utils.NanoIDGenerator(),
 		dbCtx,
 	}
 }
 
-func (server Server) Run() error {
-	server.app.Use(cors.New())
-	// server.app.Use(logUserAgent())
-	protected := server.app.Group("/auth", authMiddleware(server.config))
-
-	auth.Start(server.app, server.db, server.dbCtx, server.config, server.newID)
-	location.Start(server.app, server.db, server.dbCtx)
-	extra.Start(server.app, protected, server.db, server.dbCtx)
-	// server.app.Post("/signup", handlers.SignUpHandler(server.db, server.newID))
-	// server.app.Post("/signin", handlers.SignInHandler(server.db, server.config))
-	// server.app.Get("/deps", handlers.DepsHandler(server.db))
-	// server.app.Get("/provs/dep/:depid", handlers.ProvsHandler(server.db))
-	// server.app.Get("/muns/prov/:provid", handlers.MunsHandler(server.db))
-	// server.app.Get("/schools/mun/:munid", handlers.SchoolsHandler(server.db))
-	// server.app.Get("/years", handlers.YearlyDataHandler(server.db))
-	// server.app.Get("/static", handlers.StaticDataHandler(server.db))
-	// server.app.Post("/errors", handlers.SaveAppErrors(server.db))
-	// server.app.Get("/stats", handlers.StatsHandler(server.db))
-	// server.app.Get("/class/:classid", handlers.ClassDetailsHandler(server.db))
-
-	teacher.Start(protected, server.db, server.dbCtx)
-	class.Start(server.app, protected, server.db, server.dbCtx)
-	// protected.Get("/profile", handlers.GetProfile(server.db))
-	// protected.Post("/parsexls", handlers.ParseXLS())
-	// protected.Get("/classes/year/:yearid", handlers.ClassListHandler(server.db))
-	protected.Post("/class", handlers.NewClassHandler(server.db, server.newID))
-	protected.Post("/students", handlers.SaveStudent(server.db))
-	protected.Get("/students/year/:yearid", handlers.GetStudents(server.db))
-	protected.Post("/classperiods", handlers.SaveClassPeriods(server.db))
-	protected.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.db))
-	protected.Post("/attendancedays", handlers.SaveAttendanceDays(server.db))
-	protected.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.db))
-	protected.Post("/attendances", handlers.SaveAttendances(server.db))
-	protected.Get("/attendances/year/:yearid", handlers.GetAttendances(server.db))
-	protected.Post("/activities", handlers.SaveActivities(server.db))
-	protected.Get("/activities/year/:yearid", handlers.GetActivities(server.db))
-	protected.Post("/scores", handlers.SaveScores(server.db))
-	protected.Get("/scores/year/:yearid", handlers.GetScores(server.db))
-
-	admin := server.app.Group("/admin", authMiddleware(server.config), adminMiddleware(server.db))
-
-	admin.Get("/teachers", handlers.GetTeachers(server.db))
-	admin.Get("/teacher/:id", handlers.GetTeacher(server.db))
-	admin.Post("/subscription", handlers.AddSubscription(server.db, server.newID))
-	admin.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.db))
-	admin.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.db))
-
-	return server.app.Listen(fmt.Sprintf("0.0.0.0:%s", server.config.App.Port))
+func (server Server) Run() {
+	server.App.Use(cors.New())
+	server.ProtectedApp.Post("/class", handlers.NewClassHandler(server.DB, server.IDGenerator))
+	server.ProtectedApp.Post("/students", handlers.SaveStudent(server.DB))
+	server.ProtectedApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
+	server.ProtectedApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
+	server.ProtectedApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))
+	server.ProtectedApp.Post("/attendancedays", handlers.SaveAttendanceDays(server.DB))
+	server.ProtectedApp.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.DB))
+	server.ProtectedApp.Post("/attendances", handlers.SaveAttendances(server.DB))
+	server.ProtectedApp.Get("/attendances/year/:yearid", handlers.GetAttendances(server.DB))
+	server.ProtectedApp.Post("/activities", handlers.SaveActivities(server.DB))
+	server.ProtectedApp.Get("/activities/year/:yearid", handlers.GetActivities(server.DB))
+	server.ProtectedApp.Post("/scores", handlers.SaveScores(server.DB))
+	server.ProtectedApp.Get("/scores/year/:yearid", handlers.GetScores(server.DB))
+	server.AdminApp.Get("/teachers", handlers.GetTeachers(server.DB))
+	server.AdminApp.Get("/teacher/:id", handlers.GetTeacher(server.DB))
+	server.AdminApp.Post("/subscription", handlers.AddSubscription(server.DB, server.IDGenerator))
+	server.AdminApp.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.DB))
+	server.AdminApp.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.DB))
 }

@@ -2,13 +2,28 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app"
+	"github.com/vmkevv/rigelapi/app/auth"
+	"github.com/vmkevv/rigelapi/app/class"
+	"github.com/vmkevv/rigelapi/app/extra"
+	"github.com/vmkevv/rigelapi/app/location"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/database"
 )
+
+func setupServer(server app.Server) error {
+	server.App.Use(cors.New())
+	auth.Setup(server)
+	class.Setup(server)
+	extra.Setup(server)
+	location.Setup(server)
+	return nil
+}
 
 func main() {
 	config := config.GetConfig()
@@ -25,7 +40,9 @@ func main() {
 	logger := log.New(file, "", log.LstdFlags)
 
 	server := app.NewServer(entClient, config, logger, dbCtx)
-	err = server.Run()
+	setupServer(server)
+	server.Run()
+	err = server.App.Listen(fmt.Sprintf("0.0.0.0:%s", server.Config.App.Port))
 	if err != nil {
 		log.Fatalf("Error starting fiber: %v", err)
 	}

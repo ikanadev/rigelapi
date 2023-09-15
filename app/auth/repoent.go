@@ -89,3 +89,42 @@ func (aer AuthEntRepo) GetTeacher(email, password string) (models.TeacherWithSub
 	teacherRes = common.BuildTeacherProfile(entTeacher)
 	return teacherRes, tokenStr, nil
 }
+
+// GetProfile implements AuthRepository
+func (aer AuthEntRepo) GetProfile(teacherID string) (models.TeacherWithSubs, error) {
+	var profile models.TeacherWithSubs
+	entTeacher, err := aer.ent.Teacher.
+		Query().
+		Where(teacher.ID(teacherID)).
+		WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+			sq.WithYear()
+			sq.Order(ent.Asc(subscription.FieldDate))
+		}).
+		First(aer.ctx)
+	if err != nil {
+		return profile, err
+	}
+	profile.Teacher = models.Teacher{
+		ID:       entTeacher.ID,
+		Name:     entTeacher.Name,
+		LastName: entTeacher.LastName,
+		Email:    entTeacher.Email,
+		IsAdmin:  entTeacher.IsAdmin,
+	}
+	profile.Subscriptions = make([]models.SubWithYear, len(entTeacher.Edges.Subscriptions))
+	for i, sub := range entTeacher.Edges.Subscriptions {
+		profile.Subscriptions[i] = models.SubWithYear{
+			Subscription: models.Subscription{
+				ID:     sub.ID,
+				Method: sub.Method,
+				Qtty:   sub.Qtty,
+				Date:   sub.Date.UnixMilli(),
+			},
+			Year: models.Year{
+				ID:    sub.Edges.Year.ID,
+				Value: sub.Edges.Year.Value,
+			},
+		}
+	}
+	return profile, nil
+}
