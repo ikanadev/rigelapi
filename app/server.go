@@ -53,13 +53,13 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 		},
 	})
 	return Server{
-		db,
-		config,
-		app,
-		app.Group("/auth", authMiddleware(config)),
-		app.Group("/admin", authMiddleware(config), adminMiddleware(db)),
-		utils.NanoIDGenerator(),
-		dbCtx,
+		DB:          db,
+		Config:      config,
+		App:         app,
+		TeacherApp:  app.Group("/auth", authMiddleware(config)),
+		AdminApp:    app.Group("/admin", authMiddleware(config), adminMiddleware(db)),
+		IDGenerator: utils.NanoIDGenerator(),
+		DBCtx:       dbCtx,
 	}
 }
 

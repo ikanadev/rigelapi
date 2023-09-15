@@ -4,6 +4,8 @@ import (
 	"context"
 	"math"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/vmkevv/rigelapi/app/common"
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
@@ -11,17 +13,19 @@ import (
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/student"
+	"github.com/vmkevv/rigelapi/ent/subscription"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
 )
 
 type ClassEntRepo struct {
-	ent *ent.Client
-	ctx context.Context
+	ent         *ent.Client
+	ctx         context.Context
+	idGenerator func() string
 }
 
-func NewClassEntRepo(ent *ent.Client, ctx context.Context) ClassEntRepo {
-	return ClassEntRepo{ent, ctx}
+func NewClassEntRepo(ent *ent.Client, ctx context.Context, idGenerator func() string) ClassEntRepo {
+	return ClassEntRepo{ent, ctx, idGenerator}
 }
 
 func (cer ClassEntRepo) GetTeacherClasses(
@@ -55,6 +59,42 @@ func (cer ClassEntRepo) GetTeacherClasses(
 		classesData[i] = entClassToClassData(class)
 	}
 	return classesData, nil
+}
+
+func (cer ClassEntRepo) SaveClass(data NewClassData) error {
+	limit := 4
+	teacherDB, err := cer.ent.Teacher.Query().
+		WithSubscriptions(func(sq *ent.SubscriptionQuery) {
+			sq.Where(subscription.HasYearWith(year.IDEQ(data.YearID)))
+		}).
+		WithClasses(func(cq *ent.ClassQuery) {
+			cq.Where(class.HasYearWith(year.IDEQ(data.YearID)))
+		}).
+		Where(teacher.IDEQ(data.TeacherID)).
+		First(cer.ctx)
+	if err != nil {
+		return err
+	}
+	if len(teacherDB.Edges.Subscriptions) > 0 {
+		limit = 20
+	}
+	if len(teacherDB.Edges.Classes) >= limit {
+		return common.NewClientErr(
+			fiber.StatusMethodNotAllowed,
+			"Lo sentimos, ha alcanzado el límite máximo de materias creadas.",
+		)
+	}
+	_, err = cer.ent.Class.
+		Create().
+		SetID(cer.idGenerator()).
+		SetTeacherID(data.TeacherID).
+		SetGradeID(data.GradeID).
+		SetSubjectID(data.SubjectID).
+		SetSchoolID(data.SchoolID).
+		SetYearID(data.YearID).
+		SetParallel(data.Parallel).
+		Save(cer.ctx)
+	return err
 }
 
 func (cer ClassEntRepo) GetClassData(classID string) (models.ClassData, error) {
