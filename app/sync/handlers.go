@@ -15,19 +15,10 @@ func NewSyncHandler(teacherApp fiber.Router, repo SyncRepository) SyncHandler {
 }
 
 func (sh *SyncHandler) handle() {
-	sh.teacherApp.Post("/students", sh.handleSyncStudents)
 	sh.teacherApp.Get("/students/year/:yearid", sh.handleGetStudents)
+	sh.teacherApp.Post("/students", sh.handleSyncStudents)
 	sh.teacherApp.Get("/classperiods/year/:yearid", sh.handleGetClassPeriods)
-}
-
-func (sh *SyncHandler) handleSyncStudents(ctx *fiber.Ctx) error {
-	var students []common.StudentTx
-	err := ctx.BodyParser(&students)
-	if err != nil {
-		return err
-	}
-	err = sh.repo.SyncStudents(students)
-	return err
+	sh.teacherApp.Post("/classperiods", sh.handleSyncClassPeriods)
 }
 
 func (sh *SyncHandler) handleGetStudents(ctx *fiber.Ctx) error {
@@ -43,6 +34,19 @@ func (sh *SyncHandler) handleGetStudents(ctx *fiber.Ctx) error {
 	return ctx.JSON(students)
 }
 
+func (sh *SyncHandler) handleSyncStudents(ctx *fiber.Ctx) error {
+	var students []common.StudentTx
+	err := ctx.BodyParser(&students)
+	if err != nil {
+		return err
+	}
+	err = sh.repo.SyncStudents(students)
+	if err != nil {
+		return err
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
 func (sh *SyncHandler) handleGetClassPeriods(ctx *fiber.Ctx) error {
 	teacherID, ok := ctx.Locals("id").(string)
 	if !ok || len(teacherID) == 0 {
@@ -54,4 +58,17 @@ func (sh *SyncHandler) handleGetClassPeriods(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.JSON(classPeriods)
+}
+
+func (sh *SyncHandler) handleSyncClassPeriods(ctx *fiber.Ctx) error {
+	var classPeriods []common.ClassPeriodTx
+	err := ctx.BodyParser(&classPeriods)
+	if err != nil {
+		return err
+	}
+	err = sh.repo.SyncClassPeriods(classPeriods)
+	if err != nil {
+		return err
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
 }

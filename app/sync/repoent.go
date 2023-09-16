@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"time"
 
 	"github.com/vmkevv/rigelapi/app/common"
 	"github.com/vmkevv/rigelapi/app/models"
@@ -51,7 +52,6 @@ func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.Student, 
 	return students, nil
 }
 
-// SyncStudents implements SyncRepository
 func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
 	tx, err := ser.ent.Tx(ser.ctx)
 	if err != nil {
@@ -120,10 +120,7 @@ func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
 		return common.RollbackTx(tx, err)
 	}
 	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (ser SyncEntRepo) GetClassPeriods(
@@ -159,4 +156,55 @@ func (ser SyncEntRepo) GetClassPeriods(
 		}
 	}
 	return classPeriods, nil
+}
+
+func (ser SyncEntRepo) SyncClassPeriods(classPeriodTxs []common.ClassPeriodTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.ClassPeriodCreate{}
+	toUpdate := []models.ClassPeriod{}
+	for _, cp := range classPeriodTxs {
+		switch cp.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.ClassPeriod.
+						Create().
+						SetID(cp.Data.ID).
+						SetStart(time.UnixMilli(cp.Data.Start)).
+						SetEnd(time.UnixMilli(cp.Data.End)).
+						SetFinished(cp.Data.Finished).
+						SetClassID(cp.Data.ClassID).
+						SetPeriodID(cp.Data.Period.ID),
+				)
+			}
+		case common.Update:
+			{
+				toUpdate = append(toUpdate, cp.Data)
+			}
+		}
+	}
+	// Add class periods
+	err = tx.ClassPeriod.CreateBulk(toAdd...).
+		OnConflictColumns(classperiod.FieldID).
+		Ignore().
+		Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Update class periods
+	for _, cp := range toUpdate {
+		_, err := tx.ClassPeriod.UpdateOneID(cp.ID).
+			SetFinished(cp.Finished).
+			SetEnd(time.UnixMilli(cp.End)).
+			Save(ser.ctx)
+		if err != nil {
+			return common.RollbackTx(tx, err)
+		}
+	}
+	err = tx.Commit()
+	return err
 }

@@ -32,3 +32,8 @@ type StudentTx struct {
 	BaseTx
 	Data models.Student `json:"data"`
 }
+
+type ClassPeriodTx struct {
+	BaseTx
+	Data models.ClassPeriod `json:"data"`
+}
