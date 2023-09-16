@@ -24,6 +24,7 @@ func NewClassHandler(
 func (ch *ClassHandler) handle() {
 	ch.app.Get("/class/:classid", ch.HandleClassDetails)
 	ch.teacherApp.Get("/classes/year/:yearid", ch.HandleTeacherClasses)
+	ch.teacherApp.Post("/class", ch.HandleSaveClass)
 }
 
 func (ch *ClassHandler) HandleClassDetails(ctx *fiber.Ctx) error {
@@ -60,6 +61,42 @@ func (ch *ClassHandler) HandleTeacherClasses(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.JSON(classes)
+}
+
+func (ch *ClassHandler) HandleSaveClass(ctx *fiber.Ctx) error {
+	teacherID, ok := ctx.Locals("id").(string)
+	var reqData SaveClassReq
+	if !ok || len(teacherID) == 0 {
+		return errors.New("Cannot read string ID from context or it is empty")
+	}
+	err := ctx.BodyParser(&reqData)
+	if err != nil {
+		return err
+	}
+	err = ch.repo.SaveClass(NewClassData{
+		YearID:    reqData.YearID,
+		TeacherID: teacherID,
+		GradeID:   reqData.GradeID,
+		SubjectID: reqData.SubjectID,
+		SchoolID:  reqData.SchoolID,
+		Parallel:  reqData.Parallel,
+	})
+	if err != nil {
+		return err
+	}
+	classes, err := ch.repo.GetTeacherClasses(teacherID, reqData.YearID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(classes)
+}
+
+type SaveClassReq struct {
+	GradeID   string `json:"gradeId"`
+	SubjectID string `json:"subjectId"`
+	SchoolID  string `json:"schoolId"`
+	YearID    string `json:"yearId"`
+	Parallel  string `json:"parallel"`
 }
 
 type ClassDetailsResp struct {

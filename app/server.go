@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/vmkevv/rigelapi/app/common"
 	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
@@ -30,7 +31,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 			msg := "Unespected internal server error"
-			if err, ok := err.(handlers.ClientErr); ok {
+			if err, ok := err.(common.ClientErr); ok {
 				code = err.Status
 				msg = err.Error()
 			}
@@ -52,6 +53,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 			return c.Status(code).JSON(errMsg{Message: msg})
 		},
 	})
+	app.Use(cors.New())
 	return Server{
 		DB:          db,
 		Config:      config,
@@ -65,7 +67,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 
 func (server Server) Run() {
 	server.App.Use(cors.New())
-	server.TeacherApp.Post("/class", handlers.NewClassHandler(server.DB, server.IDGenerator))
+	// server.TeacherApp.Post("/class", handlers.NewClassHandler(server.DB, server.IDGenerator))
 	server.TeacherApp.Post("/students", handlers.SaveStudent(server.DB))
 	server.TeacherApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
 	server.TeacherApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
