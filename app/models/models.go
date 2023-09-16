@@ -173,3 +173,16 @@ type Student struct {
 	CI       string `json:"ci"`
 	ClassID  string `json:"class_id"`
 }
+
+type ClassPeriodPeriod struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+type ClassPeriod struct {
+	ID       string            `json:"id"`
+	Finished bool              `json:"finished"`
+	Start    int64             `json:"start"`
+	End      int64             `json:"end"`
+	Period   ClassPeriodPeriod `json:"period"`
+	ClassID  string            `json:"class_id"`
+}

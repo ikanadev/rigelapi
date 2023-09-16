@@ -8,6 +8,7 @@ import (
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/score"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/teacher"
@@ -123,4 +124,39 @@ func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
 		return err
 	}
 	return nil
+}
+
+func (ser SyncEntRepo) GetClassPeriods(
+	teacherID string,
+	yearID string,
+) ([]models.ClassPeriod, error) {
+	entClassPeriods, err := ser.ent.ClassPeriod.
+		Query().
+		Where(
+			classperiod.HasClassWith(
+				class.HasYearWith(year.IDEQ(yearID)),
+				class.HasTeacherWith(teacher.IDEQ(teacherID)),
+			),
+		).
+		WithClass().
+		WithPeriod().
+		All(ser.ctx)
+	if err != nil {
+		return nil, err
+	}
+	classPeriods := make([]models.ClassPeriod, len(entClassPeriods))
+	for i, cp := range entClassPeriods {
+		classPeriods[i] = models.ClassPeriod{
+			ID:       cp.ID,
+			Finished: cp.Finished,
+			Start:    cp.Start.UnixMilli(),
+			End:      cp.End.UnixMilli(),
+			ClassID:  cp.Edges.Class.ID,
+			Period: models.ClassPeriodPeriod{
+				ID:   cp.Edges.Period.ID,
+				Name: cp.Edges.Period.Name,
+			},
+		}
+	}
+	return classPeriods, nil
 }

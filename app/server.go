@@ -70,7 +70,7 @@ func (server Server) Run() {
 	// server.TeacherApp.Post("/students", handlers.SaveStudent(server.DB))
 	// server.TeacherApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
 	server.TeacherApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
-	server.TeacherApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))
+	// server.TeacherApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))
 	server.TeacherApp.Post("/attendancedays", handlers.SaveAttendanceDays(server.DB))
 	server.TeacherApp.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.DB))
 	server.TeacherApp.Post("/attendances", handlers.SaveAttendances(server.DB))
