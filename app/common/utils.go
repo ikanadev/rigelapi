@@ -1,10 +1,21 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 )
+
+/* rollback a transaction */
+
+func RollbackTx(tx *ent.Tx, err error) error {
+	if rerr := tx.Rollback(); rerr != nil {
+		err = fmt.Errorf("%w: %v", err, rerr)
+	}
+	return err
+}
 
 func GenClaims(ID string) AppClaims {
 	return AppClaims{

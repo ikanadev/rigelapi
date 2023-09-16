@@ -3,9 +3,12 @@ package sync
 import (
 	"context"
 
+	"github.com/vmkevv/rigelapi/app/common"
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/class"
+	"github.com/vmkevv/rigelapi/ent/score"
 	"github.com/vmkevv/rigelapi/ent/student"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -45,4 +48,79 @@ func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.Student, 
 		}
 	}
 	return students, nil
+}
+
+// SyncStudents implements SyncRepository
+func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.StudentCreate{}
+	toUpdate := []models.Student{}
+	toDelete := []string{}
+	for _, studentTx := range studentTxs {
+		switch studentTx.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.Student.Create().
+						SetID(studentTx.Data.ID).
+						SetName(studentTx.Data.Name).
+						SetLastName(studentTx.Data.LastName).
+						SetCi(studentTx.Data.CI).
+						SetClassID(studentTx.Data.ClassID),
+				)
+			}
+		case common.Update:
+			{
+				toUpdate = append(toUpdate, studentTx.Data)
+			}
+		case common.Delete:
+			{
+				toDelete = append(toDelete, studentTx.Data.ID)
+			}
+		}
+	}
+	// Add students
+	err = tx.Student.CreateBulk(toAdd...).OnConflictColumns(student.FieldID).Ignore().Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Update Students
+	for _, st := range toUpdate {
+		_, err := tx.Student.UpdateOneID(st.ID).
+			SetName(st.Name).
+			SetLastName(st.LastName).
+			SetCi(st.CI).
+			Save(ser.ctx)
+		if err != nil {
+			return common.RollbackTx(tx, err)
+		}
+	}
+	// Delete student attendances
+	_, err = tx.Attendance.Delete().Where(
+		attendance.HasStudentWith(student.IDIn(toDelete...)),
+	).Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Delete student scores
+	_, err = tx.Score.Delete().Where(
+		score.HasStudentWith(student.IDIn(toDelete...)),
+	).Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Delete Students
+	_, err = tx.Student.Delete().Where(student.IDIn(toDelete...)).Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }

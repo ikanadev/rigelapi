@@ -67,7 +67,7 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 
 func (server Server) Run() {
 	server.App.Use(cors.New())
-	server.TeacherApp.Post("/students", handlers.SaveStudent(server.DB))
+	// server.TeacherApp.Post("/students", handlers.SaveStudent(server.DB))
 	// server.TeacherApp.Get("/students/year/:yearid", handlers.GetStudents(server.DB))
 	server.TeacherApp.Post("/classperiods", handlers.SaveClassPeriods(server.DB))
 	server.TeacherApp.Get("/classperiods/year/:yearid", handlers.GetClassPeriods(server.DB))

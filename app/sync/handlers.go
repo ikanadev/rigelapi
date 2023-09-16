@@ -2,6 +2,7 @@ package sync
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/vmkevv/rigelapi/app/common"
 )
 
 type SyncHandler struct {
@@ -14,7 +15,18 @@ func NewSyncHandler(teacherApp fiber.Router, repo SyncRepository) SyncHandler {
 }
 
 func (sh *SyncHandler) handle() {
+	sh.teacherApp.Post("/students", sh.handleSyncStudents)
 	sh.teacherApp.Get("/students/year/:yearid", sh.handleGetStudents)
+}
+
+func (sh *SyncHandler) handleSyncStudents(ctx *fiber.Ctx) error {
+	var students []common.StudentTx
+	err := ctx.BodyParser(&students)
+	if err != nil {
+		return err
+	}
+	err = sh.repo.SyncStudents(students)
+	return err
 }
 
 func (sh *SyncHandler) handleGetStudents(ctx *fiber.Ctx) error {
