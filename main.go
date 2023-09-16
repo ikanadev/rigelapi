@@ -6,22 +6,22 @@ import (
 	"log"
 	"os"
 
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app"
 	"github.com/vmkevv/rigelapi/app/auth"
 	"github.com/vmkevv/rigelapi/app/class"
 	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/location"
+	"github.com/vmkevv/rigelapi/app/sync"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/database"
 )
 
 func setupServer(server app.Server) error {
-	server.App.Use(cors.New())
 	auth.Setup(server)
 	class.Setup(server)
 	extra.Setup(server)
 	location.Setup(server)
+	sync.Setup(server)
 	return nil
 }
 

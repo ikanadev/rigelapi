@@ -165,3 +165,11 @@ type ClassPeriodData struct {
 	Areas          []AreaWithActivities `json:"areas"`
 	AttendanceDays []AttendanceDay      `json:"attendance_days"`
 }
+
+type Student struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	LastName string `json:"last_name"`
+	CI       string `json:"ci"`
+	ClassID  string `json:"class_id"`
+}
