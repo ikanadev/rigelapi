@@ -42,3 +42,8 @@ type AppAttendanceDayTx struct {
 	BaseTx
 	Data models.AppAttendanceDay `json:"data"`
 }
+
+type AppAttendanceTx struct {
+	BaseTx
+	Data models.AppAttendance `json:"data"`
+}

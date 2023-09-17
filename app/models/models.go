@@ -192,3 +192,10 @@ type AppAttendanceDay struct {
 	Day           int64  `json:"day"`
 	ClassPeriodID string `json:"class_period_id"`
 }
+
+type AppAttendance struct {
+	ID              string           `json:"id"`
+	Value           attendance.Value `json:"value"`
+	StudentID       string           `json:"student_id"`
+	AttendanceDayID string           `json:"attendance_day_id"`
+}

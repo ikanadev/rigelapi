@@ -267,3 +267,80 @@ func (ser SyncEntRepo) SyncAttendanceDays(attendanceDayTxs []common.AppAttendanc
 	}
 	return tx.Commit()
 }
+
+func (ser SyncEntRepo) GetAttendances(
+	teacherID string,
+	yearID string,
+) ([]models.AppAttendance, error) {
+	entAtts, err := ser.ent.Attendance.Query().
+		Where(
+			attendance.HasAttendanceDayWith(
+				attendanceday.HasClassPeriodWith(
+					classperiod.HasClassWith(
+						class.HasYearWith(year.IDEQ(yearID)),
+						class.HasTeacherWith(teacher.IDEQ(teacherID)),
+					),
+				),
+			),
+		).
+		WithStudent().
+		WithAttendanceDay().
+		All(ser.ctx)
+	if err != nil {
+		return nil, err
+	}
+	atts := make([]models.AppAttendance, len(entAtts))
+	for i, att := range entAtts {
+		atts[i] = models.AppAttendance{
+			ID:              att.ID,
+			Value:           att.Value,
+			StudentID:       att.Edges.Student.ID,
+			AttendanceDayID: att.Edges.AttendanceDay.ID,
+		}
+	}
+	return atts, nil
+}
+
+func (ser SyncEntRepo) SyncAttendances(attendanceTxs []common.AppAttendanceTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.AttendanceCreate{}
+	toUpdate := []models.AppAttendance{}
+	for _, att := range attendanceTxs {
+		switch att.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.Attendance.Create().
+						SetID(att.Data.ID).
+						SetValue(att.Data.Value).
+						SetStudentID(att.Data.StudentID).
+						SetAttendanceDayID(att.Data.AttendanceDayID),
+				)
+			}
+		case common.Update:
+			{
+				toUpdate = append(toUpdate, att.Data)
+			}
+		}
+	}
+	// Add attendances
+	err = tx.Attendance.CreateBulk(toAdd...).
+		OnConflictColumns(attendance.FieldID).
+		Ignore().
+		Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Update attendances
+	for _, att := range toUpdate {
+		_, err := tx.Attendance.UpdateOneID(att.ID).SetValue(att.Value).Save(ser.ctx)
+		if err != nil {
+			return common.RollbackTx(tx, err)
+		}
+	}
+	return tx.Commit()
+}
