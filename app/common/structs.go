@@ -28,12 +28,17 @@ type BaseTx struct {
 	Type     DBOperation `json:"type"`
 }
 
-type StudentTx struct {
+type AppStudentTx struct {
 	BaseTx
-	Data models.Student `json:"data"`
+	Data models.AppStudent `json:"data"`
 }
 
-type ClassPeriodTx struct {
+type AppClassPeriodTx struct {
 	BaseTx
-	Data models.ClassPeriod `json:"data"`
+	Data models.AppClassPeriod `json:"data"`
+}
+
+type AppAttendanceDayTx struct {
+	BaseTx
+	Data models.AppAttendanceDay `json:"data"`
 }

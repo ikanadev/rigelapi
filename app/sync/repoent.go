@@ -8,6 +8,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/ent/attendance"
+	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/class"
 	"github.com/vmkevv/rigelapi/ent/classperiod"
 	"github.com/vmkevv/rigelapi/ent/score"
@@ -25,7 +26,7 @@ func NewSyncEntRepo(ent *ent.Client, ctx context.Context) SyncEntRepo {
 	return SyncEntRepo{ent, ctx}
 }
 
-func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.Student, error) {
+func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.AppStudent, error) {
 	entStudents, err := ser.ent.Student.
 		Query().
 		Where(
@@ -39,9 +40,9 @@ func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.Student, 
 	if err != nil {
 		return nil, err
 	}
-	students := make([]models.Student, len(entStudents))
+	students := make([]models.AppStudent, len(entStudents))
 	for i, student := range entStudents {
-		students[i] = models.Student{
+		students[i] = models.AppStudent{
 			ID:       student.ID,
 			Name:     student.Name,
 			LastName: student.LastName,
@@ -52,13 +53,13 @@ func (ser SyncEntRepo) GetStudents(teacherID, yearID string) ([]models.Student, 
 	return students, nil
 }
 
-func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
+func (ser SyncEntRepo) SyncStudents(studentTxs []common.AppStudentTx) error {
 	tx, err := ser.ent.Tx(ser.ctx)
 	if err != nil {
 		return err
 	}
 	toAdd := []*ent.StudentCreate{}
-	toUpdate := []models.Student{}
+	toUpdate := []models.AppStudent{}
 	toDelete := []string{}
 	for _, studentTx := range studentTxs {
 		switch studentTx.Type {
@@ -119,14 +120,13 @@ func (ser SyncEntRepo) SyncStudents(studentTxs []common.StudentTx) error {
 	if err != nil {
 		return common.RollbackTx(tx, err)
 	}
-	err = tx.Commit()
-	return err
+	return tx.Commit()
 }
 
 func (ser SyncEntRepo) GetClassPeriods(
 	teacherID string,
 	yearID string,
-) ([]models.ClassPeriod, error) {
+) ([]models.AppClassPeriod, error) {
 	entClassPeriods, err := ser.ent.ClassPeriod.
 		Query().
 		Where(
@@ -141,9 +141,9 @@ func (ser SyncEntRepo) GetClassPeriods(
 	if err != nil {
 		return nil, err
 	}
-	classPeriods := make([]models.ClassPeriod, len(entClassPeriods))
+	classPeriods := make([]models.AppClassPeriod, len(entClassPeriods))
 	for i, cp := range entClassPeriods {
-		classPeriods[i] = models.ClassPeriod{
+		classPeriods[i] = models.AppClassPeriod{
 			ID:       cp.ID,
 			Finished: cp.Finished,
 			Start:    cp.Start.UnixMilli(),
@@ -158,13 +158,13 @@ func (ser SyncEntRepo) GetClassPeriods(
 	return classPeriods, nil
 }
 
-func (ser SyncEntRepo) SyncClassPeriods(classPeriodTxs []common.ClassPeriodTx) error {
+func (ser SyncEntRepo) SyncClassPeriods(classPeriodTxs []common.AppClassPeriodTx) error {
 	tx, err := ser.ent.Tx(ser.ctx)
 	if err != nil {
 		return err
 	}
 	toAdd := []*ent.ClassPeriodCreate{}
-	toUpdate := []models.ClassPeriod{}
+	toUpdate := []models.AppClassPeriod{}
 	for _, cp := range classPeriodTxs {
 		switch cp.Type {
 		case common.Insert:
@@ -205,6 +205,65 @@ func (ser SyncEntRepo) SyncClassPeriods(classPeriodTxs []common.ClassPeriodTx) e
 			return common.RollbackTx(tx, err)
 		}
 	}
-	err = tx.Commit()
-	return err
+	return tx.Commit()
+}
+
+func (ser SyncEntRepo) GetAttendanceDays(
+	teacherID string,
+	yearID string,
+) ([]models.AppAttendanceDay, error) {
+	entAttDays, err := ser.ent.AttendanceDay.Query().
+		Where(
+			attendanceday.HasClassPeriodWith(
+				classperiod.HasClassWith(
+					class.HasYearWith(year.IDEQ(yearID)),
+					class.HasTeacherWith(teacher.IDEQ(teacherID)),
+				),
+			),
+		).
+		WithClassPeriod().
+		All(ser.ctx)
+	if err != nil {
+		return nil, err
+	}
+	attDays := make([]models.AppAttendanceDay, len(entAttDays))
+	for i, attDay := range entAttDays {
+		attDays[i] = models.AppAttendanceDay{
+			ID:            attDay.ID,
+			Day:           attDay.Day.UnixMilli(),
+			ClassPeriodID: attDay.Edges.ClassPeriod.ID,
+		}
+	}
+	return attDays, nil
+}
+
+func (ser SyncEntRepo) SyncAttendanceDays(attendanceDayTxs []common.AppAttendanceDayTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.AttendanceDayCreate{}
+	for _, attDay := range attendanceDayTxs {
+		switch attDay.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.AttendanceDay.Create().
+						SetID(attDay.Data.ID).
+						SetDay(time.UnixMilli(attDay.Data.Day)).
+						SetClassPeriodID(attDay.Data.ClassPeriodID),
+				)
+			}
+		}
+	}
+	// Add attendance day
+	err = tx.AttendanceDay.CreateBulk(toAdd...).
+		OnConflictColumns(attendanceday.FieldID).
+		Ignore().
+		Exec(ser.ctx)
+	if err != nil {
+		common.RollbackTx(tx, err)
+	}
+	return tx.Commit()
 }

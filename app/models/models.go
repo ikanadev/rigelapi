@@ -166,7 +166,7 @@ type ClassPeriodData struct {
 	AttendanceDays []AttendanceDay      `json:"attendance_days"`
 }
 
-type Student struct {
+type AppStudent struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	LastName string `json:"last_name"`
@@ -178,11 +178,17 @@ type ClassPeriodPeriod struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
-type ClassPeriod struct {
+type AppClassPeriod struct {
 	ID       string            `json:"id"`
 	Finished bool              `json:"finished"`
 	Start    int64             `json:"start"`
 	End      int64             `json:"end"`
 	Period   ClassPeriodPeriod `json:"period"`
 	ClassID  string            `json:"class_id"`
+}
+
+type AppAttendanceDay struct {
+	ID            string `json:"id"`
+	Day           int64  `json:"day"`
+	ClassPeriodID string `json:"class_period_id"`
 }

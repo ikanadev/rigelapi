@@ -6,8 +6,10 @@ import (
 )
 
 type SyncRepository interface {
-	GetStudents(teacherID, yearID string) ([]models.Student, error)
-	SyncStudents(studentTxs []common.StudentTx) error
-	GetClassPeriods(teacherID, yearID string) ([]models.ClassPeriod, error)
-	SyncClassPeriods(classPeriodTxs []common.ClassPeriodTx) error
+	GetStudents(teacherID, yearID string) ([]models.AppStudent, error)
+	SyncStudents(studentTxs []common.AppStudentTx) error
+	GetClassPeriods(teacherID, yearID string) ([]models.AppClassPeriod, error)
+	SyncClassPeriods(classPeriodTxs []common.AppClassPeriodTx) error
+	GetAttendanceDays(teacherID, yearID string) ([]models.AppAttendanceDay, error)
+	SyncAttendanceDays(attendanceDayTxs []common.AppAttendanceDayTx) error
 }
