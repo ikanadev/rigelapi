@@ -378,14 +378,14 @@ func (ser SyncEntRepo) GetActivities(
 	return activities, nil
 }
 
-func (ser SyncEntRepo) SyncActivities(activityTx []common.AppActivityTx) error {
+func (ser SyncEntRepo) SyncActivities(activityTxs []common.AppActivityTx) error {
 	tx, err := ser.ent.Tx(ser.ctx)
 	if err != nil {
 		return err
 	}
 	toAdd := []*ent.ActivityCreate{}
 	toUpdate := []models.AppActivity{}
-	for _, act := range activityTx {
+	for _, act := range activityTxs {
 		switch act.Type {
 		case common.Insert:
 			{
@@ -413,6 +413,77 @@ func (ser SyncEntRepo) SyncActivities(activityTx []common.AppActivityTx) error {
 	// Update activities
 	for _, act := range toUpdate {
 		_, err := tx.Activity.UpdateOneID(act.ID).SetName(act.Name).SetAreaID(act.AreaId).Save(ser.ctx)
+		if err != nil {
+			return common.RollbackTx(tx, err)
+		}
+	}
+	return tx.Commit()
+}
+
+func (ser SyncEntRepo) GetScores(teacherID string, yearID string) ([]models.AppScore, error) {
+	entScores, err := ser.ent.Score.Query().
+		Where(
+			score.HasActivityWith(
+				activity.HasClassPeriodWith(
+					classperiod.HasClassWith(
+						class.HasTeacherWith(teacher.IDEQ(teacherID)),
+						class.HasYearWith(year.IDEQ(yearID)),
+					),
+				),
+			),
+		).
+		WithActivity().
+		WithStudent().
+		All(ser.ctx)
+	if err != nil {
+		return nil, err
+	}
+	scores := make([]models.AppScore, len(entScores))
+	for i, score := range entScores {
+		scores[i] = models.AppScore{
+			ID:         score.ID,
+			StudentId:  score.Edges.Student.ID,
+			ActivityId: score.Edges.Activity.ID,
+			Points:     score.Points,
+		}
+	}
+	return scores, nil
+}
+
+func (ser SyncEntRepo) SyncScores(scoreTxs []common.AppScoreTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.ScoreCreate{}
+	toUpdate := []models.AppScore{}
+	for _, score := range scoreTxs {
+		switch score.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.Score.Create().
+						SetID(score.Data.ID).
+						SetPoints(score.Data.Points).
+						SetStudentID(score.Data.StudentId).
+						SetActivityID(score.Data.ActivityId),
+				)
+			}
+		case common.Update:
+			{
+				toUpdate = append(toUpdate, score.Data)
+			}
+		}
+	}
+	// Add scores
+	err = tx.Score.CreateBulk(toAdd...).OnConflictColumns(score.FieldID).Ignore().Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Update scores
+	for _, score := range toUpdate {
+		_, err := tx.Score.UpdateOneID(score.ID).SetPoints(score.Points).Save(ser.ctx)
 		if err != nil {
 			return common.RollbackTx(tx, err)
 		}

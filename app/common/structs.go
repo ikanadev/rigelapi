@@ -52,3 +52,8 @@ type AppActivityTx struct {
 	BaseTx
 	Data models.AppActivity `json:"data"`
 }
+
+type AppScoreTx struct {
+	BaseTx
+	Data models.AppScore `json:"data"`
+}

@@ -15,5 +15,7 @@ type SyncRepository interface {
 	GetAttendances(teacherID, yearID string) ([]models.AppAttendance, error)
 	SyncAttendances(attendanceTxs []common.AppAttendanceTx) error
 	GetActivities(teacherID, yearID string) ([]models.AppActivity, error)
-	SyncActivities(activityTx []common.AppActivityTx) error
+	SyncActivities(activityTxs []common.AppActivityTx) error
+	GetScores(teacherID, yearID string) ([]models.AppScore, error)
+	SyncScores(scoreTxs []common.AppScoreTx) error
 }

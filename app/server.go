@@ -67,14 +67,6 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 
 func (server Server) Run() {
 	server.App.Use(cors.New())
-	// server.TeacherApp.Post("/attendancedays", handlers.SaveAttendanceDays(server.DB))
-	// server.TeacherApp.Get("/attendancedays/year/:yearid", handlers.GetAttendanceDays(server.DB))
-	// server.TeacherApp.Post("/attendances", handlers.SaveAttendances(server.DB))
-	// server.TeacherApp.Get("/attendances/year/:yearid", handlers.GetAttendances(server.DB))
-	// server.TeacherApp.Post("/activities", handlers.SaveActivities(server.DB))
-	// server.TeacherApp.Get("/activities/year/:yearid", handlers.GetActivities(server.DB))
-	server.TeacherApp.Post("/scores", handlers.SaveScores(server.DB))
-	server.TeacherApp.Get("/scores/year/:yearid", handlers.GetScores(server.DB))
 	server.AdminApp.Get("/teachers", handlers.GetTeachers(server.DB))
 	server.AdminApp.Get("/teacher/:id", handlers.GetTeacher(server.DB))
 	server.AdminApp.Post("/subscription", handlers.AddSubscription(server.DB, server.IDGenerator))

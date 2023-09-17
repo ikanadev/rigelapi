@@ -207,3 +207,10 @@ type AppActivity struct {
 	AreaId        string `json:"area_id"`
 	Date          int64  `json:"date"`
 }
+
+type AppScore struct {
+	ID         string `json:"id"`
+	StudentId  string `json:"student_id"`
+	ActivityId string `json:"activity_id"`
+	Points     int    `json:"points"`
+}
