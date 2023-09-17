@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/vmkevv/rigelapi/app/common"
-	"github.com/vmkevv/rigelapi/app/handlers"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/ent"
 	"github.com/vmkevv/rigelapi/utils"
@@ -63,11 +62,4 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 		IDGenerator: utils.NanoIDGenerator(),
 		DBCtx:       dbCtx,
 	}
-}
-
-func (server Server) Run() {
-	server.App.Use(cors.New())
-	server.AdminApp.Post("/subscription", handlers.AddSubscription(server.DB, server.IDGenerator))
-	server.AdminApp.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.DB))
-	server.AdminApp.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.DB))
 }

@@ -24,6 +24,7 @@ func SetUpDB(ctx context.Context, config config.Config) (*ent.Client, error) {
 			dbConfig.Password,
 			dbConfig.SslMode,
 		),
+		ent.Debug(),
 	)
 	if err != nil {
 		return nil, err

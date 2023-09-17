@@ -11,18 +11,19 @@ import (
 	"github.com/vmkevv/rigelapi/app/class"
 	"github.com/vmkevv/rigelapi/app/extra"
 	"github.com/vmkevv/rigelapi/app/location"
+	"github.com/vmkevv/rigelapi/app/subscription"
 	"github.com/vmkevv/rigelapi/app/sync"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/database"
 )
 
-func setupServer(server app.Server) error {
+func setupServer(server app.Server) {
 	auth.Setup(server)
 	class.Setup(server)
 	extra.Setup(server)
 	location.Setup(server)
 	sync.Setup(server)
-	return nil
+	subscription.Setup(server)
 }
 
 func main() {
@@ -41,7 +42,6 @@ func main() {
 
 	server := app.NewServer(entClient, config, logger, dbCtx)
 	setupServer(server)
-	server.Run()
 	err = server.App.Listen(fmt.Sprintf("0.0.0.0:%s", server.Config.App.Port))
 	if err != nil {
 		log.Fatalf("Error starting fiber: %v", err)
