@@ -23,6 +23,8 @@ func (sh *SyncHandler) handle() {
 	sh.teacherApp.Post("/attendancedays", sh.handleSyncAttendanceDays)
 	sh.teacherApp.Get("/attendances/year/:yearid", sh.handleGetAttendances)
 	sh.teacherApp.Post("/attendances", sh.handleSyncAttendances)
+	sh.teacherApp.Get("/activities/year/:yearid", sh.handleGetActivities)
+	sh.teacherApp.Post("/activities", sh.handleSyncActivities)
 }
 
 func (sh *SyncHandler) getTeacherAndYearID(ctx *fiber.Ctx) (teacherID, yearID string, ok bool) {
@@ -128,6 +130,31 @@ func (sh *SyncHandler) handleSyncAttendances(ctx *fiber.Ctx) error {
 		return err
 	}
 	err = sh.repo.SyncAttendances(attendances)
+	if err != nil {
+		return err
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func (sh *SyncHandler) handleGetActivities(ctx *fiber.Ctx) error {
+	teacherID, yearID, ok := sh.getTeacherAndYearID(ctx)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).SendString("No autorizado")
+	}
+	activities, err := sh.repo.GetActivities(teacherID, yearID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(activities)
+}
+
+func (sh *SyncHandler) handleSyncActivities(ctx *fiber.Ctx) error {
+	var activities []common.AppActivityTx
+	err := ctx.BodyParser(&activities)
+	if err != nil {
+		return err
+	}
+	err = sh.repo.SyncActivities(activities)
 	if err != nil {
 		return err
 	}

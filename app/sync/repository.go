@@ -14,4 +14,6 @@ type SyncRepository interface {
 	SyncAttendanceDays(attendanceDayTxs []common.AppAttendanceDayTx) error
 	GetAttendances(teacherID, yearID string) ([]models.AppAttendance, error)
 	SyncAttendances(attendanceTxs []common.AppAttendanceTx) error
+	GetActivities(teacherID, yearID string) ([]models.AppActivity, error)
+	SyncActivities(activityTx []common.AppActivityTx) error
 }

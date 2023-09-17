@@ -7,6 +7,7 @@ import (
 	"github.com/vmkevv/rigelapi/app/common"
 	"github.com/vmkevv/rigelapi/app/models"
 	"github.com/vmkevv/rigelapi/ent"
+	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/attendance"
 	"github.com/vmkevv/rigelapi/ent/attendanceday"
 	"github.com/vmkevv/rigelapi/ent/class"
@@ -338,6 +339,80 @@ func (ser SyncEntRepo) SyncAttendances(attendanceTxs []common.AppAttendanceTx) e
 	// Update attendances
 	for _, att := range toUpdate {
 		_, err := tx.Attendance.UpdateOneID(att.ID).SetValue(att.Value).Save(ser.ctx)
+		if err != nil {
+			return common.RollbackTx(tx, err)
+		}
+	}
+	return tx.Commit()
+}
+
+func (ser SyncEntRepo) GetActivities(
+	teacherID string,
+	yearID string,
+) ([]models.AppActivity, error) {
+	entActivities, err := ser.ent.Activity.Query().
+		Where(
+			activity.HasClassPeriodWith(
+				classperiod.HasClassWith(
+					class.HasTeacherWith(teacher.IDEQ(teacherID)),
+					class.HasYearWith(year.IDEQ(yearID)),
+				),
+			),
+		).
+		WithArea().
+		WithClassPeriod().
+		All(ser.ctx)
+	if err != nil {
+		return nil, err
+	}
+	activities := make([]models.AppActivity, len(entActivities))
+	for i, act := range entActivities {
+		activities[i] = models.AppActivity{
+			ID:            act.ID,
+			Name:          act.Name,
+			Date:          act.Date.UnixMilli(),
+			AreaId:        act.Edges.Area.ID,
+			ClassPeriodId: act.Edges.ClassPeriod.ID,
+		}
+	}
+	return activities, nil
+}
+
+func (ser SyncEntRepo) SyncActivities(activityTx []common.AppActivityTx) error {
+	tx, err := ser.ent.Tx(ser.ctx)
+	if err != nil {
+		return err
+	}
+	toAdd := []*ent.ActivityCreate{}
+	toUpdate := []models.AppActivity{}
+	for _, act := range activityTx {
+		switch act.Type {
+		case common.Insert:
+			{
+				toAdd = append(
+					toAdd,
+					tx.Activity.Create().
+						SetID(act.Data.ID).
+						SetName(act.Data.Name).
+						SetDate(time.UnixMilli(act.Data.Date)).
+						SetClassPeriodID(act.Data.ClassPeriodId).
+						SetAreaID(act.Data.AreaId),
+				)
+			}
+		case common.Update:
+			{
+				toUpdate = append(toUpdate, act.Data)
+			}
+		}
+	}
+	// Add activities
+	err = tx.Activity.CreateBulk(toAdd...).OnConflictColumns(activity.FieldID).Ignore().Exec(ser.ctx)
+	if err != nil {
+		return common.RollbackTx(tx, err)
+	}
+	// Update activities
+	for _, act := range toUpdate {
+		_, err := tx.Activity.UpdateOneID(act.ID).SetName(act.Name).SetAreaID(act.AreaId).Save(ser.ctx)
 		if err != nil {
 			return common.RollbackTx(tx, err)
 		}

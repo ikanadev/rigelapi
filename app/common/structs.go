@@ -47,3 +47,8 @@ type AppAttendanceTx struct {
 	BaseTx
 	Data models.AppAttendance `json:"data"`
 }
+
+type AppActivityTx struct {
+	BaseTx
+	Data models.AppActivity `json:"data"`
+}

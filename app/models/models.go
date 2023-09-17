@@ -199,3 +199,11 @@ type AppAttendance struct {
 	StudentID       string           `json:"student_id"`
 	AttendanceDayID string           `json:"attendance_day_id"`
 }
+
+type AppActivity struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	ClassPeriodId string `json:"class_period_id"`
+	AreaId        string `json:"area_id"`
+	Date          int64  `json:"date"`
+}
