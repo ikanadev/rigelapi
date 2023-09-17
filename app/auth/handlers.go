@@ -11,6 +11,7 @@ import (
 type AuthHandler struct {
 	app        *fiber.App
 	teacherApp fiber.Router
+	adminApp   fiber.Router
 	repo       AuthRepository
 	config     config.Config
 }
@@ -18,16 +19,26 @@ type AuthHandler struct {
 func NewAuthHandler(
 	app *fiber.App,
 	teacherApp fiber.Router,
+	adminApp fiber.Router,
 	repo AuthRepository,
 	config config.Config,
 ) AuthHandler {
-	return AuthHandler{app, teacherApp, repo, config}
+	return AuthHandler{app, teacherApp, adminApp, repo, config}
 }
 
 func (ah *AuthHandler) handle() {
 	ah.app.Post("/signup", ah.HandleSignUp)
 	ah.app.Post("/signin", ah.HandleSignIn)
 	ah.teacherApp.Get("/profile", ah.HandleGetProfile)
+	ah.adminApp.Get("/teachers/:id", ah.HandleGetTeacherProfile)
+	ah.adminApp.Get("/teachers", ah.HandleGetTeachers)
+}
+
+type SignUpReq struct {
+	Name     string `json:"name"`
+	LastName string `json:"lastName"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (ah *AuthHandler) HandleSignUp(ctx *fiber.Ctx) error {
@@ -41,6 +52,15 @@ func (ah *AuthHandler) HandleSignUp(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.SendStatus(fiber.StatusCreated)
+}
+
+type SignInReq struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+type SignInRes struct {
+	Teacher models.TeacherWithSubs `json:"teacher"`
+	JWT     string                 `json:"jwt"`
 }
 
 func (ah *AuthHandler) HandleSignIn(ctx *fiber.Ctx) error {
@@ -67,25 +87,26 @@ func (ah *AuthHandler) HandleGetProfile(ctx *fiber.Ctx) error {
 	if len(teacherID) == 0 {
 		return errors.New("id is empty")
 	}
-	profile, err := ah.repo.GetProfile(teacherID)
+	profile, err := ah.repo.GetTeacherProfile(teacherID)
 	if err != nil {
 		return err
 	}
 	return ctx.JSON(profile)
 }
 
-type SignInReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-type SignInRes struct {
-	Teacher models.TeacherWithSubs `json:"teacher"`
-	JWT     string                 `json:"jwt"`
+func (ah *AuthHandler) HandleGetTeacherProfile(ctx *fiber.Ctx) error {
+	teacherID := ctx.Params("id")
+	profile, err := ah.repo.GetTeacherProfile(teacherID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(profile)
 }
 
-type SignUpReq struct {
-	Name     string `json:"name"`
-	LastName string `json:"lastName"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+func (ah *AuthHandler) HandleGetTeachers(ctx *fiber.Ctx) error {
+	teachers, err := ah.repo.GetTeachers()
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(teachers)
 }

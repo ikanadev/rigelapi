@@ -90,8 +90,7 @@ func (aer AuthEntRepo) GetTeacher(email, password string) (models.TeacherWithSub
 	return teacherRes, tokenStr, nil
 }
 
-// GetProfile implements AuthRepository
-func (aer AuthEntRepo) GetProfile(teacherID string) (models.TeacherWithSubs, error) {
+func (aer AuthEntRepo) GetTeacherProfile(teacherID string) (models.TeacherWithSubs, error) {
 	var profile models.TeacherWithSubs
 	entTeacher, err := aer.ent.Teacher.
 		Query().
@@ -127,4 +126,22 @@ func (aer AuthEntRepo) GetProfile(teacherID string) (models.TeacherWithSubs, err
 		}
 	}
 	return profile, nil
+}
+
+func (aer AuthEntRepo) GetTeachers() ([]models.Teacher, error) {
+	entTeachers, err := aer.ent.Teacher.Query().Order(ent.Asc(teacher.FieldLastName)).All(aer.ctx)
+	if err != nil {
+		return nil, err
+	}
+	teachers := make([]models.Teacher, len(entTeachers))
+	for i, teacher := range entTeachers {
+		teachers[i] = models.Teacher{
+			ID:       teacher.ID,
+			Name:     teacher.Name,
+			LastName: teacher.LastName,
+			Email:    teacher.Email,
+			IsAdmin:  teacher.IsAdmin,
+		}
+	}
+	return teachers, nil
 }

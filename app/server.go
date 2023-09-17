@@ -67,8 +67,6 @@ func NewServer(db *ent.Client, config config.Config, logger *log.Logger, dbCtx c
 
 func (server Server) Run() {
 	server.App.Use(cors.New())
-	server.AdminApp.Get("/teachers", handlers.GetTeachers(server.DB))
-	server.AdminApp.Get("/teacher/:id", handlers.GetTeacher(server.DB))
 	server.AdminApp.Post("/subscription", handlers.AddSubscription(server.DB, server.IDGenerator))
 	server.AdminApp.Patch("/subscription/:subscription_id", handlers.UpdateSubscription(server.DB))
 	server.AdminApp.Delete("/subscription/:subscription_id", handlers.DeleteSubscription(server.DB))
