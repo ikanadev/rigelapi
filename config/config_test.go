@@ -23,7 +23,7 @@ func TestGetConfig(t *testing.T) {
 	assert := assert.New(t)
 	config := GetConfig()
 	expected := Config{
-		DB: dbData{
+		DB: DBData{
 			Host:     "hosttest",
 			Port:     "porttest",
 			Name:     "dbtest",
@@ -31,7 +31,7 @@ func TestGetConfig(t *testing.T) {
 			Password: "passtest",
 			SslMode:  "disable",
 		},
-		App: appData{
+		App: AppData{
 			JWTKey: "ImsKLIZXipqsHJKo_e3z",
 			Port:   "4000",
 		},

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type dbData struct {
+type DBData struct {
 	Host     string
 	Name     string
 	Port     string
@@ -13,14 +13,14 @@ type dbData struct {
 	Password string
 	SslMode  string
 }
-type appData struct {
+type AppData struct {
 	JWTKey string
 	Port   string
 }
 
 type Config struct {
-	DB  dbData
-	App appData
+	DB  DBData
+	App AppData
 }
 
 func getEnvOrPanic(name string) string {
@@ -33,7 +33,7 @@ func getEnvOrPanic(name string) string {
 
 func GetConfig() Config {
 	return Config{
-		DB: dbData{
+		DB: DBData{
 			Host:     getEnvOrPanic("DB_HOST"),
 			Name:     getEnvOrPanic("DB_NAME"),
 			Port:     getEnvOrPanic("DB_PORT"),
@@ -41,7 +41,7 @@ func GetConfig() Config {
 			Password: getEnvOrPanic("DB_PASSWORD"),
 			SslMode:  getEnvOrPanic("DB_SSL_MODE"),
 		},
-		App: appData{
+		App: AppData{
 			JWTKey: "ImsKLIZXipqsHJKo_e3z",
 			Port:   getEnvOrPanic("APP_PORT"),
 		},
