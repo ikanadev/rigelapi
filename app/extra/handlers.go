@@ -70,7 +70,7 @@ func (eh *ExtraHandler) handleStats(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	schools, err := eh.repo.GetClassesCount()
+	schools, err := eh.repo.GetSchoolsCount()
 	if err != nil {
 		return err
 	}
