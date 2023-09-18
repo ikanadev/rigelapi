@@ -10,179 +10,127 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Class(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Class(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Class(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.Class {
+	return predicate.Class(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.Class {
+	return predicate.Class(sql.FieldContainsFold(FieldID, id))
 }
 
 // Parallel applies equality check predicate on the "parallel" field. It's identical to ParallelEQ.
 func Parallel(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldEQ(FieldParallel, v))
 }
 
 // ParallelEQ applies the EQ predicate on the "parallel" field.
 func ParallelEQ(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldEQ(FieldParallel, v))
 }
 
 // ParallelNEQ applies the NEQ predicate on the "parallel" field.
 func ParallelNEQ(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldNEQ(FieldParallel, v))
 }
 
 // ParallelIn applies the In predicate on the "parallel" field.
 func ParallelIn(vs ...string) predicate.Class {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldParallel), v...))
-	})
+	return predicate.Class(sql.FieldIn(FieldParallel, vs...))
 }
 
 // ParallelNotIn applies the NotIn predicate on the "parallel" field.
 func ParallelNotIn(vs ...string) predicate.Class {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldParallel), v...))
-	})
+	return predicate.Class(sql.FieldNotIn(FieldParallel, vs...))
 }
 
 // ParallelGT applies the GT predicate on the "parallel" field.
 func ParallelGT(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldGT(FieldParallel, v))
 }
 
 // ParallelGTE applies the GTE predicate on the "parallel" field.
 func ParallelGTE(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldGTE(FieldParallel, v))
 }
 
 // ParallelLT applies the LT predicate on the "parallel" field.
 func ParallelLT(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldLT(FieldParallel, v))
 }
 
 // ParallelLTE applies the LTE predicate on the "parallel" field.
 func ParallelLTE(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldLTE(FieldParallel, v))
 }
 
 // ParallelContains applies the Contains predicate on the "parallel" field.
 func ParallelContains(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldContains(FieldParallel, v))
 }
 
 // ParallelHasPrefix applies the HasPrefix predicate on the "parallel" field.
 func ParallelHasPrefix(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldHasPrefix(FieldParallel, v))
 }
 
 // ParallelHasSuffix applies the HasSuffix predicate on the "parallel" field.
 func ParallelHasSuffix(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldHasSuffix(FieldParallel, v))
 }
 
 // ParallelEqualFold applies the EqualFold predicate on the "parallel" field.
 func ParallelEqualFold(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldEqualFold(FieldParallel, v))
 }
 
 // ParallelContainsFold applies the ContainsFold predicate on the "parallel" field.
 func ParallelContainsFold(v string) predicate.Class {
-	return predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldParallel), v))
-	})
+	return predicate.Class(sql.FieldContainsFold(FieldParallel, v))
 }
 
 // HasStudents applies the HasEdge predicate on the "students" edge.
@@ -190,7 +138,6 @@ func HasStudents() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StudentsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, StudentsTable, StudentsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -200,11 +147,7 @@ func HasStudents() predicate.Class {
 // HasStudentsWith applies the HasEdge predicate on the "students" edge with a given conditions (other predicates).
 func HasStudentsWith(preds ...predicate.Student) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StudentsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, StudentsTable, StudentsColumn),
-		)
+		step := newStudentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -218,7 +161,6 @@ func HasClassPeriods() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassPeriodsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, ClassPeriodsTable, ClassPeriodsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -228,11 +170,7 @@ func HasClassPeriods() predicate.Class {
 // HasClassPeriodsWith applies the HasEdge predicate on the "classPeriods" edge with a given conditions (other predicates).
 func HasClassPeriodsWith(preds ...predicate.ClassPeriod) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassPeriodsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ClassPeriodsTable, ClassPeriodsColumn),
-		)
+		step := newClassPeriodsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -246,7 +184,6 @@ func HasSchool() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SchoolTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, SchoolTable, SchoolColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -256,11 +193,7 @@ func HasSchool() predicate.Class {
 // HasSchoolWith applies the HasEdge predicate on the "school" edge with a given conditions (other predicates).
 func HasSchoolWith(preds ...predicate.School) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SchoolInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SchoolTable, SchoolColumn),
-		)
+		step := newSchoolStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -274,7 +207,6 @@ func HasTeacher() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -284,11 +216,7 @@ func HasTeacher() predicate.Class {
 // HasTeacherWith applies the HasEdge predicate on the "teacher" edge with a given conditions (other predicates).
 func HasTeacherWith(preds ...predicate.Teacher) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(TeacherInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, TeacherTable, TeacherColumn),
-		)
+		step := newTeacherStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -302,7 +230,6 @@ func HasSubject() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SubjectTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, SubjectTable, SubjectColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -312,11 +239,7 @@ func HasSubject() predicate.Class {
 // HasSubjectWith applies the HasEdge predicate on the "subject" edge with a given conditions (other predicates).
 func HasSubjectWith(preds ...predicate.Subject) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SubjectInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SubjectTable, SubjectColumn),
-		)
+		step := newSubjectStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -330,7 +253,6 @@ func HasGrade() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(GradeTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, GradeTable, GradeColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -340,11 +262,7 @@ func HasGrade() predicate.Class {
 // HasGradeWith applies the HasEdge predicate on the "grade" edge with a given conditions (other predicates).
 func HasGradeWith(preds ...predicate.Grade) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(GradeInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, GradeTable, GradeColumn),
-		)
+		step := newGradeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -358,7 +276,6 @@ func HasYear() predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(YearTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -368,11 +285,7 @@ func HasYear() predicate.Class {
 // HasYearWith applies the HasEdge predicate on the "year" edge with a given conditions (other predicates).
 func HasYearWith(preds ...predicate.Year) predicate.Class {
 	return predicate.Class(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(YearInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, YearTable, YearColumn),
-		)
+		step := newYearStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -103,34 +103,7 @@ func (pu *PeriodUpdate) ClearYear() *PeriodUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (pu *PeriodUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(pu.hooks) == 0 {
-		affected, err = pu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PeriodMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			pu.mutation = mutation
-			affected, err = pu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pu.hooks) - 1; i >= 0; i-- {
-			if pu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pu.sqlSave, pu.mutation, pu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -156,16 +129,7 @@ func (pu *PeriodUpdate) ExecX(ctx context.Context) {
 }
 
 func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   period.Table,
-			Columns: period.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: period.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(period.Table, period.Columns, sqlgraph.NewFieldSpec(period.FieldID, field.TypeString))
 	if ps := pu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -174,11 +138,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := pu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: period.FieldName,
-		})
+		_spec.SetField(period.FieldName, field.TypeString, value)
 	}
 	if pu.mutation.ClassPeriodsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -188,10 +148,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -204,10 +161,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -223,10 +177,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -242,10 +193,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{period.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -258,10 +206,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{period.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -277,6 +222,7 @@ func (pu *PeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	pu.mutation.done = true
 	return n, nil
 }
 
@@ -360,6 +306,12 @@ func (puo *PeriodUpdateOne) ClearYear() *PeriodUpdateOne {
 	return puo
 }
 
+// Where appends a list predicates to the PeriodUpdate builder.
+func (puo *PeriodUpdateOne) Where(ps ...predicate.Period) *PeriodUpdateOne {
+	puo.mutation.Where(ps...)
+	return puo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (puo *PeriodUpdateOne) Select(field string, fields ...string) *PeriodUpdateOne {
@@ -369,40 +321,7 @@ func (puo *PeriodUpdateOne) Select(field string, fields ...string) *PeriodUpdate
 
 // Save executes the query and returns the updated Period entity.
 func (puo *PeriodUpdateOne) Save(ctx context.Context) (*Period, error) {
-	var (
-		err  error
-		node *Period
-	)
-	if len(puo.hooks) == 0 {
-		node, err = puo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PeriodMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			puo.mutation = mutation
-			node, err = puo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(puo.hooks) - 1; i >= 0; i-- {
-			if puo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = puo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, puo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Period)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PeriodMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, puo.sqlSave, puo.mutation, puo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -428,16 +347,7 @@ func (puo *PeriodUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   period.Table,
-			Columns: period.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: period.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(period.Table, period.Columns, sqlgraph.NewFieldSpec(period.FieldID, field.TypeString))
 	id, ok := puo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Period.id" for update`)}
@@ -463,11 +373,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 		}
 	}
 	if value, ok := puo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: period.FieldName,
-		})
+		_spec.SetField(period.FieldName, field.TypeString, value)
 	}
 	if puo.mutation.ClassPeriodsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -477,10 +383,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -493,10 +396,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -512,10 +412,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 			Columns: []string{period.ClassPeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -531,10 +428,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 			Columns: []string{period.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -547,10 +441,7 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 			Columns: []string{period.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -569,5 +460,6 @@ func (puo *PeriodUpdateOne) sqlSave(ctx context.Context) (_node *Period, err err
 		}
 		return nil, err
 	}
+	puo.mutation.done = true
 	return _node, nil
 }

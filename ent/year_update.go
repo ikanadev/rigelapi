@@ -195,34 +195,7 @@ func (yu *YearUpdate) RemoveSubscriptions(s ...*Subscription) *YearUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (yu *YearUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(yu.hooks) == 0 {
-		affected, err = yu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*YearMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			yu.mutation = mutation
-			affected, err = yu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(yu.hooks) - 1; i >= 0; i-- {
-			if yu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = yu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, yu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, yu.sqlSave, yu.mutation, yu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -248,16 +221,7 @@ func (yu *YearUpdate) ExecX(ctx context.Context) {
 }
 
 func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   year.Table,
-			Columns: year.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: year.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(year.Table, year.Columns, sqlgraph.NewFieldSpec(year.FieldID, field.TypeString))
 	if ps := yu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -266,18 +230,10 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := yu.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: year.FieldValue,
-		})
+		_spec.SetField(year.FieldValue, field.TypeInt, value)
 	}
 	if value, ok := yu.mutation.AddedValue(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: year.FieldValue,
-		})
+		_spec.AddField(year.FieldValue, field.TypeInt, value)
 	}
 	if yu.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -287,10 +243,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -303,10 +256,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -322,10 +272,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -341,10 +288,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -357,10 +301,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -376,10 +317,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -395,10 +333,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -411,10 +346,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -430,10 +362,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -449,10 +378,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -465,10 +391,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -484,10 +407,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -503,6 +423,7 @@ func (yu *YearUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	yu.mutation.done = true
 	return n, nil
 }
 
@@ -676,6 +597,12 @@ func (yuo *YearUpdateOne) RemoveSubscriptions(s ...*Subscription) *YearUpdateOne
 	return yuo.RemoveSubscriptionIDs(ids...)
 }
 
+// Where appends a list predicates to the YearUpdate builder.
+func (yuo *YearUpdateOne) Where(ps ...predicate.Year) *YearUpdateOne {
+	yuo.mutation.Where(ps...)
+	return yuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (yuo *YearUpdateOne) Select(field string, fields ...string) *YearUpdateOne {
@@ -685,40 +612,7 @@ func (yuo *YearUpdateOne) Select(field string, fields ...string) *YearUpdateOne 
 
 // Save executes the query and returns the updated Year entity.
 func (yuo *YearUpdateOne) Save(ctx context.Context) (*Year, error) {
-	var (
-		err  error
-		node *Year
-	)
-	if len(yuo.hooks) == 0 {
-		node, err = yuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*YearMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			yuo.mutation = mutation
-			node, err = yuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(yuo.hooks) - 1; i >= 0; i-- {
-			if yuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = yuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, yuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Year)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from YearMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, yuo.sqlSave, yuo.mutation, yuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -744,16 +638,7 @@ func (yuo *YearUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   year.Table,
-			Columns: year.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: year.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(year.Table, year.Columns, sqlgraph.NewFieldSpec(year.FieldID, field.TypeString))
 	id, ok := yuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Year.id" for update`)}
@@ -779,18 +664,10 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 		}
 	}
 	if value, ok := yuo.mutation.Value(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: year.FieldValue,
-		})
+		_spec.SetField(year.FieldValue, field.TypeInt, value)
 	}
 	if value, ok := yuo.mutation.AddedValue(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: year.FieldValue,
-		})
+		_spec.AddField(year.FieldValue, field.TypeInt, value)
 	}
 	if yuo.mutation.ClassesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -800,10 +677,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -816,10 +690,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -835,10 +706,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.ClassesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -854,10 +722,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -870,10 +735,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -889,10 +751,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.PeriodsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -908,10 +767,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -924,10 +780,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -943,10 +796,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.AreasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: area.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(area.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -962,10 +812,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -978,10 +825,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -997,10 +841,7 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 			Columns: []string{year.SubscriptionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: subscription.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subscription.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -1019,5 +860,6 @@ func (yuo *YearUpdateOne) sqlSave(ctx context.Context) (_node *Year, err error) 
 		}
 		return nil, err
 	}
+	yuo.mutation.done = true
 	return _node, nil
 }

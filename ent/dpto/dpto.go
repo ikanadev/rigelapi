@@ -2,6 +2,11 @@
 
 package dpto
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the dpto type in the database.
 	Label = "dpto"
@@ -36,4 +41,38 @@ func ValidColumn(column string) bool {
 		}
 	}
 	return false
+}
+
+// OrderOption defines the ordering options for the Dpto queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByProvinciasCount orders the results by provincias count.
+func ByProvinciasCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProvinciasStep(), opts...)
+	}
+}
+
+// ByProvincias orders the results by provincias terms.
+func ByProvincias(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProvinciasStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newProvinciasStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProvinciasInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProvinciasTable, ProvinciasColumn),
+	)
 }

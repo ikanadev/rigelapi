@@ -2,13 +2,29 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/vmkevv/rigelapi/app"
+	"github.com/vmkevv/rigelapi/app/auth"
+	"github.com/vmkevv/rigelapi/app/class"
+	"github.com/vmkevv/rigelapi/app/extra"
+	"github.com/vmkevv/rigelapi/app/location"
+	"github.com/vmkevv/rigelapi/app/subscription"
+	"github.com/vmkevv/rigelapi/app/sync"
 	"github.com/vmkevv/rigelapi/config"
 	"github.com/vmkevv/rigelapi/database"
 )
+
+func setupServer(server app.Server) {
+	auth.Setup(server)
+	class.Setup(server)
+	extra.Setup(server)
+	location.Setup(server)
+	sync.Setup(server)
+	subscription.Setup(server)
+}
 
 func main() {
 	config := config.GetConfig()
@@ -24,8 +40,9 @@ func main() {
 	defer file.Close()
 	logger := log.New(file, "", log.LstdFlags)
 
-	server := app.NewServer(entClient, config, logger)
-	err = server.Run()
+	server := app.NewServer(entClient, config, logger, dbCtx)
+	setupServer(server)
+	err = server.App.Listen(fmt.Sprintf("0.0.0.0:%s", server.Config.App.Port))
 	if err != nil {
 		log.Fatalf("Error starting fiber: %v", err)
 	}

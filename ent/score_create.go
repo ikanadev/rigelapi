@@ -81,49 +81,7 @@ func (sc *ScoreCreate) Mutation() *ScoreMutation {
 
 // Save creates the Score in the database.
 func (sc *ScoreCreate) Save(ctx context.Context) (*Score, error) {
-	var (
-		err  error
-		node *Score
-	)
-	if len(sc.hooks) == 0 {
-		if err = sc.check(); err != nil {
-			return nil, err
-		}
-		node, err = sc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ScoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = sc.check(); err != nil {
-				return nil, err
-			}
-			sc.mutation = mutation
-			if node, err = sc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(sc.hooks) - 1; i >= 0; i-- {
-			if sc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = sc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, sc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Score)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ScoreMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -157,6 +115,9 @@ func (sc *ScoreCreate) check() error {
 }
 
 func (sc *ScoreCreate) sqlSave(ctx context.Context) (*Score, error) {
+	if err := sc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := sc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -171,19 +132,15 @@ func (sc *ScoreCreate) sqlSave(ctx context.Context) (*Score, error) {
 			return nil, fmt.Errorf("unexpected Score.ID type: %T", _spec.ID.Value)
 		}
 	}
+	sc.mutation.id = &_node.ID
+	sc.mutation.done = true
 	return _node, nil
 }
 
 func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Score{config: sc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: score.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: score.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(score.Table, sqlgraph.NewFieldSpec(score.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
@@ -191,11 +148,7 @@ func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := sc.mutation.Points(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: score.FieldPoints,
-		})
+		_spec.SetField(score.FieldPoints, field.TypeInt, value)
 		_node.Points = value
 	}
 	if nodes := sc.mutation.ActivityIDs(); len(nodes) > 0 {
@@ -206,10 +159,7 @@ func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 			Columns: []string{score.ActivityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -226,10 +176,7 @@ func (sc *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 			Columns: []string{score.StudentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: student.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(student.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -439,8 +386,8 @@ func (scb *ScoreCreateBulk) Save(ctx context.Context) ([]*Score, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
@@ -554,7 +501,6 @@ func (u *ScoreUpsertBulk) UpdateNewValues() *ScoreUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(score.FieldID)
-				return
 			}
 		}
 	}))

@@ -72,34 +72,7 @@ func (aau *AdminActionUpdate) ClearTeacher() *AdminActionUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (aau *AdminActionUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(aau.hooks) == 0 {
-		affected, err = aau.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminActionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aau.mutation = mutation
-			affected, err = aau.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(aau.hooks) - 1; i >= 0; i-- {
-			if aau.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aau.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, aau.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, aau.sqlSave, aau.mutation, aau.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -125,16 +98,7 @@ func (aau *AdminActionUpdate) ExecX(ctx context.Context) {
 }
 
 func (aau *AdminActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   adminaction.Table,
-			Columns: adminaction.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: adminaction.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(adminaction.Table, adminaction.Columns, sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString))
 	if ps := aau.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -143,18 +107,10 @@ func (aau *AdminActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := aau.mutation.Action(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldAction,
-		})
+		_spec.SetField(adminaction.FieldAction, field.TypeString, value)
 	}
 	if value, ok := aau.mutation.Info(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldInfo,
-		})
+		_spec.SetField(adminaction.FieldInfo, field.TypeString, value)
 	}
 	if aau.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -164,10 +120,7 @@ func (aau *AdminActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{adminaction.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -180,10 +133,7 @@ func (aau *AdminActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{adminaction.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -199,6 +149,7 @@ func (aau *AdminActionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	aau.mutation.done = true
 	return n, nil
 }
 
@@ -252,6 +203,12 @@ func (aauo *AdminActionUpdateOne) ClearTeacher() *AdminActionUpdateOne {
 	return aauo
 }
 
+// Where appends a list predicates to the AdminActionUpdate builder.
+func (aauo *AdminActionUpdateOne) Where(ps ...predicate.AdminAction) *AdminActionUpdateOne {
+	aauo.mutation.Where(ps...)
+	return aauo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (aauo *AdminActionUpdateOne) Select(field string, fields ...string) *AdminActionUpdateOne {
@@ -261,40 +218,7 @@ func (aauo *AdminActionUpdateOne) Select(field string, fields ...string) *AdminA
 
 // Save executes the query and returns the updated AdminAction entity.
 func (aauo *AdminActionUpdateOne) Save(ctx context.Context) (*AdminAction, error) {
-	var (
-		err  error
-		node *AdminAction
-	)
-	if len(aauo.hooks) == 0 {
-		node, err = aauo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminActionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aauo.mutation = mutation
-			node, err = aauo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aauo.hooks) - 1; i >= 0; i-- {
-			if aauo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aauo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aauo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AdminAction)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AdminActionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aauo.sqlSave, aauo.mutation, aauo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -320,16 +244,7 @@ func (aauo *AdminActionUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (aauo *AdminActionUpdateOne) sqlSave(ctx context.Context) (_node *AdminAction, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   adminaction.Table,
-			Columns: adminaction.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: adminaction.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(adminaction.Table, adminaction.Columns, sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString))
 	id, ok := aauo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AdminAction.id" for update`)}
@@ -355,18 +270,10 @@ func (aauo *AdminActionUpdateOne) sqlSave(ctx context.Context) (_node *AdminActi
 		}
 	}
 	if value, ok := aauo.mutation.Action(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldAction,
-		})
+		_spec.SetField(adminaction.FieldAction, field.TypeString, value)
 	}
 	if value, ok := aauo.mutation.Info(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldInfo,
-		})
+		_spec.SetField(adminaction.FieldInfo, field.TypeString, value)
 	}
 	if aauo.mutation.TeacherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -376,10 +283,7 @@ func (aauo *AdminActionUpdateOne) sqlSave(ctx context.Context) (_node *AdminActi
 			Columns: []string{adminaction.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -392,10 +296,7 @@ func (aauo *AdminActionUpdateOne) sqlSave(ctx context.Context) (_node *AdminActi
 			Columns: []string{adminaction.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -414,5 +315,6 @@ func (aauo *AdminActionUpdateOne) sqlSave(ctx context.Context) (_node *AdminActi
 		}
 		return nil, err
 	}
+	aauo.mutation.done = true
 	return _node, nil
 }

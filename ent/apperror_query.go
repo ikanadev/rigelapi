@@ -17,11 +17,9 @@ import (
 // AppErrorQuery is the builder for querying AppError entities.
 type AppErrorQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []apperror.OrderOption
+	inters     []Interceptor
 	predicates []predicate.AppError
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -34,27 +32,27 @@ func (aeq *AppErrorQuery) Where(ps ...predicate.AppError) *AppErrorQuery {
 	return aeq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (aeq *AppErrorQuery) Limit(limit int) *AppErrorQuery {
-	aeq.limit = &limit
+	aeq.ctx.Limit = &limit
 	return aeq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (aeq *AppErrorQuery) Offset(offset int) *AppErrorQuery {
-	aeq.offset = &offset
+	aeq.ctx.Offset = &offset
 	return aeq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (aeq *AppErrorQuery) Unique(unique bool) *AppErrorQuery {
-	aeq.unique = &unique
+	aeq.ctx.Unique = &unique
 	return aeq
 }
 
-// Order adds an order step to the query.
-func (aeq *AppErrorQuery) Order(o ...OrderFunc) *AppErrorQuery {
+// Order specifies how the records should be ordered.
+func (aeq *AppErrorQuery) Order(o ...apperror.OrderOption) *AppErrorQuery {
 	aeq.order = append(aeq.order, o...)
 	return aeq
 }
@@ -62,7 +60,7 @@ func (aeq *AppErrorQuery) Order(o ...OrderFunc) *AppErrorQuery {
 // First returns the first AppError entity from the query.
 // Returns a *NotFoundError when no AppError was found.
 func (aeq *AppErrorQuery) First(ctx context.Context) (*AppError, error) {
-	nodes, err := aeq.Limit(1).All(ctx)
+	nodes, err := aeq.Limit(1).All(setContextOp(ctx, aeq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +83,7 @@ func (aeq *AppErrorQuery) FirstX(ctx context.Context) *AppError {
 // Returns a *NotFoundError when no AppError ID was found.
 func (aeq *AppErrorQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = aeq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = aeq.Limit(1).IDs(setContextOp(ctx, aeq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -108,7 +106,7 @@ func (aeq *AppErrorQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one AppError entity is found.
 // Returns a *NotFoundError when no AppError entities are found.
 func (aeq *AppErrorQuery) Only(ctx context.Context) (*AppError, error) {
-	nodes, err := aeq.Limit(2).All(ctx)
+	nodes, err := aeq.Limit(2).All(setContextOp(ctx, aeq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +134,7 @@ func (aeq *AppErrorQuery) OnlyX(ctx context.Context) *AppError {
 // Returns a *NotFoundError when no entities are found.
 func (aeq *AppErrorQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = aeq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = aeq.Limit(2).IDs(setContextOp(ctx, aeq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -161,10 +159,12 @@ func (aeq *AppErrorQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of AppErrors.
 func (aeq *AppErrorQuery) All(ctx context.Context) ([]*AppError, error) {
+	ctx = setContextOp(ctx, aeq.ctx, "All")
 	if err := aeq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return aeq.sqlAll(ctx)
+	qr := querierAll[[]*AppError, *AppErrorQuery]()
+	return withInterceptors[[]*AppError](ctx, aeq, qr, aeq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -177,9 +177,12 @@ func (aeq *AppErrorQuery) AllX(ctx context.Context) []*AppError {
 }
 
 // IDs executes the query and returns a list of AppError IDs.
-func (aeq *AppErrorQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := aeq.Select(apperror.FieldID).Scan(ctx, &ids); err != nil {
+func (aeq *AppErrorQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if aeq.ctx.Unique == nil && aeq.path != nil {
+		aeq.Unique(true)
+	}
+	ctx = setContextOp(ctx, aeq.ctx, "IDs")
+	if err = aeq.Select(apperror.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -196,10 +199,11 @@ func (aeq *AppErrorQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (aeq *AppErrorQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, aeq.ctx, "Count")
 	if err := aeq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return aeq.sqlCount(ctx)
+	return withInterceptors[int](ctx, aeq, querierCount[*AppErrorQuery](), aeq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -213,10 +217,15 @@ func (aeq *AppErrorQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (aeq *AppErrorQuery) Exist(ctx context.Context) (bool, error) {
-	if err := aeq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, aeq.ctx, "Exist")
+	switch _, err := aeq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return aeq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -236,14 +245,13 @@ func (aeq *AppErrorQuery) Clone() *AppErrorQuery {
 	}
 	return &AppErrorQuery{
 		config:     aeq.config,
-		limit:      aeq.limit,
-		offset:     aeq.offset,
-		order:      append([]OrderFunc{}, aeq.order...),
+		ctx:        aeq.ctx.Clone(),
+		order:      append([]apperror.OrderOption{}, aeq.order...),
+		inters:     append([]Interceptor{}, aeq.inters...),
 		predicates: append([]predicate.AppError{}, aeq.predicates...),
 		// clone intermediate query.
-		sql:    aeq.sql.Clone(),
-		path:   aeq.path,
-		unique: aeq.unique,
+		sql:  aeq.sql.Clone(),
+		path: aeq.path,
 	}
 }
 
@@ -262,16 +270,11 @@ func (aeq *AppErrorQuery) Clone() *AppErrorQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (aeq *AppErrorQuery) GroupBy(field string, fields ...string) *AppErrorGroupBy {
-	grbuild := &AppErrorGroupBy{config: aeq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := aeq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return aeq.sqlQuery(ctx), nil
-	}
+	aeq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AppErrorGroupBy{build: aeq}
+	grbuild.flds = &aeq.ctx.Fields
 	grbuild.label = apperror.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -288,15 +291,30 @@ func (aeq *AppErrorQuery) GroupBy(field string, fields ...string) *AppErrorGroup
 //		Select(apperror.FieldUserID).
 //		Scan(ctx, &v)
 func (aeq *AppErrorQuery) Select(fields ...string) *AppErrorSelect {
-	aeq.fields = append(aeq.fields, fields...)
-	selbuild := &AppErrorSelect{AppErrorQuery: aeq}
-	selbuild.label = apperror.Label
-	selbuild.flds, selbuild.scan = &aeq.fields, selbuild.Scan
-	return selbuild
+	aeq.ctx.Fields = append(aeq.ctx.Fields, fields...)
+	sbuild := &AppErrorSelect{AppErrorQuery: aeq}
+	sbuild.label = apperror.Label
+	sbuild.flds, sbuild.scan = &aeq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AppErrorSelect configured with the given aggregations.
+func (aeq *AppErrorQuery) Aggregate(fns ...AggregateFunc) *AppErrorSelect {
+	return aeq.Select().Aggregate(fns...)
 }
 
 func (aeq *AppErrorQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range aeq.fields {
+	for _, inter := range aeq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, aeq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range aeq.ctx.Fields {
 		if !apperror.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -316,10 +334,10 @@ func (aeq *AppErrorQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ap
 		nodes = []*AppError{}
 		_spec = aeq.querySpec()
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*AppError).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &AppError{config: aeq.config}
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
@@ -338,38 +356,22 @@ func (aeq *AppErrorQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ap
 
 func (aeq *AppErrorQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := aeq.querySpec()
-	_spec.Node.Columns = aeq.fields
-	if len(aeq.fields) > 0 {
-		_spec.Unique = aeq.unique != nil && *aeq.unique
+	_spec.Node.Columns = aeq.ctx.Fields
+	if len(aeq.ctx.Fields) > 0 {
+		_spec.Unique = aeq.ctx.Unique != nil && *aeq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, aeq.driver, _spec)
 }
 
-func (aeq *AppErrorQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := aeq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (aeq *AppErrorQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apperror.Table,
-			Columns: apperror.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: apperror.FieldID,
-			},
-		},
-		From:   aeq.sql,
-		Unique: true,
-	}
-	if unique := aeq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(apperror.Table, apperror.Columns, sqlgraph.NewFieldSpec(apperror.FieldID, field.TypeString))
+	_spec.From = aeq.sql
+	if unique := aeq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if aeq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := aeq.fields; len(fields) > 0 {
+	if fields := aeq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, apperror.FieldID)
 		for i := range fields {
@@ -385,10 +387,10 @@ func (aeq *AppErrorQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := aeq.limit; limit != nil {
+	if limit := aeq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := aeq.offset; offset != nil {
+	if offset := aeq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := aeq.order; len(ps) > 0 {
@@ -404,7 +406,7 @@ func (aeq *AppErrorQuery) querySpec() *sqlgraph.QuerySpec {
 func (aeq *AppErrorQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(aeq.driver.Dialect())
 	t1 := builder.Table(apperror.Table)
-	columns := aeq.fields
+	columns := aeq.ctx.Fields
 	if len(columns) == 0 {
 		columns = apperror.Columns
 	}
@@ -413,7 +415,7 @@ func (aeq *AppErrorQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = aeq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if aeq.unique != nil && *aeq.unique {
+	if aeq.ctx.Unique != nil && *aeq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range aeq.predicates {
@@ -422,12 +424,12 @@ func (aeq *AppErrorQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range aeq.order {
 		p(selector)
 	}
-	if offset := aeq.offset; offset != nil {
+	if offset := aeq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := aeq.limit; limit != nil {
+	if limit := aeq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -435,13 +437,8 @@ func (aeq *AppErrorQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // AppErrorGroupBy is the group-by builder for AppError entities.
 type AppErrorGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AppErrorQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -450,74 +447,77 @@ func (aegb *AppErrorGroupBy) Aggregate(fns ...AggregateFunc) *AppErrorGroupBy {
 	return aegb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (aegb *AppErrorGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := aegb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (aegb *AppErrorGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, aegb.build.ctx, "GroupBy")
+	if err := aegb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	aegb.sql = query
-	return aegb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AppErrorQuery, *AppErrorGroupBy](ctx, aegb.build, aegb, aegb.build.inters, v)
 }
 
-func (aegb *AppErrorGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range aegb.fields {
-		if !apperror.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (aegb *AppErrorGroupBy) sqlScan(ctx context.Context, root *AppErrorQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(aegb.fns))
+	for _, fn := range aegb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := aegb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*aegb.flds)+len(aegb.fns))
+		for _, f := range *aegb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*aegb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := aegb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := aegb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (aegb *AppErrorGroupBy) sqlQuery() *sql.Selector {
-	selector := aegb.sql.Select()
-	aggregation := make([]string, 0, len(aegb.fns))
-	for _, fn := range aegb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(aegb.fields)+len(aegb.fns))
-		for _, f := range aegb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(aegb.fields...)...)
-}
-
 // AppErrorSelect is the builder for selecting fields of AppError entities.
 type AppErrorSelect struct {
 	*AppErrorQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (aes *AppErrorSelect) Aggregate(fns ...AggregateFunc) *AppErrorSelect {
+	aes.fns = append(aes.fns, fns...)
+	return aes
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (aes *AppErrorSelect) Scan(ctx context.Context, v interface{}) error {
+func (aes *AppErrorSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, aes.ctx, "Select")
 	if err := aes.prepareQuery(ctx); err != nil {
 		return err
 	}
-	aes.sql = aes.AppErrorQuery.sqlQuery(ctx)
-	return aes.sqlScan(ctx, v)
+	return scanWithInterceptors[*AppErrorQuery, *AppErrorSelect](ctx, aes.AppErrorQuery, aes, aes.inters, v)
 }
 
-func (aes *AppErrorSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (aes *AppErrorSelect) sqlScan(ctx context.Context, root *AppErrorQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(aes.fns))
+	for _, fn := range aes.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*aes.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := aes.sql.Query()
+	query, args := selector.Query()
 	if err := aes.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

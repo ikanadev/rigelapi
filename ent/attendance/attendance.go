@@ -4,6 +4,9 @@ package attendance
 
 import (
 	"fmt"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -86,4 +89,45 @@ func ValueValidator(v Value) error {
 	default:
 		return fmt.Errorf("attendance: invalid enum value for value field: %q", v)
 	}
+}
+
+// OrderOption defines the ordering options for the Attendance queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByValue orders the results by the value field.
+func ByValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValue, opts...).ToFunc()
+}
+
+// ByAttendanceDayField orders the results by attendanceDay field.
+func ByAttendanceDayField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAttendanceDayStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByStudentField orders the results by student field.
+func ByStudentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStudentStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newAttendanceDayStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AttendanceDayInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AttendanceDayTable, AttendanceDayColumn),
+	)
+}
+func newStudentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StudentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, StudentTable, StudentColumn),
+	)
 }

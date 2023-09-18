@@ -19,11 +19,9 @@ import (
 // GradeQuery is the builder for querying Grade entities.
 type GradeQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
+	ctx         *QueryContext
+	order       []grade.OrderOption
+	inters      []Interceptor
 	predicates  []predicate.Grade
 	withClasses *ClassQuery
 	// intermediate query (i.e. traversal path).
@@ -37,34 +35,34 @@ func (gq *GradeQuery) Where(ps ...predicate.Grade) *GradeQuery {
 	return gq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (gq *GradeQuery) Limit(limit int) *GradeQuery {
-	gq.limit = &limit
+	gq.ctx.Limit = &limit
 	return gq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (gq *GradeQuery) Offset(offset int) *GradeQuery {
-	gq.offset = &offset
+	gq.ctx.Offset = &offset
 	return gq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (gq *GradeQuery) Unique(unique bool) *GradeQuery {
-	gq.unique = &unique
+	gq.ctx.Unique = &unique
 	return gq
 }
 
-// Order adds an order step to the query.
-func (gq *GradeQuery) Order(o ...OrderFunc) *GradeQuery {
+// Order specifies how the records should be ordered.
+func (gq *GradeQuery) Order(o ...grade.OrderOption) *GradeQuery {
 	gq.order = append(gq.order, o...)
 	return gq
 }
 
 // QueryClasses chains the current query on the "classes" edge.
 func (gq *GradeQuery) QueryClasses() *ClassQuery {
-	query := &ClassQuery{config: gq.config}
+	query := (&ClassClient{config: gq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := gq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (gq *GradeQuery) QueryClasses() *ClassQuery {
 // First returns the first Grade entity from the query.
 // Returns a *NotFoundError when no Grade was found.
 func (gq *GradeQuery) First(ctx context.Context) (*Grade, error) {
-	nodes, err := gq.Limit(1).All(ctx)
+	nodes, err := gq.Limit(1).All(setContextOp(ctx, gq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (gq *GradeQuery) FirstX(ctx context.Context) *Grade {
 // Returns a *NotFoundError when no Grade ID was found.
 func (gq *GradeQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = gq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = gq.Limit(1).IDs(setContextOp(ctx, gq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (gq *GradeQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Grade entity is found.
 // Returns a *NotFoundError when no Grade entities are found.
 func (gq *GradeQuery) Only(ctx context.Context) (*Grade, error) {
-	nodes, err := gq.Limit(2).All(ctx)
+	nodes, err := gq.Limit(2).All(setContextOp(ctx, gq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (gq *GradeQuery) OnlyX(ctx context.Context) *Grade {
 // Returns a *NotFoundError when no entities are found.
 func (gq *GradeQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = gq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = gq.Limit(2).IDs(setContextOp(ctx, gq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (gq *GradeQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Grades.
 func (gq *GradeQuery) All(ctx context.Context) ([]*Grade, error) {
+	ctx = setContextOp(ctx, gq.ctx, "All")
 	if err := gq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return gq.sqlAll(ctx)
+	qr := querierAll[[]*Grade, *GradeQuery]()
+	return withInterceptors[[]*Grade](ctx, gq, qr, gq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (gq *GradeQuery) AllX(ctx context.Context) []*Grade {
 }
 
 // IDs executes the query and returns a list of Grade IDs.
-func (gq *GradeQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := gq.Select(grade.FieldID).Scan(ctx, &ids); err != nil {
+func (gq *GradeQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if gq.ctx.Unique == nil && gq.path != nil {
+		gq.Unique(true)
+	}
+	ctx = setContextOp(ctx, gq.ctx, "IDs")
+	if err = gq.Select(grade.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (gq *GradeQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (gq *GradeQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, gq.ctx, "Count")
 	if err := gq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return gq.sqlCount(ctx)
+	return withInterceptors[int](ctx, gq, querierCount[*GradeQuery](), gq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (gq *GradeQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (gq *GradeQuery) Exist(ctx context.Context) (bool, error) {
-	if err := gq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, gq.ctx, "Exist")
+	switch _, err := gq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return gq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (gq *GradeQuery) Clone() *GradeQuery {
 	}
 	return &GradeQuery{
 		config:      gq.config,
-		limit:       gq.limit,
-		offset:      gq.offset,
-		order:       append([]OrderFunc{}, gq.order...),
+		ctx:         gq.ctx.Clone(),
+		order:       append([]grade.OrderOption{}, gq.order...),
+		inters:      append([]Interceptor{}, gq.inters...),
 		predicates:  append([]predicate.Grade{}, gq.predicates...),
 		withClasses: gq.withClasses.Clone(),
 		// clone intermediate query.
-		sql:    gq.sql.Clone(),
-		path:   gq.path,
-		unique: gq.unique,
+		sql:  gq.sql.Clone(),
+		path: gq.path,
 	}
 }
 
 // WithClasses tells the query-builder to eager-load the nodes that are connected to
 // the "classes" edge. The optional arguments are used to configure the query builder of the edge.
 func (gq *GradeQuery) WithClasses(opts ...func(*ClassQuery)) *GradeQuery {
-	query := &ClassQuery{config: gq.config}
+	query := (&ClassClient{config: gq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (gq *GradeQuery) WithClasses(opts ...func(*ClassQuery)) *GradeQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (gq *GradeQuery) GroupBy(field string, fields ...string) *GradeGroupBy {
-	grbuild := &GradeGroupBy{config: gq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := gq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return gq.sqlQuery(ctx), nil
-	}
+	gq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &GradeGroupBy{build: gq}
+	grbuild.flds = &gq.ctx.Fields
 	grbuild.label = grade.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (gq *GradeQuery) GroupBy(field string, fields ...string) *GradeGroupBy {
 //		Select(grade.FieldName).
 //		Scan(ctx, &v)
 func (gq *GradeQuery) Select(fields ...string) *GradeSelect {
-	gq.fields = append(gq.fields, fields...)
-	selbuild := &GradeSelect{GradeQuery: gq}
-	selbuild.label = grade.Label
-	selbuild.flds, selbuild.scan = &gq.fields, selbuild.Scan
-	return selbuild
+	gq.ctx.Fields = append(gq.ctx.Fields, fields...)
+	sbuild := &GradeSelect{GradeQuery: gq}
+	sbuild.label = grade.Label
+	sbuild.flds, sbuild.scan = &gq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a GradeSelect configured with the given aggregations.
+func (gq *GradeQuery) Aggregate(fns ...AggregateFunc) *GradeSelect {
+	return gq.Select().Aggregate(fns...)
 }
 
 func (gq *GradeQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range gq.fields {
+	for _, inter := range gq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, gq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range gq.ctx.Fields {
 		if !grade.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -356,10 +374,10 @@ func (gq *GradeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Grade,
 			gq.withClasses != nil,
 		}
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Grade).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Grade{config: gq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -396,7 +414,7 @@ func (gq *GradeQuery) loadClasses(ctx context.Context, query *ClassQuery, nodes 
 	}
 	query.withFKs = true
 	query.Where(predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.InValues(grade.ClassesColumn, fks...))
+		s.Where(sql.InValues(s.C(grade.ClassesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -409,7 +427,7 @@ func (gq *GradeQuery) loadClasses(ctx context.Context, query *ClassQuery, nodes 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "grade_classes" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "grade_classes" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -418,38 +436,22 @@ func (gq *GradeQuery) loadClasses(ctx context.Context, query *ClassQuery, nodes 
 
 func (gq *GradeQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := gq.querySpec()
-	_spec.Node.Columns = gq.fields
-	if len(gq.fields) > 0 {
-		_spec.Unique = gq.unique != nil && *gq.unique
+	_spec.Node.Columns = gq.ctx.Fields
+	if len(gq.ctx.Fields) > 0 {
+		_spec.Unique = gq.ctx.Unique != nil && *gq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, gq.driver, _spec)
 }
 
-func (gq *GradeQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := gq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (gq *GradeQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   grade.Table,
-			Columns: grade.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: grade.FieldID,
-			},
-		},
-		From:   gq.sql,
-		Unique: true,
-	}
-	if unique := gq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(grade.Table, grade.Columns, sqlgraph.NewFieldSpec(grade.FieldID, field.TypeString))
+	_spec.From = gq.sql
+	if unique := gq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if gq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := gq.fields; len(fields) > 0 {
+	if fields := gq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, grade.FieldID)
 		for i := range fields {
@@ -465,10 +467,10 @@ func (gq *GradeQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := gq.limit; limit != nil {
+	if limit := gq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := gq.offset; offset != nil {
+	if offset := gq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := gq.order; len(ps) > 0 {
@@ -484,7 +486,7 @@ func (gq *GradeQuery) querySpec() *sqlgraph.QuerySpec {
 func (gq *GradeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(gq.driver.Dialect())
 	t1 := builder.Table(grade.Table)
-	columns := gq.fields
+	columns := gq.ctx.Fields
 	if len(columns) == 0 {
 		columns = grade.Columns
 	}
@@ -493,7 +495,7 @@ func (gq *GradeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = gq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if gq.unique != nil && *gq.unique {
+	if gq.ctx.Unique != nil && *gq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range gq.predicates {
@@ -502,12 +504,12 @@ func (gq *GradeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range gq.order {
 		p(selector)
 	}
-	if offset := gq.offset; offset != nil {
+	if offset := gq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := gq.limit; limit != nil {
+	if limit := gq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -515,13 +517,8 @@ func (gq *GradeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // GradeGroupBy is the group-by builder for Grade entities.
 type GradeGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *GradeQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -530,74 +527,77 @@ func (ggb *GradeGroupBy) Aggregate(fns ...AggregateFunc) *GradeGroupBy {
 	return ggb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (ggb *GradeGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := ggb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (ggb *GradeGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ggb.build.ctx, "GroupBy")
+	if err := ggb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ggb.sql = query
-	return ggb.sqlScan(ctx, v)
+	return scanWithInterceptors[*GradeQuery, *GradeGroupBy](ctx, ggb.build, ggb, ggb.build.inters, v)
 }
 
-func (ggb *GradeGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range ggb.fields {
-		if !grade.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (ggb *GradeGroupBy) sqlScan(ctx context.Context, root *GradeQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(ggb.fns))
+	for _, fn := range ggb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := ggb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*ggb.flds)+len(ggb.fns))
+		for _, f := range *ggb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*ggb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := ggb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := ggb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (ggb *GradeGroupBy) sqlQuery() *sql.Selector {
-	selector := ggb.sql.Select()
-	aggregation := make([]string, 0, len(ggb.fns))
-	for _, fn := range ggb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(ggb.fields)+len(ggb.fns))
-		for _, f := range ggb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(ggb.fields...)...)
-}
-
 // GradeSelect is the builder for selecting fields of Grade entities.
 type GradeSelect struct {
 	*GradeQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (gs *GradeSelect) Aggregate(fns ...AggregateFunc) *GradeSelect {
+	gs.fns = append(gs.fns, fns...)
+	return gs
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (gs *GradeSelect) Scan(ctx context.Context, v interface{}) error {
+func (gs *GradeSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, gs.ctx, "Select")
 	if err := gs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	gs.sql = gs.GradeQuery.sqlQuery(ctx)
-	return gs.sqlScan(ctx, v)
+	return scanWithInterceptors[*GradeQuery, *GradeSelect](ctx, gs.GradeQuery, gs, gs.inters, v)
 }
 
-func (gs *GradeSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (gs *GradeSelect) sqlScan(ctx context.Context, root *GradeQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(gs.fns))
+	for _, fn := range gs.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*gs.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := gs.sql.Query()
+	query, args := selector.Query()
 	if err := gs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

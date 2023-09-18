@@ -20,11 +20,9 @@ import (
 // AttendanceDayQuery is the builder for querying AttendanceDay entities.
 type AttendanceDayQuery struct {
 	config
-	limit           *int
-	offset          *int
-	unique          *bool
-	order           []OrderFunc
-	fields          []string
+	ctx             *QueryContext
+	order           []attendanceday.OrderOption
+	inters          []Interceptor
 	predicates      []predicate.AttendanceDay
 	withAttendances *AttendanceQuery
 	withClassPeriod *ClassPeriodQuery
@@ -40,34 +38,34 @@ func (adq *AttendanceDayQuery) Where(ps ...predicate.AttendanceDay) *AttendanceD
 	return adq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (adq *AttendanceDayQuery) Limit(limit int) *AttendanceDayQuery {
-	adq.limit = &limit
+	adq.ctx.Limit = &limit
 	return adq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (adq *AttendanceDayQuery) Offset(offset int) *AttendanceDayQuery {
-	adq.offset = &offset
+	adq.ctx.Offset = &offset
 	return adq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (adq *AttendanceDayQuery) Unique(unique bool) *AttendanceDayQuery {
-	adq.unique = &unique
+	adq.ctx.Unique = &unique
 	return adq
 }
 
-// Order adds an order step to the query.
-func (adq *AttendanceDayQuery) Order(o ...OrderFunc) *AttendanceDayQuery {
+// Order specifies how the records should be ordered.
+func (adq *AttendanceDayQuery) Order(o ...attendanceday.OrderOption) *AttendanceDayQuery {
 	adq.order = append(adq.order, o...)
 	return adq
 }
 
 // QueryAttendances chains the current query on the "attendances" edge.
 func (adq *AttendanceDayQuery) QueryAttendances() *AttendanceQuery {
-	query := &AttendanceQuery{config: adq.config}
+	query := (&AttendanceClient{config: adq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := adq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (adq *AttendanceDayQuery) QueryAttendances() *AttendanceQuery {
 
 // QueryClassPeriod chains the current query on the "classPeriod" edge.
 func (adq *AttendanceDayQuery) QueryClassPeriod() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: adq.config}
+	query := (&ClassPeriodClient{config: adq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := adq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,7 +110,7 @@ func (adq *AttendanceDayQuery) QueryClassPeriod() *ClassPeriodQuery {
 // First returns the first AttendanceDay entity from the query.
 // Returns a *NotFoundError when no AttendanceDay was found.
 func (adq *AttendanceDayQuery) First(ctx context.Context) (*AttendanceDay, error) {
-	nodes, err := adq.Limit(1).All(ctx)
+	nodes, err := adq.Limit(1).All(setContextOp(ctx, adq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (adq *AttendanceDayQuery) FirstX(ctx context.Context) *AttendanceDay {
 // Returns a *NotFoundError when no AttendanceDay ID was found.
 func (adq *AttendanceDayQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = adq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = adq.Limit(1).IDs(setContextOp(ctx, adq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +156,7 @@ func (adq *AttendanceDayQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one AttendanceDay entity is found.
 // Returns a *NotFoundError when no AttendanceDay entities are found.
 func (adq *AttendanceDayQuery) Only(ctx context.Context) (*AttendanceDay, error) {
-	nodes, err := adq.Limit(2).All(ctx)
+	nodes, err := adq.Limit(2).All(setContextOp(ctx, adq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func (adq *AttendanceDayQuery) OnlyX(ctx context.Context) *AttendanceDay {
 // Returns a *NotFoundError when no entities are found.
 func (adq *AttendanceDayQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = adq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = adq.Limit(2).IDs(setContextOp(ctx, adq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,10 +209,12 @@ func (adq *AttendanceDayQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of AttendanceDays.
 func (adq *AttendanceDayQuery) All(ctx context.Context) ([]*AttendanceDay, error) {
+	ctx = setContextOp(ctx, adq.ctx, "All")
 	if err := adq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return adq.sqlAll(ctx)
+	qr := querierAll[[]*AttendanceDay, *AttendanceDayQuery]()
+	return withInterceptors[[]*AttendanceDay](ctx, adq, qr, adq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -227,9 +227,12 @@ func (adq *AttendanceDayQuery) AllX(ctx context.Context) []*AttendanceDay {
 }
 
 // IDs executes the query and returns a list of AttendanceDay IDs.
-func (adq *AttendanceDayQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := adq.Select(attendanceday.FieldID).Scan(ctx, &ids); err != nil {
+func (adq *AttendanceDayQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if adq.ctx.Unique == nil && adq.path != nil {
+		adq.Unique(true)
+	}
+	ctx = setContextOp(ctx, adq.ctx, "IDs")
+	if err = adq.Select(attendanceday.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -246,10 +249,11 @@ func (adq *AttendanceDayQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (adq *AttendanceDayQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, adq.ctx, "Count")
 	if err := adq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return adq.sqlCount(ctx)
+	return withInterceptors[int](ctx, adq, querierCount[*AttendanceDayQuery](), adq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -263,10 +267,15 @@ func (adq *AttendanceDayQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (adq *AttendanceDayQuery) Exist(ctx context.Context) (bool, error) {
-	if err := adq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, adq.ctx, "Exist")
+	switch _, err := adq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return adq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -286,23 +295,22 @@ func (adq *AttendanceDayQuery) Clone() *AttendanceDayQuery {
 	}
 	return &AttendanceDayQuery{
 		config:          adq.config,
-		limit:           adq.limit,
-		offset:          adq.offset,
-		order:           append([]OrderFunc{}, adq.order...),
+		ctx:             adq.ctx.Clone(),
+		order:           append([]attendanceday.OrderOption{}, adq.order...),
+		inters:          append([]Interceptor{}, adq.inters...),
 		predicates:      append([]predicate.AttendanceDay{}, adq.predicates...),
 		withAttendances: adq.withAttendances.Clone(),
 		withClassPeriod: adq.withClassPeriod.Clone(),
 		// clone intermediate query.
-		sql:    adq.sql.Clone(),
-		path:   adq.path,
-		unique: adq.unique,
+		sql:  adq.sql.Clone(),
+		path: adq.path,
 	}
 }
 
 // WithAttendances tells the query-builder to eager-load the nodes that are connected to
 // the "attendances" edge. The optional arguments are used to configure the query builder of the edge.
 func (adq *AttendanceDayQuery) WithAttendances(opts ...func(*AttendanceQuery)) *AttendanceDayQuery {
-	query := &AttendanceQuery{config: adq.config}
+	query := (&AttendanceClient{config: adq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -313,7 +321,7 @@ func (adq *AttendanceDayQuery) WithAttendances(opts ...func(*AttendanceQuery)) *
 // WithClassPeriod tells the query-builder to eager-load the nodes that are connected to
 // the "classPeriod" edge. The optional arguments are used to configure the query builder of the edge.
 func (adq *AttendanceDayQuery) WithClassPeriod(opts ...func(*ClassPeriodQuery)) *AttendanceDayQuery {
-	query := &ClassPeriodQuery{config: adq.config}
+	query := (&ClassPeriodClient{config: adq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -336,16 +344,11 @@ func (adq *AttendanceDayQuery) WithClassPeriod(opts ...func(*ClassPeriodQuery)) 
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (adq *AttendanceDayQuery) GroupBy(field string, fields ...string) *AttendanceDayGroupBy {
-	grbuild := &AttendanceDayGroupBy{config: adq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := adq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return adq.sqlQuery(ctx), nil
-	}
+	adq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AttendanceDayGroupBy{build: adq}
+	grbuild.flds = &adq.ctx.Fields
 	grbuild.label = attendanceday.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -362,15 +365,30 @@ func (adq *AttendanceDayQuery) GroupBy(field string, fields ...string) *Attendan
 //		Select(attendanceday.FieldDay).
 //		Scan(ctx, &v)
 func (adq *AttendanceDayQuery) Select(fields ...string) *AttendanceDaySelect {
-	adq.fields = append(adq.fields, fields...)
-	selbuild := &AttendanceDaySelect{AttendanceDayQuery: adq}
-	selbuild.label = attendanceday.Label
-	selbuild.flds, selbuild.scan = &adq.fields, selbuild.Scan
-	return selbuild
+	adq.ctx.Fields = append(adq.ctx.Fields, fields...)
+	sbuild := &AttendanceDaySelect{AttendanceDayQuery: adq}
+	sbuild.label = attendanceday.Label
+	sbuild.flds, sbuild.scan = &adq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AttendanceDaySelect configured with the given aggregations.
+func (adq *AttendanceDayQuery) Aggregate(fns ...AggregateFunc) *AttendanceDaySelect {
+	return adq.Select().Aggregate(fns...)
 }
 
 func (adq *AttendanceDayQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range adq.fields {
+	for _, inter := range adq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, adq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range adq.ctx.Fields {
 		if !attendanceday.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -401,10 +419,10 @@ func (adq *AttendanceDayQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, attendanceday.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*AttendanceDay).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &AttendanceDay{config: adq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -447,7 +465,7 @@ func (adq *AttendanceDayQuery) loadAttendances(ctx context.Context, query *Atten
 	}
 	query.withFKs = true
 	query.Where(predicate.Attendance(func(s *sql.Selector) {
-		s.Where(sql.InValues(attendanceday.AttendancesColumn, fks...))
+		s.Where(sql.InValues(s.C(attendanceday.AttendancesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -460,7 +478,7 @@ func (adq *AttendanceDayQuery) loadAttendances(ctx context.Context, query *Atten
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "attendance_day_attendances" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "attendance_day_attendances" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -478,6 +496,9 @@ func (adq *AttendanceDayQuery) loadClassPeriod(ctx context.Context, query *Class
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(classperiod.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -498,38 +519,22 @@ func (adq *AttendanceDayQuery) loadClassPeriod(ctx context.Context, query *Class
 
 func (adq *AttendanceDayQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := adq.querySpec()
-	_spec.Node.Columns = adq.fields
-	if len(adq.fields) > 0 {
-		_spec.Unique = adq.unique != nil && *adq.unique
+	_spec.Node.Columns = adq.ctx.Fields
+	if len(adq.ctx.Fields) > 0 {
+		_spec.Unique = adq.ctx.Unique != nil && *adq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, adq.driver, _spec)
 }
 
-func (adq *AttendanceDayQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := adq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (adq *AttendanceDayQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attendanceday.Table,
-			Columns: attendanceday.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: attendanceday.FieldID,
-			},
-		},
-		From:   adq.sql,
-		Unique: true,
-	}
-	if unique := adq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(attendanceday.Table, attendanceday.Columns, sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString))
+	_spec.From = adq.sql
+	if unique := adq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if adq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := adq.fields; len(fields) > 0 {
+	if fields := adq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, attendanceday.FieldID)
 		for i := range fields {
@@ -545,10 +550,10 @@ func (adq *AttendanceDayQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := adq.limit; limit != nil {
+	if limit := adq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := adq.offset; offset != nil {
+	if offset := adq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := adq.order; len(ps) > 0 {
@@ -564,7 +569,7 @@ func (adq *AttendanceDayQuery) querySpec() *sqlgraph.QuerySpec {
 func (adq *AttendanceDayQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(adq.driver.Dialect())
 	t1 := builder.Table(attendanceday.Table)
-	columns := adq.fields
+	columns := adq.ctx.Fields
 	if len(columns) == 0 {
 		columns = attendanceday.Columns
 	}
@@ -573,7 +578,7 @@ func (adq *AttendanceDayQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = adq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if adq.unique != nil && *adq.unique {
+	if adq.ctx.Unique != nil && *adq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range adq.predicates {
@@ -582,12 +587,12 @@ func (adq *AttendanceDayQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range adq.order {
 		p(selector)
 	}
-	if offset := adq.offset; offset != nil {
+	if offset := adq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := adq.limit; limit != nil {
+	if limit := adq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -595,13 +600,8 @@ func (adq *AttendanceDayQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // AttendanceDayGroupBy is the group-by builder for AttendanceDay entities.
 type AttendanceDayGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AttendanceDayQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -610,74 +610,77 @@ func (adgb *AttendanceDayGroupBy) Aggregate(fns ...AggregateFunc) *AttendanceDay
 	return adgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (adgb *AttendanceDayGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := adgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (adgb *AttendanceDayGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, adgb.build.ctx, "GroupBy")
+	if err := adgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	adgb.sql = query
-	return adgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AttendanceDayQuery, *AttendanceDayGroupBy](ctx, adgb.build, adgb, adgb.build.inters, v)
 }
 
-func (adgb *AttendanceDayGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range adgb.fields {
-		if !attendanceday.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (adgb *AttendanceDayGroupBy) sqlScan(ctx context.Context, root *AttendanceDayQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(adgb.fns))
+	for _, fn := range adgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := adgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*adgb.flds)+len(adgb.fns))
+		for _, f := range *adgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*adgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := adgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := adgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (adgb *AttendanceDayGroupBy) sqlQuery() *sql.Selector {
-	selector := adgb.sql.Select()
-	aggregation := make([]string, 0, len(adgb.fns))
-	for _, fn := range adgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(adgb.fields)+len(adgb.fns))
-		for _, f := range adgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(adgb.fields...)...)
-}
-
 // AttendanceDaySelect is the builder for selecting fields of AttendanceDay entities.
 type AttendanceDaySelect struct {
 	*AttendanceDayQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ads *AttendanceDaySelect) Aggregate(fns ...AggregateFunc) *AttendanceDaySelect {
+	ads.fns = append(ads.fns, fns...)
+	return ads
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ads *AttendanceDaySelect) Scan(ctx context.Context, v interface{}) error {
+func (ads *AttendanceDaySelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ads.ctx, "Select")
 	if err := ads.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ads.sql = ads.AttendanceDayQuery.sqlQuery(ctx)
-	return ads.sqlScan(ctx, v)
+	return scanWithInterceptors[*AttendanceDayQuery, *AttendanceDaySelect](ctx, ads.AttendanceDayQuery, ads, ads.inters, v)
 }
 
-func (ads *AttendanceDaySelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ads *AttendanceDaySelect) sqlScan(ctx context.Context, root *AttendanceDayQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ads.fns))
+	for _, fn := range ads.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ads.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ads.sql.Query()
+	query, args := selector.Query()
 	if err := ads.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

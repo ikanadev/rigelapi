@@ -18,11 +18,9 @@ import (
 // AdminActionQuery is the builder for querying AdminAction entities.
 type AdminActionQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
+	ctx         *QueryContext
+	order       []adminaction.OrderOption
+	inters      []Interceptor
 	predicates  []predicate.AdminAction
 	withTeacher *TeacherQuery
 	withFKs     bool
@@ -37,34 +35,34 @@ func (aaq *AdminActionQuery) Where(ps ...predicate.AdminAction) *AdminActionQuer
 	return aaq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (aaq *AdminActionQuery) Limit(limit int) *AdminActionQuery {
-	aaq.limit = &limit
+	aaq.ctx.Limit = &limit
 	return aaq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (aaq *AdminActionQuery) Offset(offset int) *AdminActionQuery {
-	aaq.offset = &offset
+	aaq.ctx.Offset = &offset
 	return aaq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (aaq *AdminActionQuery) Unique(unique bool) *AdminActionQuery {
-	aaq.unique = &unique
+	aaq.ctx.Unique = &unique
 	return aaq
 }
 
-// Order adds an order step to the query.
-func (aaq *AdminActionQuery) Order(o ...OrderFunc) *AdminActionQuery {
+// Order specifies how the records should be ordered.
+func (aaq *AdminActionQuery) Order(o ...adminaction.OrderOption) *AdminActionQuery {
 	aaq.order = append(aaq.order, o...)
 	return aaq
 }
 
 // QueryTeacher chains the current query on the "teacher" edge.
 func (aaq *AdminActionQuery) QueryTeacher() *TeacherQuery {
-	query := &TeacherQuery{config: aaq.config}
+	query := (&TeacherClient{config: aaq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aaq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (aaq *AdminActionQuery) QueryTeacher() *TeacherQuery {
 // First returns the first AdminAction entity from the query.
 // Returns a *NotFoundError when no AdminAction was found.
 func (aaq *AdminActionQuery) First(ctx context.Context) (*AdminAction, error) {
-	nodes, err := aaq.Limit(1).All(ctx)
+	nodes, err := aaq.Limit(1).All(setContextOp(ctx, aaq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (aaq *AdminActionQuery) FirstX(ctx context.Context) *AdminAction {
 // Returns a *NotFoundError when no AdminAction ID was found.
 func (aaq *AdminActionQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = aaq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = aaq.Limit(1).IDs(setContextOp(ctx, aaq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (aaq *AdminActionQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one AdminAction entity is found.
 // Returns a *NotFoundError when no AdminAction entities are found.
 func (aaq *AdminActionQuery) Only(ctx context.Context) (*AdminAction, error) {
-	nodes, err := aaq.Limit(2).All(ctx)
+	nodes, err := aaq.Limit(2).All(setContextOp(ctx, aaq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (aaq *AdminActionQuery) OnlyX(ctx context.Context) *AdminAction {
 // Returns a *NotFoundError when no entities are found.
 func (aaq *AdminActionQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = aaq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = aaq.Limit(2).IDs(setContextOp(ctx, aaq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (aaq *AdminActionQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of AdminActions.
 func (aaq *AdminActionQuery) All(ctx context.Context) ([]*AdminAction, error) {
+	ctx = setContextOp(ctx, aaq.ctx, "All")
 	if err := aaq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return aaq.sqlAll(ctx)
+	qr := querierAll[[]*AdminAction, *AdminActionQuery]()
+	return withInterceptors[[]*AdminAction](ctx, aaq, qr, aaq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (aaq *AdminActionQuery) AllX(ctx context.Context) []*AdminAction {
 }
 
 // IDs executes the query and returns a list of AdminAction IDs.
-func (aaq *AdminActionQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := aaq.Select(adminaction.FieldID).Scan(ctx, &ids); err != nil {
+func (aaq *AdminActionQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if aaq.ctx.Unique == nil && aaq.path != nil {
+		aaq.Unique(true)
+	}
+	ctx = setContextOp(ctx, aaq.ctx, "IDs")
+	if err = aaq.Select(adminaction.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (aaq *AdminActionQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (aaq *AdminActionQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, aaq.ctx, "Count")
 	if err := aaq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return aaq.sqlCount(ctx)
+	return withInterceptors[int](ctx, aaq, querierCount[*AdminActionQuery](), aaq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (aaq *AdminActionQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (aaq *AdminActionQuery) Exist(ctx context.Context) (bool, error) {
-	if err := aaq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, aaq.ctx, "Exist")
+	switch _, err := aaq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return aaq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (aaq *AdminActionQuery) Clone() *AdminActionQuery {
 	}
 	return &AdminActionQuery{
 		config:      aaq.config,
-		limit:       aaq.limit,
-		offset:      aaq.offset,
-		order:       append([]OrderFunc{}, aaq.order...),
+		ctx:         aaq.ctx.Clone(),
+		order:       append([]adminaction.OrderOption{}, aaq.order...),
+		inters:      append([]Interceptor{}, aaq.inters...),
 		predicates:  append([]predicate.AdminAction{}, aaq.predicates...),
 		withTeacher: aaq.withTeacher.Clone(),
 		// clone intermediate query.
-		sql:    aaq.sql.Clone(),
-		path:   aaq.path,
-		unique: aaq.unique,
+		sql:  aaq.sql.Clone(),
+		path: aaq.path,
 	}
 }
 
 // WithTeacher tells the query-builder to eager-load the nodes that are connected to
 // the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
 func (aaq *AdminActionQuery) WithTeacher(opts ...func(*TeacherQuery)) *AdminActionQuery {
-	query := &TeacherQuery{config: aaq.config}
+	query := (&TeacherClient{config: aaq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (aaq *AdminActionQuery) WithTeacher(opts ...func(*TeacherQuery)) *AdminActi
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (aaq *AdminActionQuery) GroupBy(field string, fields ...string) *AdminActionGroupBy {
-	grbuild := &AdminActionGroupBy{config: aaq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := aaq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return aaq.sqlQuery(ctx), nil
-	}
+	aaq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AdminActionGroupBy{build: aaq}
+	grbuild.flds = &aaq.ctx.Fields
 	grbuild.label = adminaction.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (aaq *AdminActionQuery) GroupBy(field string, fields ...string) *AdminActio
 //		Select(adminaction.FieldAction).
 //		Scan(ctx, &v)
 func (aaq *AdminActionQuery) Select(fields ...string) *AdminActionSelect {
-	aaq.fields = append(aaq.fields, fields...)
-	selbuild := &AdminActionSelect{AdminActionQuery: aaq}
-	selbuild.label = adminaction.Label
-	selbuild.flds, selbuild.scan = &aaq.fields, selbuild.Scan
-	return selbuild
+	aaq.ctx.Fields = append(aaq.ctx.Fields, fields...)
+	sbuild := &AdminActionSelect{AdminActionQuery: aaq}
+	sbuild.label = adminaction.Label
+	sbuild.flds, sbuild.scan = &aaq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AdminActionSelect configured with the given aggregations.
+func (aaq *AdminActionQuery) Aggregate(fns ...AggregateFunc) *AdminActionSelect {
+	return aaq.Select().Aggregate(fns...)
 }
 
 func (aaq *AdminActionQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range aaq.fields {
+	for _, inter := range aaq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, aaq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range aaq.ctx.Fields {
 		if !adminaction.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -363,10 +381,10 @@ func (aaq *AdminActionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, adminaction.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*AdminAction).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &AdminAction{config: aaq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -403,6 +421,9 @@ func (aaq *AdminActionQuery) loadTeacher(ctx context.Context, query *TeacherQuer
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -422,38 +443,22 @@ func (aaq *AdminActionQuery) loadTeacher(ctx context.Context, query *TeacherQuer
 
 func (aaq *AdminActionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := aaq.querySpec()
-	_spec.Node.Columns = aaq.fields
-	if len(aaq.fields) > 0 {
-		_spec.Unique = aaq.unique != nil && *aaq.unique
+	_spec.Node.Columns = aaq.ctx.Fields
+	if len(aaq.ctx.Fields) > 0 {
+		_spec.Unique = aaq.ctx.Unique != nil && *aaq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, aaq.driver, _spec)
 }
 
-func (aaq *AdminActionQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := aaq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (aaq *AdminActionQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   adminaction.Table,
-			Columns: adminaction.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: adminaction.FieldID,
-			},
-		},
-		From:   aaq.sql,
-		Unique: true,
-	}
-	if unique := aaq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(adminaction.Table, adminaction.Columns, sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString))
+	_spec.From = aaq.sql
+	if unique := aaq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if aaq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := aaq.fields; len(fields) > 0 {
+	if fields := aaq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, adminaction.FieldID)
 		for i := range fields {
@@ -469,10 +474,10 @@ func (aaq *AdminActionQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := aaq.limit; limit != nil {
+	if limit := aaq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := aaq.offset; offset != nil {
+	if offset := aaq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := aaq.order; len(ps) > 0 {
@@ -488,7 +493,7 @@ func (aaq *AdminActionQuery) querySpec() *sqlgraph.QuerySpec {
 func (aaq *AdminActionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(aaq.driver.Dialect())
 	t1 := builder.Table(adminaction.Table)
-	columns := aaq.fields
+	columns := aaq.ctx.Fields
 	if len(columns) == 0 {
 		columns = adminaction.Columns
 	}
@@ -497,7 +502,7 @@ func (aaq *AdminActionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = aaq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if aaq.unique != nil && *aaq.unique {
+	if aaq.ctx.Unique != nil && *aaq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range aaq.predicates {
@@ -506,12 +511,12 @@ func (aaq *AdminActionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range aaq.order {
 		p(selector)
 	}
-	if offset := aaq.offset; offset != nil {
+	if offset := aaq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := aaq.limit; limit != nil {
+	if limit := aaq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -519,13 +524,8 @@ func (aaq *AdminActionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // AdminActionGroupBy is the group-by builder for AdminAction entities.
 type AdminActionGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AdminActionQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -534,74 +534,77 @@ func (aagb *AdminActionGroupBy) Aggregate(fns ...AggregateFunc) *AdminActionGrou
 	return aagb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (aagb *AdminActionGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := aagb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (aagb *AdminActionGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, aagb.build.ctx, "GroupBy")
+	if err := aagb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	aagb.sql = query
-	return aagb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AdminActionQuery, *AdminActionGroupBy](ctx, aagb.build, aagb, aagb.build.inters, v)
 }
 
-func (aagb *AdminActionGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range aagb.fields {
-		if !adminaction.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (aagb *AdminActionGroupBy) sqlScan(ctx context.Context, root *AdminActionQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(aagb.fns))
+	for _, fn := range aagb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := aagb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*aagb.flds)+len(aagb.fns))
+		for _, f := range *aagb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*aagb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := aagb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := aagb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (aagb *AdminActionGroupBy) sqlQuery() *sql.Selector {
-	selector := aagb.sql.Select()
-	aggregation := make([]string, 0, len(aagb.fns))
-	for _, fn := range aagb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(aagb.fields)+len(aagb.fns))
-		for _, f := range aagb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(aagb.fields...)...)
-}
-
 // AdminActionSelect is the builder for selecting fields of AdminAction entities.
 type AdminActionSelect struct {
 	*AdminActionQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (aas *AdminActionSelect) Aggregate(fns ...AggregateFunc) *AdminActionSelect {
+	aas.fns = append(aas.fns, fns...)
+	return aas
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (aas *AdminActionSelect) Scan(ctx context.Context, v interface{}) error {
+func (aas *AdminActionSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, aas.ctx, "Select")
 	if err := aas.prepareQuery(ctx); err != nil {
 		return err
 	}
-	aas.sql = aas.AdminActionQuery.sqlQuery(ctx)
-	return aas.sqlScan(ctx, v)
+	return scanWithInterceptors[*AdminActionQuery, *AdminActionSelect](ctx, aas.AdminActionQuery, aas, aas.inters, v)
 }
 
-func (aas *AdminActionSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (aas *AdminActionSelect) sqlScan(ctx context.Context, root *AdminActionQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(aas.fns))
+	for _, fn := range aas.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*aas.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := aas.sql.Query()
+	query, args := selector.Query()
 	if err := aas.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

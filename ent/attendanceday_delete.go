@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (add *AttendanceDayDelete) Where(ps ...predicate.AttendanceDay) *Attendance
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (add *AttendanceDayDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(add.hooks) == 0 {
-		affected, err = add.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttendanceDayMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			add.mutation = mutation
-			affected, err = add.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(add.hooks) - 1; i >= 0; i-- {
-			if add.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = add.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, add.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, add.sqlExec, add.mutation, add.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (add *AttendanceDayDelete) ExecX(ctx context.Context) int {
 }
 
 func (add *AttendanceDayDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: attendanceday.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: attendanceday.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(attendanceday.Table, sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString))
 	if ps := add.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (add *AttendanceDayDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	add.mutation.done = true
 	return affected, err
 }
 
 // AttendanceDayDeleteOne is the builder for deleting a single AttendanceDay entity.
 type AttendanceDayDeleteOne struct {
 	add *AttendanceDayDelete
+}
+
+// Where appends a list predicates to the AttendanceDayDelete builder.
+func (addo *AttendanceDayDeleteOne) Where(ps ...predicate.AttendanceDay) *AttendanceDayDeleteOne {
+	addo.add.mutation.Where(ps...)
+	return addo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (addo *AttendanceDayDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (addo *AttendanceDayDeleteOne) ExecX(ctx context.Context) {
-	addo.add.ExecX(ctx)
+	if err := addo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

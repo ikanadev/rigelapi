@@ -103,34 +103,7 @@ func (mu *MunicipioUpdate) ClearProvincia() *MunicipioUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (mu *MunicipioUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(mu.hooks) == 0 {
-		affected, err = mu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MunicipioMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			mu.mutation = mutation
-			affected, err = mu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(mu.hooks) - 1; i >= 0; i-- {
-			if mu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = mu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, mu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, mu.sqlSave, mu.mutation, mu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -156,16 +129,7 @@ func (mu *MunicipioUpdate) ExecX(ctx context.Context) {
 }
 
 func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   municipio.Table,
-			Columns: municipio.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: municipio.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(municipio.Table, municipio.Columns, sqlgraph.NewFieldSpec(municipio.FieldID, field.TypeString))
 	if ps := mu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -174,11 +138,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := mu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: municipio.FieldName,
-		})
+		_spec.SetField(municipio.FieldName, field.TypeString, value)
 	}
 	if mu.mutation.SchoolsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -188,10 +148,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -204,10 +161,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -223,10 +177,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -242,10 +193,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{municipio.ProvinciaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -258,10 +206,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{municipio.ProvinciaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -277,6 +222,7 @@ func (mu *MunicipioUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	mu.mutation.done = true
 	return n, nil
 }
 
@@ -360,6 +306,12 @@ func (muo *MunicipioUpdateOne) ClearProvincia() *MunicipioUpdateOne {
 	return muo
 }
 
+// Where appends a list predicates to the MunicipioUpdate builder.
+func (muo *MunicipioUpdateOne) Where(ps ...predicate.Municipio) *MunicipioUpdateOne {
+	muo.mutation.Where(ps...)
+	return muo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (muo *MunicipioUpdateOne) Select(field string, fields ...string) *MunicipioUpdateOne {
@@ -369,40 +321,7 @@ func (muo *MunicipioUpdateOne) Select(field string, fields ...string) *Municipio
 
 // Save executes the query and returns the updated Municipio entity.
 func (muo *MunicipioUpdateOne) Save(ctx context.Context) (*Municipio, error) {
-	var (
-		err  error
-		node *Municipio
-	)
-	if len(muo.hooks) == 0 {
-		node, err = muo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MunicipioMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			muo.mutation = mutation
-			node, err = muo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(muo.hooks) - 1; i >= 0; i-- {
-			if muo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = muo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, muo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Municipio)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from MunicipioMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, muo.sqlSave, muo.mutation, muo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -428,16 +347,7 @@ func (muo *MunicipioUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   municipio.Table,
-			Columns: municipio.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: municipio.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(municipio.Table, municipio.Columns, sqlgraph.NewFieldSpec(municipio.FieldID, field.TypeString))
 	id, ok := muo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Municipio.id" for update`)}
@@ -463,11 +373,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 		}
 	}
 	if value, ok := muo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: municipio.FieldName,
-		})
+		_spec.SetField(municipio.FieldName, field.TypeString, value)
 	}
 	if muo.mutation.SchoolsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -477,10 +383,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -493,10 +396,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -512,10 +412,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 			Columns: []string{municipio.SchoolsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: school.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(school.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -531,10 +428,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 			Columns: []string{municipio.ProvinciaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -547,10 +441,7 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 			Columns: []string{municipio.ProvinciaColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -569,5 +460,6 @@ func (muo *MunicipioUpdateOne) sqlSave(ctx context.Context) (_node *Municipio, e
 		}
 		return nil, err
 	}
+	muo.mutation.done = true
 	return _node, nil
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/dpto"
 	"github.com/vmkevv/rigelapi/ent/provincia"
@@ -22,6 +23,7 @@ type Provincia struct {
 	// The values are being populated by the ProvinciaQuery when eager-loading is set.
 	Edges           ProvinciaEdges `json:"edges"`
 	dpto_provincias *string
+	selectValues    sql.SelectValues
 }
 
 // ProvinciaEdges holds the relations/edges for other nodes in the graph.
@@ -58,8 +60,8 @@ func (e ProvinciaEdges) DepartamentoOrErr() (*Dpto, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Provincia) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Provincia) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case provincia.FieldID, provincia.FieldName:
@@ -67,7 +69,7 @@ func (*Provincia) scanValues(columns []string) ([]interface{}, error) {
 		case provincia.ForeignKeys[0]: // dpto_provincias
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Provincia", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -75,7 +77,7 @@ func (*Provincia) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Provincia fields.
-func (pr *Provincia) assignValues(columns []string, values []interface{}) error {
+func (pr *Provincia) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -100,26 +102,34 @@ func (pr *Provincia) assignValues(columns []string, values []interface{}) error 
 				pr.dpto_provincias = new(string)
 				*pr.dpto_provincias = value.String
 			}
+		default:
+			pr.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Provincia.
+// This includes values selected through modifiers, order, etc.
+func (pr *Provincia) Value(name string) (ent.Value, error) {
+	return pr.selectValues.Get(name)
+}
+
 // QueryMunicipios queries the "municipios" edge of the Provincia entity.
 func (pr *Provincia) QueryMunicipios() *MunicipioQuery {
-	return (&ProvinciaClient{config: pr.config}).QueryMunicipios(pr)
+	return NewProvinciaClient(pr.config).QueryMunicipios(pr)
 }
 
 // QueryDepartamento queries the "departamento" edge of the Provincia entity.
 func (pr *Provincia) QueryDepartamento() *DptoQuery {
-	return (&ProvinciaClient{config: pr.config}).QueryDepartamento(pr)
+	return NewProvinciaClient(pr.config).QueryDepartamento(pr)
 }
 
 // Update returns a builder for updating this Provincia.
 // Note that you need to call Provincia.Unwrap() before calling this method if this Provincia
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pr *Provincia) Update() *ProvinciaUpdateOne {
-	return (&ProvinciaClient{config: pr.config}).UpdateOne(pr)
+	return NewProvinciaClient(pr.config).UpdateOne(pr)
 }
 
 // Unwrap unwraps the Provincia entity that was returned from a transaction after it was closed,
@@ -146,9 +156,3 @@ func (pr *Provincia) String() string {
 
 // ProvinciaSlice is a parsable slice of Provincia.
 type ProvinciaSlice []*Provincia
-
-func (pr ProvinciaSlice) config(cfg config) {
-	for _i := range pr {
-		pr[_i].config = cfg
-	}
-}

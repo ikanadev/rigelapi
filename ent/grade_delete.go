@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (gd *GradeDelete) Where(ps ...predicate.Grade) *GradeDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (gd *GradeDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(gd.hooks) == 0 {
-		affected, err = gd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*GradeMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			gd.mutation = mutation
-			affected, err = gd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(gd.hooks) - 1; i >= 0; i-- {
-			if gd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = gd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, gd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, gd.sqlExec, gd.mutation, gd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (gd *GradeDelete) ExecX(ctx context.Context) int {
 }
 
 func (gd *GradeDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: grade.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: grade.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(grade.Table, sqlgraph.NewFieldSpec(grade.FieldID, field.TypeString))
 	if ps := gd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (gd *GradeDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	gd.mutation.done = true
 	return affected, err
 }
 
 // GradeDeleteOne is the builder for deleting a single Grade entity.
 type GradeDeleteOne struct {
 	gd *GradeDelete
+}
+
+// Where appends a list predicates to the GradeDelete builder.
+func (gdo *GradeDeleteOne) Where(ps ...predicate.Grade) *GradeDeleteOne {
+	gdo.gd.mutation.Where(ps...)
+	return gdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (gdo *GradeDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (gdo *GradeDeleteOne) ExecX(ctx context.Context) {
-	gdo.gd.ExecX(ctx)
+	if err := gdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

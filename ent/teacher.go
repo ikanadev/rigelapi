@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/teacher"
 )
@@ -27,7 +28,8 @@ type Teacher struct {
 	IsAdmin bool `json:"is_admin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TeacherQuery when eager-loading is set.
-	Edges TeacherEdges `json:"edges"`
+	Edges        TeacherEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // TeacherEdges holds the relations/edges for other nodes in the graph.
@@ -71,8 +73,8 @@ func (e TeacherEdges) SubscriptionsOrErr() ([]*Subscription, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Teacher) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Teacher) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case teacher.FieldIsAdmin:
@@ -80,7 +82,7 @@ func (*Teacher) scanValues(columns []string) ([]interface{}, error) {
 		case teacher.FieldID, teacher.FieldName, teacher.FieldLastName, teacher.FieldEmail, teacher.FieldPassword:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Teacher", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -88,7 +90,7 @@ func (*Teacher) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Teacher fields.
-func (t *Teacher) assignValues(columns []string, values []interface{}) error {
+func (t *Teacher) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -130,31 +132,39 @@ func (t *Teacher) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				t.IsAdmin = value.Bool
 			}
+		default:
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Teacher.
+// This includes values selected through modifiers, order, etc.
+func (t *Teacher) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
+}
+
 // QueryClasses queries the "classes" edge of the Teacher entity.
 func (t *Teacher) QueryClasses() *ClassQuery {
-	return (&TeacherClient{config: t.config}).QueryClasses(t)
+	return NewTeacherClient(t.config).QueryClasses(t)
 }
 
 // QueryActions queries the "actions" edge of the Teacher entity.
 func (t *Teacher) QueryActions() *AdminActionQuery {
-	return (&TeacherClient{config: t.config}).QueryActions(t)
+	return NewTeacherClient(t.config).QueryActions(t)
 }
 
 // QuerySubscriptions queries the "subscriptions" edge of the Teacher entity.
 func (t *Teacher) QuerySubscriptions() *SubscriptionQuery {
-	return (&TeacherClient{config: t.config}).QuerySubscriptions(t)
+	return NewTeacherClient(t.config).QuerySubscriptions(t)
 }
 
 // Update returns a builder for updating this Teacher.
 // Note that you need to call Teacher.Unwrap() before calling this method if this Teacher
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (t *Teacher) Update() *TeacherUpdateOne {
-	return (&TeacherClient{config: t.config}).UpdateOne(t)
+	return NewTeacherClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Teacher entity that was returned from a transaction after it was closed,
@@ -193,9 +203,3 @@ func (t *Teacher) String() string {
 
 // Teachers is a parsable slice of Teacher.
 type Teachers []*Teacher
-
-func (t Teachers) config(cfg config) {
-	for _i := range t {
-		t[_i].config = cfg
-	}
-}

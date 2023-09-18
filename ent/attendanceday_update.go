@@ -104,34 +104,7 @@ func (adu *AttendanceDayUpdate) ClearClassPeriod() *AttendanceDayUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (adu *AttendanceDayUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(adu.hooks) == 0 {
-		affected, err = adu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttendanceDayMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			adu.mutation = mutation
-			affected, err = adu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(adu.hooks) - 1; i >= 0; i-- {
-			if adu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = adu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, adu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, adu.sqlSave, adu.mutation, adu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -157,16 +130,7 @@ func (adu *AttendanceDayUpdate) ExecX(ctx context.Context) {
 }
 
 func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attendanceday.Table,
-			Columns: attendanceday.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: attendanceday.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(attendanceday.Table, attendanceday.Columns, sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString))
 	if ps := adu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -175,11 +139,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 	}
 	if value, ok := adu.mutation.Day(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: attendanceday.FieldDay,
-		})
+		_spec.SetField(attendanceday.FieldDay, field.TypeTime, value)
 	}
 	if adu.mutation.AttendancesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -189,10 +149,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -205,10 +162,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -224,10 +178,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -243,10 +194,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{attendanceday.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -259,10 +207,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{attendanceday.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -278,6 +223,7 @@ func (adu *AttendanceDayUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
+	adu.mutation.done = true
 	return n, nil
 }
 
@@ -361,6 +307,12 @@ func (aduo *AttendanceDayUpdateOne) ClearClassPeriod() *AttendanceDayUpdateOne {
 	return aduo
 }
 
+// Where appends a list predicates to the AttendanceDayUpdate builder.
+func (aduo *AttendanceDayUpdateOne) Where(ps ...predicate.AttendanceDay) *AttendanceDayUpdateOne {
+	aduo.mutation.Where(ps...)
+	return aduo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (aduo *AttendanceDayUpdateOne) Select(field string, fields ...string) *AttendanceDayUpdateOne {
@@ -370,40 +322,7 @@ func (aduo *AttendanceDayUpdateOne) Select(field string, fields ...string) *Atte
 
 // Save executes the query and returns the updated AttendanceDay entity.
 func (aduo *AttendanceDayUpdateOne) Save(ctx context.Context) (*AttendanceDay, error) {
-	var (
-		err  error
-		node *AttendanceDay
-	)
-	if len(aduo.hooks) == 0 {
-		node, err = aduo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AttendanceDayMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aduo.mutation = mutation
-			node, err = aduo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aduo.hooks) - 1; i >= 0; i-- {
-			if aduo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aduo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aduo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AttendanceDay)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AttendanceDayMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aduo.sqlSave, aduo.mutation, aduo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -429,16 +348,7 @@ func (aduo *AttendanceDayUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *AttendanceDay, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   attendanceday.Table,
-			Columns: attendanceday.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: attendanceday.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(attendanceday.Table, attendanceday.Columns, sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString))
 	id, ok := aduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AttendanceDay.id" for update`)}
@@ -464,11 +374,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 		}
 	}
 	if value, ok := aduo.mutation.Day(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: attendanceday.FieldDay,
-		})
+		_spec.SetField(attendanceday.FieldDay, field.TypeTime, value)
 	}
 	if aduo.mutation.AttendancesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -478,10 +384,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -494,10 +397,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -513,10 +413,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 			Columns: []string{attendanceday.AttendancesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendance.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendance.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -532,10 +429,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 			Columns: []string{attendanceday.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -548,10 +442,7 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 			Columns: []string{attendanceday.ClassPeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: classperiod.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -570,5 +461,6 @@ func (aduo *AttendanceDayUpdateOne) sqlSave(ctx context.Context) (_node *Attenda
 		}
 		return nil, err
 	}
+	aduo.mutation.done = true
 	return _node, nil
 }

@@ -83,49 +83,7 @@ func (ac *AreaCreate) Mutation() *AreaMutation {
 
 // Save creates the Area in the database.
 func (ac *AreaCreate) Save(ctx context.Context) (*Area, error) {
-	var (
-		err  error
-		node *Area
-	)
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AreaMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Area)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AreaMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -162,6 +120,9 @@ func (ac *AreaCreate) check() error {
 }
 
 func (ac *AreaCreate) sqlSave(ctx context.Context) (*Area, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -176,19 +137,15 @@ func (ac *AreaCreate) sqlSave(ctx context.Context) (*Area, error) {
 			return nil, fmt.Errorf("unexpected Area.ID type: %T", _spec.ID.Value)
 		}
 	}
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *AreaCreate) createSpec() (*Area, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Area{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: area.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: area.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(area.Table, sqlgraph.NewFieldSpec(area.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = ac.conflict
 	if id, ok := ac.mutation.ID(); ok {
@@ -196,19 +153,11 @@ func (ac *AreaCreate) createSpec() (*Area, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := ac.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: area.FieldName,
-		})
+		_spec.SetField(area.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := ac.mutation.Points(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: area.FieldPoints,
-		})
+		_spec.SetField(area.FieldPoints, field.TypeInt, value)
 		_node.Points = value
 	}
 	if nodes := ac.mutation.ActivitiesIDs(); len(nodes) > 0 {
@@ -219,10 +168,7 @@ func (ac *AreaCreate) createSpec() (*Area, *sqlgraph.CreateSpec) {
 			Columns: []string{area.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -238,10 +184,7 @@ func (ac *AreaCreate) createSpec() (*Area, *sqlgraph.CreateSpec) {
 			Columns: []string{area.YearColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: year.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(year.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -477,8 +420,8 @@ func (acb *AreaCreateBulk) Save(ctx context.Context) ([]*Area, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
@@ -592,7 +535,6 @@ func (u *AreaUpsertBulk) UpdateNewValues() *AreaUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(area.FieldID)
-				return
 			}
 		}
 	}))

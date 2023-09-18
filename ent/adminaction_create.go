@@ -67,49 +67,7 @@ func (aac *AdminActionCreate) Mutation() *AdminActionMutation {
 
 // Save creates the AdminAction in the database.
 func (aac *AdminActionCreate) Save(ctx context.Context) (*AdminAction, error) {
-	var (
-		err  error
-		node *AdminAction
-	)
-	if len(aac.hooks) == 0 {
-		if err = aac.check(); err != nil {
-			return nil, err
-		}
-		node, err = aac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminActionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = aac.check(); err != nil {
-				return nil, err
-			}
-			aac.mutation = mutation
-			if node, err = aac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aac.hooks) - 1; i >= 0; i-- {
-			if aac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AdminAction)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AdminActionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aac.sqlSave, aac.mutation, aac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -146,6 +104,9 @@ func (aac *AdminActionCreate) check() error {
 }
 
 func (aac *AdminActionCreate) sqlSave(ctx context.Context) (*AdminAction, error) {
+	if err := aac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := aac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, aac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -160,19 +121,15 @@ func (aac *AdminActionCreate) sqlSave(ctx context.Context) (*AdminAction, error)
 			return nil, fmt.Errorf("unexpected AdminAction.ID type: %T", _spec.ID.Value)
 		}
 	}
+	aac.mutation.id = &_node.ID
+	aac.mutation.done = true
 	return _node, nil
 }
 
 func (aac *AdminActionCreate) createSpec() (*AdminAction, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AdminAction{config: aac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: adminaction.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: adminaction.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(adminaction.Table, sqlgraph.NewFieldSpec(adminaction.FieldID, field.TypeString))
 	)
 	_spec.OnConflict = aac.conflict
 	if id, ok := aac.mutation.ID(); ok {
@@ -180,19 +137,11 @@ func (aac *AdminActionCreate) createSpec() (*AdminAction, *sqlgraph.CreateSpec) 
 		_spec.ID.Value = id
 	}
 	if value, ok := aac.mutation.Action(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldAction,
-		})
+		_spec.SetField(adminaction.FieldAction, field.TypeString, value)
 		_node.Action = value
 	}
 	if value, ok := aac.mutation.Info(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: adminaction.FieldInfo,
-		})
+		_spec.SetField(adminaction.FieldInfo, field.TypeString, value)
 		_node.Info = value
 	}
 	if nodes := aac.mutation.TeacherIDs(); len(nodes) > 0 {
@@ -203,10 +152,7 @@ func (aac *AdminActionCreate) createSpec() (*AdminAction, *sqlgraph.CreateSpec) 
 			Columns: []string{adminaction.TeacherColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: teacher.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(teacher.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -429,8 +375,8 @@ func (aacb *AdminActionCreateBulk) Save(ctx context.Context) ([]*AdminAction, er
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, aacb.builders[i+1].mutation)
 				} else {
@@ -544,7 +490,6 @@ func (u *AdminActionUpsertBulk) UpdateNewValues() *AdminActionUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(adminaction.FieldID)
-				return
 			}
 		}
 	}))

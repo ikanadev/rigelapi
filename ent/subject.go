@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/subject"
 )
@@ -19,7 +20,8 @@ type Subject struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
-	Edges SubjectEdges `json:"edges"`
+	Edges        SubjectEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // SubjectEdges holds the relations/edges for other nodes in the graph.
@@ -41,14 +43,14 @@ func (e SubjectEdges) ClassesOrErr() ([]*Class, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Subject) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Subject) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case subject.FieldID, subject.FieldName:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Subject", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -56,7 +58,7 @@ func (*Subject) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Subject fields.
-func (s *Subject) assignValues(columns []string, values []interface{}) error {
+func (s *Subject) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -74,21 +76,29 @@ func (s *Subject) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				s.Name = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Subject.
+// This includes values selected through modifiers, order, etc.
+func (s *Subject) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryClasses queries the "classes" edge of the Subject entity.
 func (s *Subject) QueryClasses() *ClassQuery {
-	return (&SubjectClient{config: s.config}).QueryClasses(s)
+	return NewSubjectClient(s.config).QueryClasses(s)
 }
 
 // Update returns a builder for updating this Subject.
 // Note that you need to call Subject.Unwrap() before calling this method if this Subject
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Subject) Update() *SubjectUpdateOne {
-	return (&SubjectClient{config: s.config}).UpdateOne(s)
+	return NewSubjectClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Subject entity that was returned from a transaction after it was closed,
@@ -115,9 +125,3 @@ func (s *Subject) String() string {
 
 // Subjects is a parsable slice of Subject.
 type Subjects []*Subject
-
-func (s Subjects) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

@@ -179,34 +179,7 @@ func (cpu *ClassPeriodUpdate) ClearPeriod() *ClassPeriodUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (cpu *ClassPeriodUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(cpu.hooks) == 0 {
-		affected, err = cpu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ClassPeriodMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			cpu.mutation = mutation
-			affected, err = cpu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(cpu.hooks) - 1; i >= 0; i-- {
-			if cpu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cpu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, cpu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, cpu.sqlSave, cpu.mutation, cpu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -232,16 +205,7 @@ func (cpu *ClassPeriodUpdate) ExecX(ctx context.Context) {
 }
 
 func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   classperiod.Table,
-			Columns: classperiod.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: classperiod.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(classperiod.Table, classperiod.Columns, sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString))
 	if ps := cpu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -250,25 +214,13 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := cpu.mutation.Start(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldStart,
-		})
+		_spec.SetField(classperiod.FieldStart, field.TypeTime, value)
 	}
 	if value, ok := cpu.mutation.End(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldEnd,
-		})
+		_spec.SetField(classperiod.FieldEnd, field.TypeTime, value)
 	}
 	if value, ok := cpu.mutation.Finished(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: classperiod.FieldFinished,
-		})
+		_spec.SetField(classperiod.FieldFinished, field.TypeBool, value)
 	}
 	if cpu.mutation.AttendanceDaysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -278,10 +230,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -294,10 +243,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -313,10 +259,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -332,10 +275,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -348,10 +288,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -367,10 +304,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -386,10 +320,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -402,10 +333,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -421,10 +349,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.PeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -437,10 +362,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{classperiod.PeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -456,6 +378,7 @@ func (cpu *ClassPeriodUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	cpu.mutation.done = true
 	return n, nil
 }
 
@@ -612,6 +535,12 @@ func (cpuo *ClassPeriodUpdateOne) ClearPeriod() *ClassPeriodUpdateOne {
 	return cpuo
 }
 
+// Where appends a list predicates to the ClassPeriodUpdate builder.
+func (cpuo *ClassPeriodUpdateOne) Where(ps ...predicate.ClassPeriod) *ClassPeriodUpdateOne {
+	cpuo.mutation.Where(ps...)
+	return cpuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (cpuo *ClassPeriodUpdateOne) Select(field string, fields ...string) *ClassPeriodUpdateOne {
@@ -621,40 +550,7 @@ func (cpuo *ClassPeriodUpdateOne) Select(field string, fields ...string) *ClassP
 
 // Save executes the query and returns the updated ClassPeriod entity.
 func (cpuo *ClassPeriodUpdateOne) Save(ctx context.Context) (*ClassPeriod, error) {
-	var (
-		err  error
-		node *ClassPeriod
-	)
-	if len(cpuo.hooks) == 0 {
-		node, err = cpuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ClassPeriodMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			cpuo.mutation = mutation
-			node, err = cpuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(cpuo.hooks) - 1; i >= 0; i-- {
-			if cpuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cpuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, cpuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ClassPeriod)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ClassPeriodMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, cpuo.sqlSave, cpuo.mutation, cpuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -680,16 +576,7 @@ func (cpuo *ClassPeriodUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeriod, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   classperiod.Table,
-			Columns: classperiod.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: classperiod.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(classperiod.Table, classperiod.Columns, sqlgraph.NewFieldSpec(classperiod.FieldID, field.TypeString))
 	id, ok := cpuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ClassPeriod.id" for update`)}
@@ -715,25 +602,13 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 		}
 	}
 	if value, ok := cpuo.mutation.Start(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldStart,
-		})
+		_spec.SetField(classperiod.FieldStart, field.TypeTime, value)
 	}
 	if value, ok := cpuo.mutation.End(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: classperiod.FieldEnd,
-		})
+		_spec.SetField(classperiod.FieldEnd, field.TypeTime, value)
 	}
 	if value, ok := cpuo.mutation.Finished(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: classperiod.FieldFinished,
-		})
+		_spec.SetField(classperiod.FieldFinished, field.TypeBool, value)
 	}
 	if cpuo.mutation.AttendanceDaysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -743,10 +618,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -759,10 +631,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -778,10 +647,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.AttendanceDaysColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: attendanceday.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(attendanceday.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -797,10 +663,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -813,10 +676,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -832,10 +692,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.ActivitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: activity.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(activity.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -851,10 +708,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -867,10 +721,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.ClassColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: class.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(class.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -886,10 +737,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.PeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -902,10 +750,7 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 			Columns: []string{classperiod.PeriodColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: period.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(period.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -924,5 +769,6 @@ func (cpuo *ClassPeriodUpdateOne) sqlSave(ctx context.Context) (_node *ClassPeri
 		}
 		return nil, err
 	}
+	cpuo.mutation.done = true
 	return _node, nil
 }

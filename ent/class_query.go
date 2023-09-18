@@ -25,11 +25,9 @@ import (
 // ClassQuery is the builder for querying Class entities.
 type ClassQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
+	ctx              *QueryContext
+	order            []class.OrderOption
+	inters           []Interceptor
 	predicates       []predicate.Class
 	withStudents     *StudentQuery
 	withClassPeriods *ClassPeriodQuery
@@ -50,34 +48,34 @@ func (cq *ClassQuery) Where(ps ...predicate.Class) *ClassQuery {
 	return cq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (cq *ClassQuery) Limit(limit int) *ClassQuery {
-	cq.limit = &limit
+	cq.ctx.Limit = &limit
 	return cq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (cq *ClassQuery) Offset(offset int) *ClassQuery {
-	cq.offset = &offset
+	cq.ctx.Offset = &offset
 	return cq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (cq *ClassQuery) Unique(unique bool) *ClassQuery {
-	cq.unique = &unique
+	cq.ctx.Unique = &unique
 	return cq
 }
 
-// Order adds an order step to the query.
-func (cq *ClassQuery) Order(o ...OrderFunc) *ClassQuery {
+// Order specifies how the records should be ordered.
+func (cq *ClassQuery) Order(o ...class.OrderOption) *ClassQuery {
 	cq.order = append(cq.order, o...)
 	return cq
 }
 
 // QueryStudents chains the current query on the "students" edge.
 func (cq *ClassQuery) QueryStudents() *StudentQuery {
-	query := &StudentQuery{config: cq.config}
+	query := (&StudentClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -99,7 +97,7 @@ func (cq *ClassQuery) QueryStudents() *StudentQuery {
 
 // QueryClassPeriods chains the current query on the "classPeriods" edge.
 func (cq *ClassQuery) QueryClassPeriods() *ClassPeriodQuery {
-	query := &ClassPeriodQuery{config: cq.config}
+	query := (&ClassPeriodClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -121,7 +119,7 @@ func (cq *ClassQuery) QueryClassPeriods() *ClassPeriodQuery {
 
 // QuerySchool chains the current query on the "school" edge.
 func (cq *ClassQuery) QuerySchool() *SchoolQuery {
-	query := &SchoolQuery{config: cq.config}
+	query := (&SchoolClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -143,7 +141,7 @@ func (cq *ClassQuery) QuerySchool() *SchoolQuery {
 
 // QueryTeacher chains the current query on the "teacher" edge.
 func (cq *ClassQuery) QueryTeacher() *TeacherQuery {
-	query := &TeacherQuery{config: cq.config}
+	query := (&TeacherClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -165,7 +163,7 @@ func (cq *ClassQuery) QueryTeacher() *TeacherQuery {
 
 // QuerySubject chains the current query on the "subject" edge.
 func (cq *ClassQuery) QuerySubject() *SubjectQuery {
-	query := &SubjectQuery{config: cq.config}
+	query := (&SubjectClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -187,7 +185,7 @@ func (cq *ClassQuery) QuerySubject() *SubjectQuery {
 
 // QueryGrade chains the current query on the "grade" edge.
 func (cq *ClassQuery) QueryGrade() *GradeQuery {
-	query := &GradeQuery{config: cq.config}
+	query := (&GradeClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -209,7 +207,7 @@ func (cq *ClassQuery) QueryGrade() *GradeQuery {
 
 // QueryYear chains the current query on the "year" edge.
 func (cq *ClassQuery) QueryYear() *YearQuery {
-	query := &YearQuery{config: cq.config}
+	query := (&YearClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -232,7 +230,7 @@ func (cq *ClassQuery) QueryYear() *YearQuery {
 // First returns the first Class entity from the query.
 // Returns a *NotFoundError when no Class was found.
 func (cq *ClassQuery) First(ctx context.Context) (*Class, error) {
-	nodes, err := cq.Limit(1).All(ctx)
+	nodes, err := cq.Limit(1).All(setContextOp(ctx, cq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +253,7 @@ func (cq *ClassQuery) FirstX(ctx context.Context) *Class {
 // Returns a *NotFoundError when no Class ID was found.
 func (cq *ClassQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = cq.Limit(1).IDs(setContextOp(ctx, cq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -278,7 +276,7 @@ func (cq *ClassQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Class entity is found.
 // Returns a *NotFoundError when no Class entities are found.
 func (cq *ClassQuery) Only(ctx context.Context) (*Class, error) {
-	nodes, err := cq.Limit(2).All(ctx)
+	nodes, err := cq.Limit(2).All(setContextOp(ctx, cq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +304,7 @@ func (cq *ClassQuery) OnlyX(ctx context.Context) *Class {
 // Returns a *NotFoundError when no entities are found.
 func (cq *ClassQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = cq.Limit(2).IDs(setContextOp(ctx, cq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -331,10 +329,12 @@ func (cq *ClassQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Classes.
 func (cq *ClassQuery) All(ctx context.Context) ([]*Class, error) {
+	ctx = setContextOp(ctx, cq.ctx, "All")
 	if err := cq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return cq.sqlAll(ctx)
+	qr := querierAll[[]*Class, *ClassQuery]()
+	return withInterceptors[[]*Class](ctx, cq, qr, cq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -347,9 +347,12 @@ func (cq *ClassQuery) AllX(ctx context.Context) []*Class {
 }
 
 // IDs executes the query and returns a list of Class IDs.
-func (cq *ClassQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := cq.Select(class.FieldID).Scan(ctx, &ids); err != nil {
+func (cq *ClassQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if cq.ctx.Unique == nil && cq.path != nil {
+		cq.Unique(true)
+	}
+	ctx = setContextOp(ctx, cq.ctx, "IDs")
+	if err = cq.Select(class.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -366,10 +369,11 @@ func (cq *ClassQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (cq *ClassQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, cq.ctx, "Count")
 	if err := cq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return cq.sqlCount(ctx)
+	return withInterceptors[int](ctx, cq, querierCount[*ClassQuery](), cq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -383,10 +387,15 @@ func (cq *ClassQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cq *ClassQuery) Exist(ctx context.Context) (bool, error) {
-	if err := cq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, cq.ctx, "Exist")
+	switch _, err := cq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return cq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -406,9 +415,9 @@ func (cq *ClassQuery) Clone() *ClassQuery {
 	}
 	return &ClassQuery{
 		config:           cq.config,
-		limit:            cq.limit,
-		offset:           cq.offset,
-		order:            append([]OrderFunc{}, cq.order...),
+		ctx:              cq.ctx.Clone(),
+		order:            append([]class.OrderOption{}, cq.order...),
+		inters:           append([]Interceptor{}, cq.inters...),
 		predicates:       append([]predicate.Class{}, cq.predicates...),
 		withStudents:     cq.withStudents.Clone(),
 		withClassPeriods: cq.withClassPeriods.Clone(),
@@ -418,16 +427,15 @@ func (cq *ClassQuery) Clone() *ClassQuery {
 		withGrade:        cq.withGrade.Clone(),
 		withYear:         cq.withYear.Clone(),
 		// clone intermediate query.
-		sql:    cq.sql.Clone(),
-		path:   cq.path,
-		unique: cq.unique,
+		sql:  cq.sql.Clone(),
+		path: cq.path,
 	}
 }
 
 // WithStudents tells the query-builder to eager-load the nodes that are connected to
 // the "students" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithStudents(opts ...func(*StudentQuery)) *ClassQuery {
-	query := &StudentQuery{config: cq.config}
+	query := (&StudentClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -438,7 +446,7 @@ func (cq *ClassQuery) WithStudents(opts ...func(*StudentQuery)) *ClassQuery {
 // WithClassPeriods tells the query-builder to eager-load the nodes that are connected to
 // the "classPeriods" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithClassPeriods(opts ...func(*ClassPeriodQuery)) *ClassQuery {
-	query := &ClassPeriodQuery{config: cq.config}
+	query := (&ClassPeriodClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -449,7 +457,7 @@ func (cq *ClassQuery) WithClassPeriods(opts ...func(*ClassPeriodQuery)) *ClassQu
 // WithSchool tells the query-builder to eager-load the nodes that are connected to
 // the "school" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithSchool(opts ...func(*SchoolQuery)) *ClassQuery {
-	query := &SchoolQuery{config: cq.config}
+	query := (&SchoolClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -460,7 +468,7 @@ func (cq *ClassQuery) WithSchool(opts ...func(*SchoolQuery)) *ClassQuery {
 // WithTeacher tells the query-builder to eager-load the nodes that are connected to
 // the "teacher" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithTeacher(opts ...func(*TeacherQuery)) *ClassQuery {
-	query := &TeacherQuery{config: cq.config}
+	query := (&TeacherClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -471,7 +479,7 @@ func (cq *ClassQuery) WithTeacher(opts ...func(*TeacherQuery)) *ClassQuery {
 // WithSubject tells the query-builder to eager-load the nodes that are connected to
 // the "subject" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithSubject(opts ...func(*SubjectQuery)) *ClassQuery {
-	query := &SubjectQuery{config: cq.config}
+	query := (&SubjectClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -482,7 +490,7 @@ func (cq *ClassQuery) WithSubject(opts ...func(*SubjectQuery)) *ClassQuery {
 // WithGrade tells the query-builder to eager-load the nodes that are connected to
 // the "grade" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithGrade(opts ...func(*GradeQuery)) *ClassQuery {
-	query := &GradeQuery{config: cq.config}
+	query := (&GradeClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -493,7 +501,7 @@ func (cq *ClassQuery) WithGrade(opts ...func(*GradeQuery)) *ClassQuery {
 // WithYear tells the query-builder to eager-load the nodes that are connected to
 // the "year" edge. The optional arguments are used to configure the query builder of the edge.
 func (cq *ClassQuery) WithYear(opts ...func(*YearQuery)) *ClassQuery {
-	query := &YearQuery{config: cq.config}
+	query := (&YearClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -516,16 +524,11 @@ func (cq *ClassQuery) WithYear(opts ...func(*YearQuery)) *ClassQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (cq *ClassQuery) GroupBy(field string, fields ...string) *ClassGroupBy {
-	grbuild := &ClassGroupBy{config: cq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := cq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return cq.sqlQuery(ctx), nil
-	}
+	cq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ClassGroupBy{build: cq}
+	grbuild.flds = &cq.ctx.Fields
 	grbuild.label = class.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -542,15 +545,30 @@ func (cq *ClassQuery) GroupBy(field string, fields ...string) *ClassGroupBy {
 //		Select(class.FieldParallel).
 //		Scan(ctx, &v)
 func (cq *ClassQuery) Select(fields ...string) *ClassSelect {
-	cq.fields = append(cq.fields, fields...)
-	selbuild := &ClassSelect{ClassQuery: cq}
-	selbuild.label = class.Label
-	selbuild.flds, selbuild.scan = &cq.fields, selbuild.Scan
-	return selbuild
+	cq.ctx.Fields = append(cq.ctx.Fields, fields...)
+	sbuild := &ClassSelect{ClassQuery: cq}
+	sbuild.label = class.Label
+	sbuild.flds, sbuild.scan = &cq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a ClassSelect configured with the given aggregations.
+func (cq *ClassQuery) Aggregate(fns ...AggregateFunc) *ClassSelect {
+	return cq.Select().Aggregate(fns...)
 }
 
 func (cq *ClassQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range cq.fields {
+	for _, inter := range cq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, cq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range cq.ctx.Fields {
 		if !class.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -586,10 +604,10 @@ func (cq *ClassQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Class,
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, class.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Class).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Class{config: cq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -663,7 +681,7 @@ func (cq *ClassQuery) loadStudents(ctx context.Context, query *StudentQuery, nod
 	}
 	query.withFKs = true
 	query.Where(predicate.Student(func(s *sql.Selector) {
-		s.Where(sql.InValues(class.StudentsColumn, fks...))
+		s.Where(sql.InValues(s.C(class.StudentsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -676,7 +694,7 @@ func (cq *ClassQuery) loadStudents(ctx context.Context, query *StudentQuery, nod
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_students" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "class_students" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -694,7 +712,7 @@ func (cq *ClassQuery) loadClassPeriods(ctx context.Context, query *ClassPeriodQu
 	}
 	query.withFKs = true
 	query.Where(predicate.ClassPeriod(func(s *sql.Selector) {
-		s.Where(sql.InValues(class.ClassPeriodsColumn, fks...))
+		s.Where(sql.InValues(s.C(class.ClassPeriodsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -707,7 +725,7 @@ func (cq *ClassQuery) loadClassPeriods(ctx context.Context, query *ClassPeriodQu
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "class_class_periods" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "class_class_periods" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -725,6 +743,9 @@ func (cq *ClassQuery) loadSchool(ctx context.Context, query *SchoolQuery, nodes 
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(school.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -755,6 +776,9 @@ func (cq *ClassQuery) loadTeacher(ctx context.Context, query *TeacherQuery, node
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(teacher.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -783,6 +807,9 @@ func (cq *ClassQuery) loadSubject(ctx context.Context, query *SubjectQuery, node
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(subject.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -813,6 +840,9 @@ func (cq *ClassQuery) loadGrade(ctx context.Context, query *GradeQuery, nodes []
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(grade.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -842,6 +872,9 @@ func (cq *ClassQuery) loadYear(ctx context.Context, query *YearQuery, nodes []*C
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(year.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -861,38 +894,22 @@ func (cq *ClassQuery) loadYear(ctx context.Context, query *YearQuery, nodes []*C
 
 func (cq *ClassQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := cq.querySpec()
-	_spec.Node.Columns = cq.fields
-	if len(cq.fields) > 0 {
-		_spec.Unique = cq.unique != nil && *cq.unique
+	_spec.Node.Columns = cq.ctx.Fields
+	if len(cq.ctx.Fields) > 0 {
+		_spec.Unique = cq.ctx.Unique != nil && *cq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, cq.driver, _spec)
 }
 
-func (cq *ClassQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := cq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (cq *ClassQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   class.Table,
-			Columns: class.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: class.FieldID,
-			},
-		},
-		From:   cq.sql,
-		Unique: true,
-	}
-	if unique := cq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(class.Table, class.Columns, sqlgraph.NewFieldSpec(class.FieldID, field.TypeString))
+	_spec.From = cq.sql
+	if unique := cq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if cq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := cq.fields; len(fields) > 0 {
+	if fields := cq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, class.FieldID)
 		for i := range fields {
@@ -908,10 +925,10 @@ func (cq *ClassQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := cq.limit; limit != nil {
+	if limit := cq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := cq.offset; offset != nil {
+	if offset := cq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := cq.order; len(ps) > 0 {
@@ -927,7 +944,7 @@ func (cq *ClassQuery) querySpec() *sqlgraph.QuerySpec {
 func (cq *ClassQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(cq.driver.Dialect())
 	t1 := builder.Table(class.Table)
-	columns := cq.fields
+	columns := cq.ctx.Fields
 	if len(columns) == 0 {
 		columns = class.Columns
 	}
@@ -936,7 +953,7 @@ func (cq *ClassQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = cq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if cq.unique != nil && *cq.unique {
+	if cq.ctx.Unique != nil && *cq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range cq.predicates {
@@ -945,12 +962,12 @@ func (cq *ClassQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range cq.order {
 		p(selector)
 	}
-	if offset := cq.offset; offset != nil {
+	if offset := cq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := cq.limit; limit != nil {
+	if limit := cq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -958,13 +975,8 @@ func (cq *ClassQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // ClassGroupBy is the group-by builder for Class entities.
 type ClassGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *ClassQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -973,74 +985,77 @@ func (cgb *ClassGroupBy) Aggregate(fns ...AggregateFunc) *ClassGroupBy {
 	return cgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (cgb *ClassGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := cgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (cgb *ClassGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, cgb.build.ctx, "GroupBy")
+	if err := cgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	cgb.sql = query
-	return cgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*ClassQuery, *ClassGroupBy](ctx, cgb.build, cgb, cgb.build.inters, v)
 }
 
-func (cgb *ClassGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range cgb.fields {
-		if !class.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (cgb *ClassGroupBy) sqlScan(ctx context.Context, root *ClassQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(cgb.fns))
+	for _, fn := range cgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := cgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*cgb.flds)+len(cgb.fns))
+		for _, f := range *cgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*cgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := cgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := cgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (cgb *ClassGroupBy) sqlQuery() *sql.Selector {
-	selector := cgb.sql.Select()
-	aggregation := make([]string, 0, len(cgb.fns))
-	for _, fn := range cgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(cgb.fields)+len(cgb.fns))
-		for _, f := range cgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(cgb.fields...)...)
-}
-
 // ClassSelect is the builder for selecting fields of Class entities.
 type ClassSelect struct {
 	*ClassQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (cs *ClassSelect) Aggregate(fns ...AggregateFunc) *ClassSelect {
+	cs.fns = append(cs.fns, fns...)
+	return cs
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (cs *ClassSelect) Scan(ctx context.Context, v interface{}) error {
+func (cs *ClassSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, cs.ctx, "Select")
 	if err := cs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	cs.sql = cs.ClassQuery.sqlQuery(ctx)
-	return cs.sqlScan(ctx, v)
+	return scanWithInterceptors[*ClassQuery, *ClassSelect](ctx, cs.ClassQuery, cs, cs.inters, v)
 }
 
-func (cs *ClassSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (cs *ClassSelect) sqlScan(ctx context.Context, root *ClassQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(cs.fns))
+	for _, fn := range cs.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*cs.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := cs.sql.Query()
+	query, args := selector.Query()
 	if err := cs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

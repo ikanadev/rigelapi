@@ -1,8 +1,11 @@
 package config
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
-type dbData struct {
+type DBData struct {
 	Host     string
 	Name     string
 	Port     string
@@ -10,29 +13,37 @@ type dbData struct {
 	Password string
 	SslMode  string
 }
-type appData struct {
+type AppData struct {
 	JWTKey string
 	Port   string
 }
 
 type Config struct {
-	DB  dbData
-	App appData
+	DB  DBData
+	App AppData
+}
+
+func getEnvOrPanic(name string) string {
+	value, exists := os.LookupEnv(name)
+	if !exists {
+		panic(fmt.Sprintf("env variable: %s is not set", name))
+	}
+	return value
 }
 
 func GetConfig() Config {
 	return Config{
-		DB: dbData{
-			Host:     os.Getenv("DB_HOST"),
-			Name:     os.Getenv("DB_NAME"),
-			Port:     os.Getenv("DB_PORT"),
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			SslMode:  os.Getenv("DB_SSL_MODE"),
+		DB: DBData{
+			Host:     getEnvOrPanic("DB_HOST"),
+			Name:     getEnvOrPanic("DB_NAME"),
+			Port:     getEnvOrPanic("DB_PORT"),
+			User:     getEnvOrPanic("DB_USER"),
+			Password: getEnvOrPanic("DB_PASSWORD"),
+			SslMode:  getEnvOrPanic("DB_SSL_MODE"),
 		},
-		App: appData{
+		App: AppData{
 			JWTKey: "ImsKLIZXipqsHJKo_e3z",
-			Port:   os.Getenv("APP_PORT"),
+			Port:   getEnvOrPanic("APP_PORT"),
 		},
 	}
 }

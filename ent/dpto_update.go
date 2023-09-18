@@ -77,34 +77,7 @@ func (du *DptoUpdate) RemoveProvincias(p ...*Provincia) *DptoUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (du *DptoUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(du.hooks) == 0 {
-		affected, err = du.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DptoMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			du.mutation = mutation
-			affected, err = du.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(du.hooks) - 1; i >= 0; i-- {
-			if du.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = du.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, du.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, du.sqlSave, du.mutation, du.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -130,16 +103,7 @@ func (du *DptoUpdate) ExecX(ctx context.Context) {
 }
 
 func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dpto.Table,
-			Columns: dpto.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: dpto.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(dpto.Table, dpto.Columns, sqlgraph.NewFieldSpec(dpto.FieldID, field.TypeString))
 	if ps := du.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -148,11 +112,7 @@ func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := du.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dpto.FieldName,
-		})
+		_spec.SetField(dpto.FieldName, field.TypeString, value)
 	}
 	if du.mutation.ProvinciasCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -162,10 +122,7 @@ func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -178,10 +135,7 @@ func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -197,10 +151,7 @@ func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -216,6 +167,7 @@ func (du *DptoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	du.mutation.done = true
 	return n, nil
 }
 
@@ -274,6 +226,12 @@ func (duo *DptoUpdateOne) RemoveProvincias(p ...*Provincia) *DptoUpdateOne {
 	return duo.RemoveProvinciaIDs(ids...)
 }
 
+// Where appends a list predicates to the DptoUpdate builder.
+func (duo *DptoUpdateOne) Where(ps ...predicate.Dpto) *DptoUpdateOne {
+	duo.mutation.Where(ps...)
+	return duo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (duo *DptoUpdateOne) Select(field string, fields ...string) *DptoUpdateOne {
@@ -283,40 +241,7 @@ func (duo *DptoUpdateOne) Select(field string, fields ...string) *DptoUpdateOne 
 
 // Save executes the query and returns the updated Dpto entity.
 func (duo *DptoUpdateOne) Save(ctx context.Context) (*Dpto, error) {
-	var (
-		err  error
-		node *Dpto
-	)
-	if len(duo.hooks) == 0 {
-		node, err = duo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DptoMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			duo.mutation = mutation
-			node, err = duo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(duo.hooks) - 1; i >= 0; i-- {
-			if duo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = duo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, duo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Dpto)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DptoMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, duo.sqlSave, duo.mutation, duo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -342,16 +267,7 @@ func (duo *DptoUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   dpto.Table,
-			Columns: dpto.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: dpto.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(dpto.Table, dpto.Columns, sqlgraph.NewFieldSpec(dpto.FieldID, field.TypeString))
 	id, ok := duo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Dpto.id" for update`)}
@@ -377,11 +293,7 @@ func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) 
 		}
 	}
 	if value, ok := duo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: dpto.FieldName,
-		})
+		_spec.SetField(dpto.FieldName, field.TypeString, value)
 	}
 	if duo.mutation.ProvinciasCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -391,10 +303,7 @@ func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) 
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -407,10 +316,7 @@ func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) 
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -426,10 +332,7 @@ func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) 
 			Columns: []string{dpto.ProvinciasColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: provincia.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -448,5 +351,6 @@ func (duo *DptoUpdateOne) sqlSave(ctx context.Context) (_node *Dpto, err error) 
 		}
 		return nil, err
 	}
+	duo.mutation.done = true
 	return _node, nil
 }

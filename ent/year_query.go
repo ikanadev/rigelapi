@@ -22,11 +22,9 @@ import (
 // YearQuery is the builder for querying Year entities.
 type YearQuery struct {
 	config
-	limit             *int
-	offset            *int
-	unique            *bool
-	order             []OrderFunc
-	fields            []string
+	ctx               *QueryContext
+	order             []year.OrderOption
+	inters            []Interceptor
 	predicates        []predicate.Year
 	withClasses       *ClassQuery
 	withPeriods       *PeriodQuery
@@ -43,34 +41,34 @@ func (yq *YearQuery) Where(ps ...predicate.Year) *YearQuery {
 	return yq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (yq *YearQuery) Limit(limit int) *YearQuery {
-	yq.limit = &limit
+	yq.ctx.Limit = &limit
 	return yq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (yq *YearQuery) Offset(offset int) *YearQuery {
-	yq.offset = &offset
+	yq.ctx.Offset = &offset
 	return yq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (yq *YearQuery) Unique(unique bool) *YearQuery {
-	yq.unique = &unique
+	yq.ctx.Unique = &unique
 	return yq
 }
 
-// Order adds an order step to the query.
-func (yq *YearQuery) Order(o ...OrderFunc) *YearQuery {
+// Order specifies how the records should be ordered.
+func (yq *YearQuery) Order(o ...year.OrderOption) *YearQuery {
 	yq.order = append(yq.order, o...)
 	return yq
 }
 
 // QueryClasses chains the current query on the "classes" edge.
 func (yq *YearQuery) QueryClasses() *ClassQuery {
-	query := &ClassQuery{config: yq.config}
+	query := (&ClassClient{config: yq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := yq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -92,7 +90,7 @@ func (yq *YearQuery) QueryClasses() *ClassQuery {
 
 // QueryPeriods chains the current query on the "periods" edge.
 func (yq *YearQuery) QueryPeriods() *PeriodQuery {
-	query := &PeriodQuery{config: yq.config}
+	query := (&PeriodClient{config: yq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := yq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -114,7 +112,7 @@ func (yq *YearQuery) QueryPeriods() *PeriodQuery {
 
 // QueryAreas chains the current query on the "areas" edge.
 func (yq *YearQuery) QueryAreas() *AreaQuery {
-	query := &AreaQuery{config: yq.config}
+	query := (&AreaClient{config: yq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := yq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -136,7 +134,7 @@ func (yq *YearQuery) QueryAreas() *AreaQuery {
 
 // QuerySubscriptions chains the current query on the "subscriptions" edge.
 func (yq *YearQuery) QuerySubscriptions() *SubscriptionQuery {
-	query := &SubscriptionQuery{config: yq.config}
+	query := (&SubscriptionClient{config: yq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := yq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -159,7 +157,7 @@ func (yq *YearQuery) QuerySubscriptions() *SubscriptionQuery {
 // First returns the first Year entity from the query.
 // Returns a *NotFoundError when no Year was found.
 func (yq *YearQuery) First(ctx context.Context) (*Year, error) {
-	nodes, err := yq.Limit(1).All(ctx)
+	nodes, err := yq.Limit(1).All(setContextOp(ctx, yq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +180,7 @@ func (yq *YearQuery) FirstX(ctx context.Context) *Year {
 // Returns a *NotFoundError when no Year ID was found.
 func (yq *YearQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = yq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = yq.Limit(1).IDs(setContextOp(ctx, yq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -205,7 +203,7 @@ func (yq *YearQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Year entity is found.
 // Returns a *NotFoundError when no Year entities are found.
 func (yq *YearQuery) Only(ctx context.Context) (*Year, error) {
-	nodes, err := yq.Limit(2).All(ctx)
+	nodes, err := yq.Limit(2).All(setContextOp(ctx, yq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +231,7 @@ func (yq *YearQuery) OnlyX(ctx context.Context) *Year {
 // Returns a *NotFoundError when no entities are found.
 func (yq *YearQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = yq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = yq.Limit(2).IDs(setContextOp(ctx, yq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -258,10 +256,12 @@ func (yq *YearQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Years.
 func (yq *YearQuery) All(ctx context.Context) ([]*Year, error) {
+	ctx = setContextOp(ctx, yq.ctx, "All")
 	if err := yq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return yq.sqlAll(ctx)
+	qr := querierAll[[]*Year, *YearQuery]()
+	return withInterceptors[[]*Year](ctx, yq, qr, yq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -274,9 +274,12 @@ func (yq *YearQuery) AllX(ctx context.Context) []*Year {
 }
 
 // IDs executes the query and returns a list of Year IDs.
-func (yq *YearQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := yq.Select(year.FieldID).Scan(ctx, &ids); err != nil {
+func (yq *YearQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if yq.ctx.Unique == nil && yq.path != nil {
+		yq.Unique(true)
+	}
+	ctx = setContextOp(ctx, yq.ctx, "IDs")
+	if err = yq.Select(year.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -293,10 +296,11 @@ func (yq *YearQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (yq *YearQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, yq.ctx, "Count")
 	if err := yq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return yq.sqlCount(ctx)
+	return withInterceptors[int](ctx, yq, querierCount[*YearQuery](), yq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -310,10 +314,15 @@ func (yq *YearQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (yq *YearQuery) Exist(ctx context.Context) (bool, error) {
-	if err := yq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, yq.ctx, "Exist")
+	switch _, err := yq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return yq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -333,25 +342,24 @@ func (yq *YearQuery) Clone() *YearQuery {
 	}
 	return &YearQuery{
 		config:            yq.config,
-		limit:             yq.limit,
-		offset:            yq.offset,
-		order:             append([]OrderFunc{}, yq.order...),
+		ctx:               yq.ctx.Clone(),
+		order:             append([]year.OrderOption{}, yq.order...),
+		inters:            append([]Interceptor{}, yq.inters...),
 		predicates:        append([]predicate.Year{}, yq.predicates...),
 		withClasses:       yq.withClasses.Clone(),
 		withPeriods:       yq.withPeriods.Clone(),
 		withAreas:         yq.withAreas.Clone(),
 		withSubscriptions: yq.withSubscriptions.Clone(),
 		// clone intermediate query.
-		sql:    yq.sql.Clone(),
-		path:   yq.path,
-		unique: yq.unique,
+		sql:  yq.sql.Clone(),
+		path: yq.path,
 	}
 }
 
 // WithClasses tells the query-builder to eager-load the nodes that are connected to
 // the "classes" edge. The optional arguments are used to configure the query builder of the edge.
 func (yq *YearQuery) WithClasses(opts ...func(*ClassQuery)) *YearQuery {
-	query := &ClassQuery{config: yq.config}
+	query := (&ClassClient{config: yq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -362,7 +370,7 @@ func (yq *YearQuery) WithClasses(opts ...func(*ClassQuery)) *YearQuery {
 // WithPeriods tells the query-builder to eager-load the nodes that are connected to
 // the "periods" edge. The optional arguments are used to configure the query builder of the edge.
 func (yq *YearQuery) WithPeriods(opts ...func(*PeriodQuery)) *YearQuery {
-	query := &PeriodQuery{config: yq.config}
+	query := (&PeriodClient{config: yq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -373,7 +381,7 @@ func (yq *YearQuery) WithPeriods(opts ...func(*PeriodQuery)) *YearQuery {
 // WithAreas tells the query-builder to eager-load the nodes that are connected to
 // the "areas" edge. The optional arguments are used to configure the query builder of the edge.
 func (yq *YearQuery) WithAreas(opts ...func(*AreaQuery)) *YearQuery {
-	query := &AreaQuery{config: yq.config}
+	query := (&AreaClient{config: yq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -384,7 +392,7 @@ func (yq *YearQuery) WithAreas(opts ...func(*AreaQuery)) *YearQuery {
 // WithSubscriptions tells the query-builder to eager-load the nodes that are connected to
 // the "subscriptions" edge. The optional arguments are used to configure the query builder of the edge.
 func (yq *YearQuery) WithSubscriptions(opts ...func(*SubscriptionQuery)) *YearQuery {
-	query := &SubscriptionQuery{config: yq.config}
+	query := (&SubscriptionClient{config: yq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -407,16 +415,11 @@ func (yq *YearQuery) WithSubscriptions(opts ...func(*SubscriptionQuery)) *YearQu
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (yq *YearQuery) GroupBy(field string, fields ...string) *YearGroupBy {
-	grbuild := &YearGroupBy{config: yq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := yq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return yq.sqlQuery(ctx), nil
-	}
+	yq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &YearGroupBy{build: yq}
+	grbuild.flds = &yq.ctx.Fields
 	grbuild.label = year.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -433,15 +436,30 @@ func (yq *YearQuery) GroupBy(field string, fields ...string) *YearGroupBy {
 //		Select(year.FieldValue).
 //		Scan(ctx, &v)
 func (yq *YearQuery) Select(fields ...string) *YearSelect {
-	yq.fields = append(yq.fields, fields...)
-	selbuild := &YearSelect{YearQuery: yq}
-	selbuild.label = year.Label
-	selbuild.flds, selbuild.scan = &yq.fields, selbuild.Scan
-	return selbuild
+	yq.ctx.Fields = append(yq.ctx.Fields, fields...)
+	sbuild := &YearSelect{YearQuery: yq}
+	sbuild.label = year.Label
+	sbuild.flds, sbuild.scan = &yq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a YearSelect configured with the given aggregations.
+func (yq *YearQuery) Aggregate(fns ...AggregateFunc) *YearSelect {
+	return yq.Select().Aggregate(fns...)
 }
 
 func (yq *YearQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range yq.fields {
+	for _, inter := range yq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, yq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range yq.ctx.Fields {
 		if !year.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -467,10 +485,10 @@ func (yq *YearQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Year, e
 			yq.withSubscriptions != nil,
 		}
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Year).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Year{config: yq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -528,7 +546,7 @@ func (yq *YearQuery) loadClasses(ctx context.Context, query *ClassQuery, nodes [
 	}
 	query.withFKs = true
 	query.Where(predicate.Class(func(s *sql.Selector) {
-		s.Where(sql.InValues(year.ClassesColumn, fks...))
+		s.Where(sql.InValues(s.C(year.ClassesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -541,7 +559,7 @@ func (yq *YearQuery) loadClasses(ctx context.Context, query *ClassQuery, nodes [
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "year_classes" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "year_classes" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -559,7 +577,7 @@ func (yq *YearQuery) loadPeriods(ctx context.Context, query *PeriodQuery, nodes 
 	}
 	query.withFKs = true
 	query.Where(predicate.Period(func(s *sql.Selector) {
-		s.Where(sql.InValues(year.PeriodsColumn, fks...))
+		s.Where(sql.InValues(s.C(year.PeriodsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -572,7 +590,7 @@ func (yq *YearQuery) loadPeriods(ctx context.Context, query *PeriodQuery, nodes 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "year_periods" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "year_periods" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -590,7 +608,7 @@ func (yq *YearQuery) loadAreas(ctx context.Context, query *AreaQuery, nodes []*Y
 	}
 	query.withFKs = true
 	query.Where(predicate.Area(func(s *sql.Selector) {
-		s.Where(sql.InValues(year.AreasColumn, fks...))
+		s.Where(sql.InValues(s.C(year.AreasColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -603,7 +621,7 @@ func (yq *YearQuery) loadAreas(ctx context.Context, query *AreaQuery, nodes []*Y
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "year_areas" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "year_areas" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -621,7 +639,7 @@ func (yq *YearQuery) loadSubscriptions(ctx context.Context, query *SubscriptionQ
 	}
 	query.withFKs = true
 	query.Where(predicate.Subscription(func(s *sql.Selector) {
-		s.Where(sql.InValues(year.SubscriptionsColumn, fks...))
+		s.Where(sql.InValues(s.C(year.SubscriptionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -634,7 +652,7 @@ func (yq *YearQuery) loadSubscriptions(ctx context.Context, query *SubscriptionQ
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "year_subscriptions" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "year_subscriptions" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -643,38 +661,22 @@ func (yq *YearQuery) loadSubscriptions(ctx context.Context, query *SubscriptionQ
 
 func (yq *YearQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := yq.querySpec()
-	_spec.Node.Columns = yq.fields
-	if len(yq.fields) > 0 {
-		_spec.Unique = yq.unique != nil && *yq.unique
+	_spec.Node.Columns = yq.ctx.Fields
+	if len(yq.ctx.Fields) > 0 {
+		_spec.Unique = yq.ctx.Unique != nil && *yq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, yq.driver, _spec)
 }
 
-func (yq *YearQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := yq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (yq *YearQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   year.Table,
-			Columns: year.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: year.FieldID,
-			},
-		},
-		From:   yq.sql,
-		Unique: true,
-	}
-	if unique := yq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(year.Table, year.Columns, sqlgraph.NewFieldSpec(year.FieldID, field.TypeString))
+	_spec.From = yq.sql
+	if unique := yq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if yq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := yq.fields; len(fields) > 0 {
+	if fields := yq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, year.FieldID)
 		for i := range fields {
@@ -690,10 +692,10 @@ func (yq *YearQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := yq.limit; limit != nil {
+	if limit := yq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := yq.offset; offset != nil {
+	if offset := yq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := yq.order; len(ps) > 0 {
@@ -709,7 +711,7 @@ func (yq *YearQuery) querySpec() *sqlgraph.QuerySpec {
 func (yq *YearQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(yq.driver.Dialect())
 	t1 := builder.Table(year.Table)
-	columns := yq.fields
+	columns := yq.ctx.Fields
 	if len(columns) == 0 {
 		columns = year.Columns
 	}
@@ -718,7 +720,7 @@ func (yq *YearQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = yq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if yq.unique != nil && *yq.unique {
+	if yq.ctx.Unique != nil && *yq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range yq.predicates {
@@ -727,12 +729,12 @@ func (yq *YearQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range yq.order {
 		p(selector)
 	}
-	if offset := yq.offset; offset != nil {
+	if offset := yq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := yq.limit; limit != nil {
+	if limit := yq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -740,13 +742,8 @@ func (yq *YearQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // YearGroupBy is the group-by builder for Year entities.
 type YearGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *YearQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -755,74 +752,77 @@ func (ygb *YearGroupBy) Aggregate(fns ...AggregateFunc) *YearGroupBy {
 	return ygb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (ygb *YearGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := ygb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (ygb *YearGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ygb.build.ctx, "GroupBy")
+	if err := ygb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ygb.sql = query
-	return ygb.sqlScan(ctx, v)
+	return scanWithInterceptors[*YearQuery, *YearGroupBy](ctx, ygb.build, ygb, ygb.build.inters, v)
 }
 
-func (ygb *YearGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range ygb.fields {
-		if !year.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (ygb *YearGroupBy) sqlScan(ctx context.Context, root *YearQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(ygb.fns))
+	for _, fn := range ygb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := ygb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*ygb.flds)+len(ygb.fns))
+		for _, f := range *ygb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*ygb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := ygb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := ygb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (ygb *YearGroupBy) sqlQuery() *sql.Selector {
-	selector := ygb.sql.Select()
-	aggregation := make([]string, 0, len(ygb.fns))
-	for _, fn := range ygb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(ygb.fields)+len(ygb.fns))
-		for _, f := range ygb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(ygb.fields...)...)
-}
-
 // YearSelect is the builder for selecting fields of Year entities.
 type YearSelect struct {
 	*YearQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ys *YearSelect) Aggregate(fns ...AggregateFunc) *YearSelect {
+	ys.fns = append(ys.fns, fns...)
+	return ys
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ys *YearSelect) Scan(ctx context.Context, v interface{}) error {
+func (ys *YearSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ys.ctx, "Select")
 	if err := ys.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ys.sql = ys.YearQuery.sqlQuery(ctx)
-	return ys.sqlScan(ctx, v)
+	return scanWithInterceptors[*YearQuery, *YearSelect](ctx, ys.YearQuery, ys, ys.inters, v)
 }
 
-func (ys *YearSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ys *YearSelect) sqlScan(ctx context.Context, root *YearQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ys.fns))
+	for _, fn := range ys.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ys.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ys.sql.Query()
+	query, args := selector.Query()
 	if err := ys.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

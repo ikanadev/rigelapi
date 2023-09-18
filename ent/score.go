@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/activity"
 	"github.com/vmkevv/rigelapi/ent/score"
@@ -24,6 +25,7 @@ type Score struct {
 	Edges           ScoreEdges `json:"edges"`
 	activity_scores *string
 	student_scores  *string
+	selectValues    sql.SelectValues
 }
 
 // ScoreEdges holds the relations/edges for other nodes in the graph.
@@ -64,8 +66,8 @@ func (e ScoreEdges) StudentOrErr() (*Student, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Score) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Score) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case score.FieldPoints:
@@ -77,7 +79,7 @@ func (*Score) scanValues(columns []string) ([]interface{}, error) {
 		case score.ForeignKeys[1]: // student_scores
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Score", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -85,7 +87,7 @@ func (*Score) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Score fields.
-func (s *Score) assignValues(columns []string, values []interface{}) error {
+func (s *Score) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -117,26 +119,34 @@ func (s *Score) assignValues(columns []string, values []interface{}) error {
 				s.student_scores = new(string)
 				*s.student_scores = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Score.
+// This includes values selected through modifiers, order, etc.
+func (s *Score) Value(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryActivity queries the "activity" edge of the Score entity.
 func (s *Score) QueryActivity() *ActivityQuery {
-	return (&ScoreClient{config: s.config}).QueryActivity(s)
+	return NewScoreClient(s.config).QueryActivity(s)
 }
 
 // QueryStudent queries the "student" edge of the Score entity.
 func (s *Score) QueryStudent() *StudentQuery {
-	return (&ScoreClient{config: s.config}).QueryStudent(s)
+	return NewScoreClient(s.config).QueryStudent(s)
 }
 
 // Update returns a builder for updating this Score.
 // Note that you need to call Score.Unwrap() before calling this method if this Score
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Score) Update() *ScoreUpdateOne {
-	return (&ScoreClient{config: s.config}).UpdateOne(s)
+	return NewScoreClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Score entity that was returned from a transaction after it was closed,
@@ -163,9 +173,3 @@ func (s *Score) String() string {
 
 // Scores is a parsable slice of Score.
 type Scores []*Score
-
-func (s Scores) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

@@ -10,144 +10,102 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Year(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Year(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id string) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Year(sql.FieldLTE(FieldID, id))
+}
+
+// IDEqualFold applies the EqualFold predicate on the ID field.
+func IDEqualFold(id string) predicate.Year {
+	return predicate.Year(sql.FieldEqualFold(FieldID, id))
+}
+
+// IDContainsFold applies the ContainsFold predicate on the ID field.
+func IDContainsFold(id string) predicate.Year {
+	return predicate.Year(sql.FieldContainsFold(FieldID, id))
 }
 
 // Value applies equality check predicate on the "value" field. It's identical to ValueEQ.
 func Value(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldEQ(FieldValue, v))
 }
 
 // ValueEQ applies the EQ predicate on the "value" field.
 func ValueEQ(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldEQ(FieldValue, v))
 }
 
 // ValueNEQ applies the NEQ predicate on the "value" field.
 func ValueNEQ(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldNEQ(FieldValue, v))
 }
 
 // ValueIn applies the In predicate on the "value" field.
 func ValueIn(vs ...int) predicate.Year {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldValue), v...))
-	})
+	return predicate.Year(sql.FieldIn(FieldValue, vs...))
 }
 
 // ValueNotIn applies the NotIn predicate on the "value" field.
 func ValueNotIn(vs ...int) predicate.Year {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldValue), v...))
-	})
+	return predicate.Year(sql.FieldNotIn(FieldValue, vs...))
 }
 
 // ValueGT applies the GT predicate on the "value" field.
 func ValueGT(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldGT(FieldValue, v))
 }
 
 // ValueGTE applies the GTE predicate on the "value" field.
 func ValueGTE(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldGTE(FieldValue, v))
 }
 
 // ValueLT applies the LT predicate on the "value" field.
 func ValueLT(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldLT(FieldValue, v))
 }
 
 // ValueLTE applies the LTE predicate on the "value" field.
 func ValueLTE(v int) predicate.Year {
-	return predicate.Year(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldValue), v))
-	})
+	return predicate.Year(sql.FieldLTE(FieldValue, v))
 }
 
 // HasClasses applies the HasEdge predicate on the "classes" edge.
@@ -155,7 +113,6 @@ func HasClasses() predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, ClassesTable, ClassesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -165,11 +122,7 @@ func HasClasses() predicate.Year {
 // HasClassesWith applies the HasEdge predicate on the "classes" edge with a given conditions (other predicates).
 func HasClassesWith(preds ...predicate.Class) predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ClassesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ClassesTable, ClassesColumn),
-		)
+		step := newClassesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -183,7 +136,6 @@ func HasPeriods() predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(PeriodsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, PeriodsTable, PeriodsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -193,11 +145,7 @@ func HasPeriods() predicate.Year {
 // HasPeriodsWith applies the HasEdge predicate on the "periods" edge with a given conditions (other predicates).
 func HasPeriodsWith(preds ...predicate.Period) predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(PeriodsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, PeriodsTable, PeriodsColumn),
-		)
+		step := newPeriodsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -211,7 +159,6 @@ func HasAreas() predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AreasTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, AreasTable, AreasColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -221,11 +168,7 @@ func HasAreas() predicate.Year {
 // HasAreasWith applies the HasEdge predicate on the "areas" edge with a given conditions (other predicates).
 func HasAreasWith(preds ...predicate.Area) predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AreasInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AreasTable, AreasColumn),
-		)
+		step := newAreasStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -239,7 +182,6 @@ func HasSubscriptions() predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SubscriptionsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, SubscriptionsTable, SubscriptionsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -249,11 +191,7 @@ func HasSubscriptions() predicate.Year {
 // HasSubscriptionsWith applies the HasEdge predicate on the "subscriptions" edge with a given conditions (other predicates).
 func HasSubscriptionsWith(preds ...predicate.Subscription) predicate.Year {
 	return predicate.Year(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SubscriptionsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, SubscriptionsTable, SubscriptionsColumn),
-		)
+		step := newSubscriptionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

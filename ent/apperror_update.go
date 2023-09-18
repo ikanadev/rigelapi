@@ -58,34 +58,7 @@ func (aeu *AppErrorUpdate) Mutation() *AppErrorMutation {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (aeu *AppErrorUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(aeu.hooks) == 0 {
-		affected, err = aeu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AppErrorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aeu.mutation = mutation
-			affected, err = aeu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(aeu.hooks) - 1; i >= 0; i-- {
-			if aeu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aeu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, aeu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, aeu.sqlSave, aeu.mutation, aeu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -111,16 +84,7 @@ func (aeu *AppErrorUpdate) ExecX(ctx context.Context) {
 }
 
 func (aeu *AppErrorUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apperror.Table,
-			Columns: apperror.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: apperror.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(apperror.Table, apperror.Columns, sqlgraph.NewFieldSpec(apperror.FieldID, field.TypeString))
 	if ps := aeu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -129,32 +93,16 @@ func (aeu *AppErrorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := aeu.mutation.UserID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldUserID,
-		})
+		_spec.SetField(apperror.FieldUserID, field.TypeString, value)
 	}
 	if value, ok := aeu.mutation.Cause(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldCause,
-		})
+		_spec.SetField(apperror.FieldCause, field.TypeString, value)
 	}
 	if value, ok := aeu.mutation.ErrorMsg(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorMsg,
-		})
+		_spec.SetField(apperror.FieldErrorMsg, field.TypeString, value)
 	}
 	if value, ok := aeu.mutation.ErrorStack(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorStack,
-		})
+		_spec.SetField(apperror.FieldErrorStack, field.TypeString, value)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, aeu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -164,6 +112,7 @@ func (aeu *AppErrorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	aeu.mutation.done = true
 	return n, nil
 }
 
@@ -204,6 +153,12 @@ func (aeuo *AppErrorUpdateOne) Mutation() *AppErrorMutation {
 	return aeuo.mutation
 }
 
+// Where appends a list predicates to the AppErrorUpdate builder.
+func (aeuo *AppErrorUpdateOne) Where(ps ...predicate.AppError) *AppErrorUpdateOne {
+	aeuo.mutation.Where(ps...)
+	return aeuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (aeuo *AppErrorUpdateOne) Select(field string, fields ...string) *AppErrorUpdateOne {
@@ -213,40 +168,7 @@ func (aeuo *AppErrorUpdateOne) Select(field string, fields ...string) *AppErrorU
 
 // Save executes the query and returns the updated AppError entity.
 func (aeuo *AppErrorUpdateOne) Save(ctx context.Context) (*AppError, error) {
-	var (
-		err  error
-		node *AppError
-	)
-	if len(aeuo.hooks) == 0 {
-		node, err = aeuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AppErrorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aeuo.mutation = mutation
-			node, err = aeuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aeuo.hooks) - 1; i >= 0; i-- {
-			if aeuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aeuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aeuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AppError)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AppErrorMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aeuo.sqlSave, aeuo.mutation, aeuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -272,16 +194,7 @@ func (aeuo *AppErrorUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (aeuo *AppErrorUpdateOne) sqlSave(ctx context.Context) (_node *AppError, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apperror.Table,
-			Columns: apperror.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: apperror.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(apperror.Table, apperror.Columns, sqlgraph.NewFieldSpec(apperror.FieldID, field.TypeString))
 	id, ok := aeuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AppError.id" for update`)}
@@ -307,32 +220,16 @@ func (aeuo *AppErrorUpdateOne) sqlSave(ctx context.Context) (_node *AppError, er
 		}
 	}
 	if value, ok := aeuo.mutation.UserID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldUserID,
-		})
+		_spec.SetField(apperror.FieldUserID, field.TypeString, value)
 	}
 	if value, ok := aeuo.mutation.Cause(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldCause,
-		})
+		_spec.SetField(apperror.FieldCause, field.TypeString, value)
 	}
 	if value, ok := aeuo.mutation.ErrorMsg(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorMsg,
-		})
+		_spec.SetField(apperror.FieldErrorMsg, field.TypeString, value)
 	}
 	if value, ok := aeuo.mutation.ErrorStack(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: apperror.FieldErrorStack,
-		})
+		_spec.SetField(apperror.FieldErrorStack, field.TypeString, value)
 	}
 	_node = &AppError{config: aeuo.config}
 	_spec.Assign = _node.assignValues
@@ -345,5 +242,6 @@ func (aeuo *AppErrorUpdateOne) sqlSave(ctx context.Context) (_node *AppError, er
 		}
 		return nil, err
 	}
+	aeuo.mutation.done = true
 	return _node, nil
 }

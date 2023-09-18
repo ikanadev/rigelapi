@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/area"
 	"github.com/vmkevv/rigelapi/ent/year"
@@ -22,8 +23,9 @@ type Area struct {
 	Points int `json:"points,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AreaQuery when eager-loading is set.
-	Edges      AreaEdges `json:"edges"`
-	year_areas *string
+	Edges        AreaEdges `json:"edges"`
+	year_areas   *string
+	selectValues sql.SelectValues
 }
 
 // AreaEdges holds the relations/edges for other nodes in the graph.
@@ -60,8 +62,8 @@ func (e AreaEdges) YearOrErr() (*Year, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Area) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Area) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case area.FieldPoints:
@@ -71,7 +73,7 @@ func (*Area) scanValues(columns []string) ([]interface{}, error) {
 		case area.ForeignKeys[0]: // year_areas
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Area", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -79,7 +81,7 @@ func (*Area) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Area fields.
-func (a *Area) assignValues(columns []string, values []interface{}) error {
+func (a *Area) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -110,26 +112,34 @@ func (a *Area) assignValues(columns []string, values []interface{}) error {
 				a.year_areas = new(string)
 				*a.year_areas = value.String
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Area.
+// This includes values selected through modifiers, order, etc.
+func (a *Area) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryActivities queries the "activities" edge of the Area entity.
 func (a *Area) QueryActivities() *ActivityQuery {
-	return (&AreaClient{config: a.config}).QueryActivities(a)
+	return NewAreaClient(a.config).QueryActivities(a)
 }
 
 // QueryYear queries the "year" edge of the Area entity.
 func (a *Area) QueryYear() *YearQuery {
-	return (&AreaClient{config: a.config}).QueryYear(a)
+	return NewAreaClient(a.config).QueryYear(a)
 }
 
 // Update returns a builder for updating this Area.
 // Note that you need to call Area.Unwrap() before calling this method if this Area
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Area) Update() *AreaUpdateOne {
-	return (&AreaClient{config: a.config}).UpdateOne(a)
+	return NewAreaClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Area entity that was returned from a transaction after it was closed,
@@ -159,9 +169,3 @@ func (a *Area) String() string {
 
 // Areas is a parsable slice of Area.
 type Areas []*Area
-
-func (a Areas) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

@@ -20,11 +20,9 @@ import (
 // MunicipioQuery is the builder for querying Municipio entities.
 type MunicipioQuery struct {
 	config
-	limit         *int
-	offset        *int
-	unique        *bool
-	order         []OrderFunc
-	fields        []string
+	ctx           *QueryContext
+	order         []municipio.OrderOption
+	inters        []Interceptor
 	predicates    []predicate.Municipio
 	withSchools   *SchoolQuery
 	withProvincia *ProvinciaQuery
@@ -40,34 +38,34 @@ func (mq *MunicipioQuery) Where(ps ...predicate.Municipio) *MunicipioQuery {
 	return mq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (mq *MunicipioQuery) Limit(limit int) *MunicipioQuery {
-	mq.limit = &limit
+	mq.ctx.Limit = &limit
 	return mq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (mq *MunicipioQuery) Offset(offset int) *MunicipioQuery {
-	mq.offset = &offset
+	mq.ctx.Offset = &offset
 	return mq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (mq *MunicipioQuery) Unique(unique bool) *MunicipioQuery {
-	mq.unique = &unique
+	mq.ctx.Unique = &unique
 	return mq
 }
 
-// Order adds an order step to the query.
-func (mq *MunicipioQuery) Order(o ...OrderFunc) *MunicipioQuery {
+// Order specifies how the records should be ordered.
+func (mq *MunicipioQuery) Order(o ...municipio.OrderOption) *MunicipioQuery {
 	mq.order = append(mq.order, o...)
 	return mq
 }
 
 // QuerySchools chains the current query on the "schools" edge.
 func (mq *MunicipioQuery) QuerySchools() *SchoolQuery {
-	query := &SchoolQuery{config: mq.config}
+	query := (&SchoolClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (mq *MunicipioQuery) QuerySchools() *SchoolQuery {
 
 // QueryProvincia chains the current query on the "provincia" edge.
 func (mq *MunicipioQuery) QueryProvincia() *ProvinciaQuery {
-	query := &ProvinciaQuery{config: mq.config}
+	query := (&ProvinciaClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,7 +110,7 @@ func (mq *MunicipioQuery) QueryProvincia() *ProvinciaQuery {
 // First returns the first Municipio entity from the query.
 // Returns a *NotFoundError when no Municipio was found.
 func (mq *MunicipioQuery) First(ctx context.Context) (*Municipio, error) {
-	nodes, err := mq.Limit(1).All(ctx)
+	nodes, err := mq.Limit(1).All(setContextOp(ctx, mq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (mq *MunicipioQuery) FirstX(ctx context.Context) *Municipio {
 // Returns a *NotFoundError when no Municipio ID was found.
 func (mq *MunicipioQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = mq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +156,7 @@ func (mq *MunicipioQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Municipio entity is found.
 // Returns a *NotFoundError when no Municipio entities are found.
 func (mq *MunicipioQuery) Only(ctx context.Context) (*Municipio, error) {
-	nodes, err := mq.Limit(2).All(ctx)
+	nodes, err := mq.Limit(2).All(setContextOp(ctx, mq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func (mq *MunicipioQuery) OnlyX(ctx context.Context) *Municipio {
 // Returns a *NotFoundError when no entities are found.
 func (mq *MunicipioQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = mq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,10 +209,12 @@ func (mq *MunicipioQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Municipios.
 func (mq *MunicipioQuery) All(ctx context.Context) ([]*Municipio, error) {
+	ctx = setContextOp(ctx, mq.ctx, "All")
 	if err := mq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return mq.sqlAll(ctx)
+	qr := querierAll[[]*Municipio, *MunicipioQuery]()
+	return withInterceptors[[]*Municipio](ctx, mq, qr, mq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -227,9 +227,12 @@ func (mq *MunicipioQuery) AllX(ctx context.Context) []*Municipio {
 }
 
 // IDs executes the query and returns a list of Municipio IDs.
-func (mq *MunicipioQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := mq.Select(municipio.FieldID).Scan(ctx, &ids); err != nil {
+func (mq *MunicipioQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if mq.ctx.Unique == nil && mq.path != nil {
+		mq.Unique(true)
+	}
+	ctx = setContextOp(ctx, mq.ctx, "IDs")
+	if err = mq.Select(municipio.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -246,10 +249,11 @@ func (mq *MunicipioQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (mq *MunicipioQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, mq.ctx, "Count")
 	if err := mq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return mq.sqlCount(ctx)
+	return withInterceptors[int](ctx, mq, querierCount[*MunicipioQuery](), mq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -263,10 +267,15 @@ func (mq *MunicipioQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (mq *MunicipioQuery) Exist(ctx context.Context) (bool, error) {
-	if err := mq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, mq.ctx, "Exist")
+	switch _, err := mq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return mq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -286,23 +295,22 @@ func (mq *MunicipioQuery) Clone() *MunicipioQuery {
 	}
 	return &MunicipioQuery{
 		config:        mq.config,
-		limit:         mq.limit,
-		offset:        mq.offset,
-		order:         append([]OrderFunc{}, mq.order...),
+		ctx:           mq.ctx.Clone(),
+		order:         append([]municipio.OrderOption{}, mq.order...),
+		inters:        append([]Interceptor{}, mq.inters...),
 		predicates:    append([]predicate.Municipio{}, mq.predicates...),
 		withSchools:   mq.withSchools.Clone(),
 		withProvincia: mq.withProvincia.Clone(),
 		// clone intermediate query.
-		sql:    mq.sql.Clone(),
-		path:   mq.path,
-		unique: mq.unique,
+		sql:  mq.sql.Clone(),
+		path: mq.path,
 	}
 }
 
 // WithSchools tells the query-builder to eager-load the nodes that are connected to
 // the "schools" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MunicipioQuery) WithSchools(opts ...func(*SchoolQuery)) *MunicipioQuery {
-	query := &SchoolQuery{config: mq.config}
+	query := (&SchoolClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -313,7 +321,7 @@ func (mq *MunicipioQuery) WithSchools(opts ...func(*SchoolQuery)) *MunicipioQuer
 // WithProvincia tells the query-builder to eager-load the nodes that are connected to
 // the "provincia" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MunicipioQuery) WithProvincia(opts ...func(*ProvinciaQuery)) *MunicipioQuery {
-	query := &ProvinciaQuery{config: mq.config}
+	query := (&ProvinciaClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -336,16 +344,11 @@ func (mq *MunicipioQuery) WithProvincia(opts ...func(*ProvinciaQuery)) *Municipi
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (mq *MunicipioQuery) GroupBy(field string, fields ...string) *MunicipioGroupBy {
-	grbuild := &MunicipioGroupBy{config: mq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := mq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return mq.sqlQuery(ctx), nil
-	}
+	mq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &MunicipioGroupBy{build: mq}
+	grbuild.flds = &mq.ctx.Fields
 	grbuild.label = municipio.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -362,15 +365,30 @@ func (mq *MunicipioQuery) GroupBy(field string, fields ...string) *MunicipioGrou
 //		Select(municipio.FieldName).
 //		Scan(ctx, &v)
 func (mq *MunicipioQuery) Select(fields ...string) *MunicipioSelect {
-	mq.fields = append(mq.fields, fields...)
-	selbuild := &MunicipioSelect{MunicipioQuery: mq}
-	selbuild.label = municipio.Label
-	selbuild.flds, selbuild.scan = &mq.fields, selbuild.Scan
-	return selbuild
+	mq.ctx.Fields = append(mq.ctx.Fields, fields...)
+	sbuild := &MunicipioSelect{MunicipioQuery: mq}
+	sbuild.label = municipio.Label
+	sbuild.flds, sbuild.scan = &mq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a MunicipioSelect configured with the given aggregations.
+func (mq *MunicipioQuery) Aggregate(fns ...AggregateFunc) *MunicipioSelect {
+	return mq.Select().Aggregate(fns...)
 }
 
 func (mq *MunicipioQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range mq.fields {
+	for _, inter := range mq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, mq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range mq.ctx.Fields {
 		if !municipio.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -401,10 +419,10 @@ func (mq *MunicipioQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mu
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, municipio.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Municipio).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Municipio{config: mq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -447,7 +465,7 @@ func (mq *MunicipioQuery) loadSchools(ctx context.Context, query *SchoolQuery, n
 	}
 	query.withFKs = true
 	query.Where(predicate.School(func(s *sql.Selector) {
-		s.Where(sql.InValues(municipio.SchoolsColumn, fks...))
+		s.Where(sql.InValues(s.C(municipio.SchoolsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -460,7 +478,7 @@ func (mq *MunicipioQuery) loadSchools(ctx context.Context, query *SchoolQuery, n
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "municipio_schools" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "municipio_schools" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -478,6 +496,9 @@ func (mq *MunicipioQuery) loadProvincia(ctx context.Context, query *ProvinciaQue
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(provincia.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -498,38 +519,22 @@ func (mq *MunicipioQuery) loadProvincia(ctx context.Context, query *ProvinciaQue
 
 func (mq *MunicipioQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := mq.querySpec()
-	_spec.Node.Columns = mq.fields
-	if len(mq.fields) > 0 {
-		_spec.Unique = mq.unique != nil && *mq.unique
+	_spec.Node.Columns = mq.ctx.Fields
+	if len(mq.ctx.Fields) > 0 {
+		_spec.Unique = mq.ctx.Unique != nil && *mq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, mq.driver, _spec)
 }
 
-func (mq *MunicipioQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := mq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (mq *MunicipioQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   municipio.Table,
-			Columns: municipio.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: municipio.FieldID,
-			},
-		},
-		From:   mq.sql,
-		Unique: true,
-	}
-	if unique := mq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(municipio.Table, municipio.Columns, sqlgraph.NewFieldSpec(municipio.FieldID, field.TypeString))
+	_spec.From = mq.sql
+	if unique := mq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if mq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := mq.fields; len(fields) > 0 {
+	if fields := mq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, municipio.FieldID)
 		for i := range fields {
@@ -545,10 +550,10 @@ func (mq *MunicipioQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := mq.limit; limit != nil {
+	if limit := mq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := mq.offset; offset != nil {
+	if offset := mq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := mq.order; len(ps) > 0 {
@@ -564,7 +569,7 @@ func (mq *MunicipioQuery) querySpec() *sqlgraph.QuerySpec {
 func (mq *MunicipioQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(mq.driver.Dialect())
 	t1 := builder.Table(municipio.Table)
-	columns := mq.fields
+	columns := mq.ctx.Fields
 	if len(columns) == 0 {
 		columns = municipio.Columns
 	}
@@ -573,7 +578,7 @@ func (mq *MunicipioQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = mq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if mq.unique != nil && *mq.unique {
+	if mq.ctx.Unique != nil && *mq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range mq.predicates {
@@ -582,12 +587,12 @@ func (mq *MunicipioQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range mq.order {
 		p(selector)
 	}
-	if offset := mq.offset; offset != nil {
+	if offset := mq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := mq.limit; limit != nil {
+	if limit := mq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -595,13 +600,8 @@ func (mq *MunicipioQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // MunicipioGroupBy is the group-by builder for Municipio entities.
 type MunicipioGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *MunicipioQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -610,74 +610,77 @@ func (mgb *MunicipioGroupBy) Aggregate(fns ...AggregateFunc) *MunicipioGroupBy {
 	return mgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (mgb *MunicipioGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := mgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (mgb *MunicipioGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, mgb.build.ctx, "GroupBy")
+	if err := mgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	mgb.sql = query
-	return mgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*MunicipioQuery, *MunicipioGroupBy](ctx, mgb.build, mgb, mgb.build.inters, v)
 }
 
-func (mgb *MunicipioGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range mgb.fields {
-		if !municipio.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (mgb *MunicipioGroupBy) sqlScan(ctx context.Context, root *MunicipioQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(mgb.fns))
+	for _, fn := range mgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := mgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*mgb.flds)+len(mgb.fns))
+		for _, f := range *mgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*mgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := mgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := mgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (mgb *MunicipioGroupBy) sqlQuery() *sql.Selector {
-	selector := mgb.sql.Select()
-	aggregation := make([]string, 0, len(mgb.fns))
-	for _, fn := range mgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(mgb.fields)+len(mgb.fns))
-		for _, f := range mgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(mgb.fields...)...)
-}
-
 // MunicipioSelect is the builder for selecting fields of Municipio entities.
 type MunicipioSelect struct {
 	*MunicipioQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ms *MunicipioSelect) Aggregate(fns ...AggregateFunc) *MunicipioSelect {
+	ms.fns = append(ms.fns, fns...)
+	return ms
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ms *MunicipioSelect) Scan(ctx context.Context, v interface{}) error {
+func (ms *MunicipioSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ms.ctx, "Select")
 	if err := ms.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ms.sql = ms.MunicipioQuery.sqlQuery(ctx)
-	return ms.sqlScan(ctx, v)
+	return scanWithInterceptors[*MunicipioQuery, *MunicipioSelect](ctx, ms.MunicipioQuery, ms, ms.inters, v)
 }
 
-func (ms *MunicipioSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ms *MunicipioSelect) sqlScan(ctx context.Context, root *MunicipioQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ms.fns))
+	for _, fn := range ms.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ms.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ms.sql.Query()
+	query, args := selector.Query()
 	if err := ms.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

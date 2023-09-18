@@ -20,11 +20,9 @@ import (
 // ProvinciaQuery is the builder for querying Provincia entities.
 type ProvinciaQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
+	ctx              *QueryContext
+	order            []provincia.OrderOption
+	inters           []Interceptor
 	predicates       []predicate.Provincia
 	withMunicipios   *MunicipioQuery
 	withDepartamento *DptoQuery
@@ -40,34 +38,34 @@ func (pq *ProvinciaQuery) Where(ps ...predicate.Provincia) *ProvinciaQuery {
 	return pq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (pq *ProvinciaQuery) Limit(limit int) *ProvinciaQuery {
-	pq.limit = &limit
+	pq.ctx.Limit = &limit
 	return pq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (pq *ProvinciaQuery) Offset(offset int) *ProvinciaQuery {
-	pq.offset = &offset
+	pq.ctx.Offset = &offset
 	return pq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (pq *ProvinciaQuery) Unique(unique bool) *ProvinciaQuery {
-	pq.unique = &unique
+	pq.ctx.Unique = &unique
 	return pq
 }
 
-// Order adds an order step to the query.
-func (pq *ProvinciaQuery) Order(o ...OrderFunc) *ProvinciaQuery {
+// Order specifies how the records should be ordered.
+func (pq *ProvinciaQuery) Order(o ...provincia.OrderOption) *ProvinciaQuery {
 	pq.order = append(pq.order, o...)
 	return pq
 }
 
 // QueryMunicipios chains the current query on the "municipios" edge.
 func (pq *ProvinciaQuery) QueryMunicipios() *MunicipioQuery {
-	query := &MunicipioQuery{config: pq.config}
+	query := (&MunicipioClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -89,7 +87,7 @@ func (pq *ProvinciaQuery) QueryMunicipios() *MunicipioQuery {
 
 // QueryDepartamento chains the current query on the "departamento" edge.
 func (pq *ProvinciaQuery) QueryDepartamento() *DptoQuery {
-	query := &DptoQuery{config: pq.config}
+	query := (&DptoClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,7 +110,7 @@ func (pq *ProvinciaQuery) QueryDepartamento() *DptoQuery {
 // First returns the first Provincia entity from the query.
 // Returns a *NotFoundError when no Provincia was found.
 func (pq *ProvinciaQuery) First(ctx context.Context) (*Provincia, error) {
-	nodes, err := pq.Limit(1).All(ctx)
+	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (pq *ProvinciaQuery) FirstX(ctx context.Context) *Provincia {
 // Returns a *NotFoundError when no Provincia ID was found.
 func (pq *ProvinciaQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +156,7 @@ func (pq *ProvinciaQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Provincia entity is found.
 // Returns a *NotFoundError when no Provincia entities are found.
 func (pq *ProvinciaQuery) Only(ctx context.Context) (*Provincia, error) {
-	nodes, err := pq.Limit(2).All(ctx)
+	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func (pq *ProvinciaQuery) OnlyX(ctx context.Context) *Provincia {
 // Returns a *NotFoundError when no entities are found.
 func (pq *ProvinciaQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,10 +209,12 @@ func (pq *ProvinciaQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of ProvinciaSlice.
 func (pq *ProvinciaQuery) All(ctx context.Context) ([]*Provincia, error) {
+	ctx = setContextOp(ctx, pq.ctx, "All")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return pq.sqlAll(ctx)
+	qr := querierAll[[]*Provincia, *ProvinciaQuery]()
+	return withInterceptors[[]*Provincia](ctx, pq, qr, pq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -227,9 +227,12 @@ func (pq *ProvinciaQuery) AllX(ctx context.Context) []*Provincia {
 }
 
 // IDs executes the query and returns a list of Provincia IDs.
-func (pq *ProvinciaQuery) IDs(ctx context.Context) ([]string, error) {
-	var ids []string
-	if err := pq.Select(provincia.FieldID).Scan(ctx, &ids); err != nil {
+func (pq *ProvinciaQuery) IDs(ctx context.Context) (ids []string, err error) {
+	if pq.ctx.Unique == nil && pq.path != nil {
+		pq.Unique(true)
+	}
+	ctx = setContextOp(ctx, pq.ctx, "IDs")
+	if err = pq.Select(provincia.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -246,10 +249,11 @@ func (pq *ProvinciaQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (pq *ProvinciaQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, pq.ctx, "Count")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return pq.sqlCount(ctx)
+	return withInterceptors[int](ctx, pq, querierCount[*ProvinciaQuery](), pq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -263,10 +267,15 @@ func (pq *ProvinciaQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pq *ProvinciaQuery) Exist(ctx context.Context) (bool, error) {
-	if err := pq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, pq.ctx, "Exist")
+	switch _, err := pq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return pq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -286,23 +295,22 @@ func (pq *ProvinciaQuery) Clone() *ProvinciaQuery {
 	}
 	return &ProvinciaQuery{
 		config:           pq.config,
-		limit:            pq.limit,
-		offset:           pq.offset,
-		order:            append([]OrderFunc{}, pq.order...),
+		ctx:              pq.ctx.Clone(),
+		order:            append([]provincia.OrderOption{}, pq.order...),
+		inters:           append([]Interceptor{}, pq.inters...),
 		predicates:       append([]predicate.Provincia{}, pq.predicates...),
 		withMunicipios:   pq.withMunicipios.Clone(),
 		withDepartamento: pq.withDepartamento.Clone(),
 		// clone intermediate query.
-		sql:    pq.sql.Clone(),
-		path:   pq.path,
-		unique: pq.unique,
+		sql:  pq.sql.Clone(),
+		path: pq.path,
 	}
 }
 
 // WithMunicipios tells the query-builder to eager-load the nodes that are connected to
 // the "municipios" edge. The optional arguments are used to configure the query builder of the edge.
 func (pq *ProvinciaQuery) WithMunicipios(opts ...func(*MunicipioQuery)) *ProvinciaQuery {
-	query := &MunicipioQuery{config: pq.config}
+	query := (&MunicipioClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -313,7 +321,7 @@ func (pq *ProvinciaQuery) WithMunicipios(opts ...func(*MunicipioQuery)) *Provinc
 // WithDepartamento tells the query-builder to eager-load the nodes that are connected to
 // the "departamento" edge. The optional arguments are used to configure the query builder of the edge.
 func (pq *ProvinciaQuery) WithDepartamento(opts ...func(*DptoQuery)) *ProvinciaQuery {
-	query := &DptoQuery{config: pq.config}
+	query := (&DptoClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -336,16 +344,11 @@ func (pq *ProvinciaQuery) WithDepartamento(opts ...func(*DptoQuery)) *ProvinciaQ
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pq *ProvinciaQuery) GroupBy(field string, fields ...string) *ProvinciaGroupBy {
-	grbuild := &ProvinciaGroupBy{config: pq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := pq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return pq.sqlQuery(ctx), nil
-	}
+	pq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ProvinciaGroupBy{build: pq}
+	grbuild.flds = &pq.ctx.Fields
 	grbuild.label = provincia.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -362,15 +365,30 @@ func (pq *ProvinciaQuery) GroupBy(field string, fields ...string) *ProvinciaGrou
 //		Select(provincia.FieldName).
 //		Scan(ctx, &v)
 func (pq *ProvinciaQuery) Select(fields ...string) *ProvinciaSelect {
-	pq.fields = append(pq.fields, fields...)
-	selbuild := &ProvinciaSelect{ProvinciaQuery: pq}
-	selbuild.label = provincia.Label
-	selbuild.flds, selbuild.scan = &pq.fields, selbuild.Scan
-	return selbuild
+	pq.ctx.Fields = append(pq.ctx.Fields, fields...)
+	sbuild := &ProvinciaSelect{ProvinciaQuery: pq}
+	sbuild.label = provincia.Label
+	sbuild.flds, sbuild.scan = &pq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a ProvinciaSelect configured with the given aggregations.
+func (pq *ProvinciaQuery) Aggregate(fns ...AggregateFunc) *ProvinciaSelect {
+	return pq.Select().Aggregate(fns...)
 }
 
 func (pq *ProvinciaQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range pq.fields {
+	for _, inter := range pq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, pq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range pq.ctx.Fields {
 		if !provincia.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -401,10 +419,10 @@ func (pq *ProvinciaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pr
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, provincia.ForeignKeys...)
 	}
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Provincia).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
+	_spec.Assign = func(columns []string, values []any) error {
 		node := &Provincia{config: pq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
@@ -447,7 +465,7 @@ func (pq *ProvinciaQuery) loadMunicipios(ctx context.Context, query *MunicipioQu
 	}
 	query.withFKs = true
 	query.Where(predicate.Municipio(func(s *sql.Selector) {
-		s.Where(sql.InValues(provincia.MunicipiosColumn, fks...))
+		s.Where(sql.InValues(s.C(provincia.MunicipiosColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -460,7 +478,7 @@ func (pq *ProvinciaQuery) loadMunicipios(ctx context.Context, query *MunicipioQu
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "provincia_municipios" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "provincia_municipios" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -478,6 +496,9 @@ func (pq *ProvinciaQuery) loadDepartamento(ctx context.Context, query *DptoQuery
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(dpto.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -498,38 +519,22 @@ func (pq *ProvinciaQuery) loadDepartamento(ctx context.Context, query *DptoQuery
 
 func (pq *ProvinciaQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pq.querySpec()
-	_spec.Node.Columns = pq.fields
-	if len(pq.fields) > 0 {
-		_spec.Unique = pq.unique != nil && *pq.unique
+	_spec.Node.Columns = pq.ctx.Fields
+	if len(pq.ctx.Fields) > 0 {
+		_spec.Unique = pq.ctx.Unique != nil && *pq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, pq.driver, _spec)
 }
 
-func (pq *ProvinciaQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := pq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
 func (pq *ProvinciaQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   provincia.Table,
-			Columns: provincia.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: provincia.FieldID,
-			},
-		},
-		From:   pq.sql,
-		Unique: true,
-	}
-	if unique := pq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(provincia.Table, provincia.Columns, sqlgraph.NewFieldSpec(provincia.FieldID, field.TypeString))
+	_spec.From = pq.sql
+	if unique := pq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if pq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := pq.fields; len(fields) > 0 {
+	if fields := pq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, provincia.FieldID)
 		for i := range fields {
@@ -545,10 +550,10 @@ func (pq *ProvinciaQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := pq.limit; limit != nil {
+	if limit := pq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := pq.offset; offset != nil {
+	if offset := pq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := pq.order; len(ps) > 0 {
@@ -564,7 +569,7 @@ func (pq *ProvinciaQuery) querySpec() *sqlgraph.QuerySpec {
 func (pq *ProvinciaQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pq.driver.Dialect())
 	t1 := builder.Table(provincia.Table)
-	columns := pq.fields
+	columns := pq.ctx.Fields
 	if len(columns) == 0 {
 		columns = provincia.Columns
 	}
@@ -573,7 +578,7 @@ func (pq *ProvinciaQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = pq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if pq.unique != nil && *pq.unique {
+	if pq.ctx.Unique != nil && *pq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range pq.predicates {
@@ -582,12 +587,12 @@ func (pq *ProvinciaQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range pq.order {
 		p(selector)
 	}
-	if offset := pq.offset; offset != nil {
+	if offset := pq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := pq.limit; limit != nil {
+	if limit := pq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -595,13 +600,8 @@ func (pq *ProvinciaQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // ProvinciaGroupBy is the group-by builder for Provincia entities.
 type ProvinciaGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *ProvinciaQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -610,74 +610,77 @@ func (pgb *ProvinciaGroupBy) Aggregate(fns ...AggregateFunc) *ProvinciaGroupBy {
 	return pgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (pgb *ProvinciaGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := pgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (pgb *ProvinciaGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, pgb.build.ctx, "GroupBy")
+	if err := pgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pgb.sql = query
-	return pgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*ProvinciaQuery, *ProvinciaGroupBy](ctx, pgb.build, pgb, pgb.build.inters, v)
 }
 
-func (pgb *ProvinciaGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range pgb.fields {
-		if !provincia.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (pgb *ProvinciaGroupBy) sqlScan(ctx context.Context, root *ProvinciaQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(pgb.fns))
+	for _, fn := range pgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := pgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*pgb.flds)+len(pgb.fns))
+		for _, f := range *pgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*pgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := pgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := pgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (pgb *ProvinciaGroupBy) sqlQuery() *sql.Selector {
-	selector := pgb.sql.Select()
-	aggregation := make([]string, 0, len(pgb.fns))
-	for _, fn := range pgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
-		for _, f := range pgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(pgb.fields...)...)
-}
-
 // ProvinciaSelect is the builder for selecting fields of Provincia entities.
 type ProvinciaSelect struct {
 	*ProvinciaQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ps *ProvinciaSelect) Aggregate(fns ...AggregateFunc) *ProvinciaSelect {
+	ps.fns = append(ps.fns, fns...)
+	return ps
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ps *ProvinciaSelect) Scan(ctx context.Context, v interface{}) error {
+func (ps *ProvinciaSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ps.ctx, "Select")
 	if err := ps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ps.sql = ps.ProvinciaQuery.sqlQuery(ctx)
-	return ps.sqlScan(ctx, v)
+	return scanWithInterceptors[*ProvinciaQuery, *ProvinciaSelect](ctx, ps.ProvinciaQuery, ps, ps.inters, v)
 }
 
-func (ps *ProvinciaSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (ps *ProvinciaSelect) sqlScan(ctx context.Context, root *ProvinciaQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ps.fns))
+	for _, fn := range ps.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ps.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ps.sql.Query()
+	query, args := selector.Query()
 	if err := ps.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

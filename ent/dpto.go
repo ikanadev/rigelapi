@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/vmkevv/rigelapi/ent/dpto"
 )
@@ -19,7 +20,8 @@ type Dpto struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DptoQuery when eager-loading is set.
-	Edges DptoEdges `json:"edges"`
+	Edges        DptoEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // DptoEdges holds the relations/edges for other nodes in the graph.
@@ -41,14 +43,14 @@ func (e DptoEdges) ProvinciasOrErr() ([]*Provincia, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Dpto) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Dpto) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case dpto.FieldID, dpto.FieldName:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Dpto", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -56,7 +58,7 @@ func (*Dpto) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Dpto fields.
-func (d *Dpto) assignValues(columns []string, values []interface{}) error {
+func (d *Dpto) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -74,21 +76,29 @@ func (d *Dpto) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				d.Name = value.String
 			}
+		default:
+			d.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Dpto.
+// This includes values selected through modifiers, order, etc.
+func (d *Dpto) Value(name string) (ent.Value, error) {
+	return d.selectValues.Get(name)
+}
+
 // QueryProvincias queries the "provincias" edge of the Dpto entity.
 func (d *Dpto) QueryProvincias() *ProvinciaQuery {
-	return (&DptoClient{config: d.config}).QueryProvincias(d)
+	return NewDptoClient(d.config).QueryProvincias(d)
 }
 
 // Update returns a builder for updating this Dpto.
 // Note that you need to call Dpto.Unwrap() before calling this method if this Dpto
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (d *Dpto) Update() *DptoUpdateOne {
-	return (&DptoClient{config: d.config}).UpdateOne(d)
+	return NewDptoClient(d.config).UpdateOne(d)
 }
 
 // Unwrap unwraps the Dpto entity that was returned from a transaction after it was closed,
@@ -115,9 +125,3 @@ func (d *Dpto) String() string {
 
 // Dptos is a parsable slice of Dpto.
 type Dptos []*Dpto
-
-func (d Dptos) config(cfg config) {
-	for _i := range d {
-		d[_i].config = cfg
-	}
-}
